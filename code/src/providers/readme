@@ -1,0 +1,9 @@
+this will be containing all packages that will be installed or projects that are used
+to provide functionality for the project build.
+eg openfx, audio plugin suports etc
+
+and make sure to add them to their folders based on their responsibility.
+
+either for video or audio
+
+or functions from vcpkg so that the code base is clean as posible
