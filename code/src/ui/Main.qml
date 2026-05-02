@@ -19,33 +19,43 @@ ApplicationWindow {
     title: ProjectManager.projectName + (ProjectManager.isDirty ? " *" : "") + " - MOKM Effector"
     color: Theme.surface
 
+    Component.onCompleted: {
+        console.log("MOKM Effector Workspace Loaded");
+    }
+
     menuBar: MenuBar {
         id: mainMenuBar
         background: Rectangle { color: Theme.base; border.color: Theme.border; border.width: 1 }
 
         Menu {
             title: "File"
-            Action { text: "New Project"; onTriggered: ProjectManager.createNewProject("Untitled") }
-            Action { text: "Open Project..."; onTriggered: openProjectDialog.open() }
+            Action { text: "New Project"; shortcut: "Ctrl+N"; onTriggered: ProjectManager.createNewProject("Untitled") }
+            Action { text: "Open Project..."; shortcut: "Ctrl+O"; onTriggered: openProjectDialog.open() }
             MenuSeparator {}
-            Action { text: "Save"; onTriggered: ProjectManager.saveProject() }
+            Action { text: "Save"; shortcut: "Ctrl+S"; onTriggered: ProjectManager.saveProject() }
+            Action { text: "Save As..."; shortcut: "Ctrl+Shift+S"; onTriggered: saveAsProjectDialog.open() }
+            MenuSeparator {}
             Action { text: "Exit"; onTriggered: Qt.quit() }
         }
         Menu {
             title: "Edit"
-            Action { text: "Undo"; enabled: UndoManager.canUndo; onTriggered: UndoManager.undo() }
-            Action { text: "Redo"; enabled: UndoManager.canRedo; onTriggered: UndoManager.redo() }
+            Action { text: "Undo"; shortcut: "Ctrl+Z"; enabled: UndoManager.canUndo; onTriggered: UndoManager.undo() }
+            Action { text: "Redo"; shortcut: "Ctrl+Y"; enabled: UndoManager.canRedo; onTriggered: UndoManager.redo() }
         }
         Menu {
             title: "Composition"
-            Action { text: "New Composition" }
-            Action { text: "Render Settings" }
+            Action { text: "New Composition"; shortcut: "Ctrl+N" }
+            Action { text: "Composition Settings"; shortcut: "Ctrl+K" }
+            MenuSeparator {}
+            Action { text: "Render Queue"; shortcut: "Ctrl+M" }
         }
         Menu {
             title: "Window"
             Action { text: "Project Bin"; checkable: true; checked: true }
             Action { text: "Inspector"; checkable: true; checked: true }
             Action { text: "Timeline"; checkable: true; checked: true }
+            MenuSeparator {}
+            Action { text: "Reset Workspace Layout" }
         }
         Menu {
             title: "Help"
@@ -64,7 +74,7 @@ ApplicationWindow {
             Layout.fillHeight: true
             spacing: 0
 
-            // Left Tool Sidebar
+            // Left Tool Sidebar (Consistent with Web)
             Rectangle {
                 Layout.fillHeight: true
                 Layout.preferredWidth: 44
@@ -79,16 +89,18 @@ ApplicationWindow {
 
                     Repeater {
                         model: [
-                            { icon: "mouse-pointer-2.svg", active: true },
-                            { icon: "hand.svg" },
-                            { icon: "box.svg" },
-                            { icon: "network.svg" },
-                            { icon: "layers.svg" },
-                            { icon: "zap.svg" }
+                            { icon: "mouse-pointer-2.svg", name: "Select", active: true },
+                            { icon: "hand.svg", name: "Pan" },
+                            { icon: "box.svg", name: "3D View" },
+                            { icon: "network.svg", name: "Nodes" },
+                            { icon: "layers.svg", name: "Layers" },
+                            { icon: "zap.svg", name: "Render" }
                         ]
                         delegate: ToolButton {
                             Layout.fillWidth: true
                             Layout.preferredHeight: 36
+                            ToolTip.visible: hovered
+                            ToolTip.text: modelData.name
                             background: Rectangle {
                                 color: modelData.active ? Theme.primary : "transparent"
                                 opacity: modelData.active ? 0.2 : 1
@@ -106,14 +118,26 @@ ApplicationWindow {
                     ToolButton {
                         Layout.fillWidth: true
                         Layout.preferredHeight: 36
+                        ToolTip.visible: hovered
+                        ToolTip.text: "Settings"
                         icon.source: "icons/outline/settings.svg"
                         icon.color: Theme.textSecondary
-                        onClicked: preferencesModal.open()
+                        onClicked: menu.open()
+                        
+                        Menu {
+                            id: menu
+                            y: -height
+                            MenuItem { text: "Project Settings"; onClicked: projectSettingsModal.open() }
+                            MenuItem { text: "Preferences"; onClicked: preferencesModal.open() }
+                            MenuItem { text: "Proxy Dashboard"; onClicked: proxyDashboard.open() }
+                            MenuItem { text: "Plugin Manager"; onClicked: pluginManagerModal.open() }
+                            MenuItem { text: "Keyboard Shortcuts"; onClicked: shortcutMapperModal.open() }
+                        }
                     }
                 }
             }
 
-            // Central Panels
+            // Central Split Panels
             SplitView {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
@@ -145,7 +169,7 @@ ApplicationWindow {
                         // Workspace Grid Overlay
                         Canvas {
                             anchors.fill: parent
-                            opacity: 0.1
+                            opacity: 0.05
                             onPaint: {
                                 var ctx = getContext("2d");
                                 ctx.strokeStyle = Theme.textSecondary;
@@ -162,14 +186,30 @@ ApplicationWindow {
                         Loader {
                             id: workspaceLoader
                             anchors.fill: parent
-                            source: "node_editor/NodeEditorWorkspace.qml" // Default view
+                            source: "node_editor/NodeEditorWorkspace.qml"
+                        }
+                        
+                        // Viewport Controls (Consistent with Web)
+                        Row {
+                            anchors.bottom: parent.bottom
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            anchors.bottomMargin: 12
+                            spacing: 1
+                            Rectangle {
+                                width: 120; height: 28; radius: 6; color: Theme.base; opacity: 0.8
+                                border.color: Theme.border; border.width: 1
+                                RowLayout {
+                                    anchors.fill: parent; anchors.margins: 4
+                                    Text { text: "100%"; font: Theme.monoFont; color: Theme.textSecondary; Layout.alignment: Qt.AlignCenter }
+                                }
+                            }
                         }
                     }
 
                     // Timeline (Bottom Panel)
                     Rectangle {
                         SplitView.preferredHeight: 240
-                        SplitView.minimumHeight: 100
+                        SplitView.minimumHeight: 120
                         color: Theme.surface
                         border.color: Theme.border
 
@@ -195,7 +235,7 @@ ApplicationWindow {
             }
         }
 
-        // Status Bar
+        // Status Bar (Consistent with Web)
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 24
@@ -211,6 +251,13 @@ ApplicationWindow {
                     text: "Ready"
                     font: Theme.monoFont
                     color: Theme.textSecondary
+                }
+                
+                Text {
+                    text: "| Composition: Main_Render | Frame: 0 / 240"
+                    font: Theme.monoFont
+                    color: Theme.textSecondary
+                    opacity: 0.6
                 }
                 
                 Item { Layout.fillWidth: true }
@@ -231,10 +278,26 @@ ApplicationWindow {
     PluginManagerModal { id: pluginManagerModal }
     ShortcutMapper { id: shortcutMapperModal }
 
+    MessageDialog {
+        id: recoveryDialog
+        title: "Crash Recovery"
+        text: "An unsaved project was found. Would you like to recover it?"
+        buttons: MessageDialog.Yes | MessageDialog.No
+        onAccepted: ProjectManager.loadProject("")
+    }
+
     FileDialog {
         id: openProjectDialog
         title: "Open Project"
         nameFilters: ["MOKM Project Files (*.mokm)"]
         onAccepted: ProjectManager.loadProject(selectedFile)
+    }
+
+    FileDialog {
+        id: saveAsProjectDialog
+        title: "Save Project As"
+        fileMode: FileDialog.SaveFile
+        nameFilters: ["MOKM Project Files (*.mokm)"]
+        onAccepted: ProjectManager.saveProjectAs(selectedFile)
     }
 }
