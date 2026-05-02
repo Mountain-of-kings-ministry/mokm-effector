@@ -81,12 +81,12 @@ jobs:
       # ✅ FIX 1: run inside /web
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
-        working-directory: ./web
+        # working-directory: ./web
 
       # ✅ FIX 2: build inside /web (no filter needed)
       - name: Build
         run: pnpm build
-        working-directory: ./web
+        # working-directory: ./web
 
       # ✅ FIX 3: explicitly name artifact (prevents duplication issues)
       - name: Upload Artifact
