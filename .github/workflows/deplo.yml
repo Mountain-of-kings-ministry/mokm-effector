@@ -61,7 +61,6 @@ permissions:
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -76,23 +75,21 @@ jobs:
         with:
           node-version: "20"
           cache: "pnpm"
+          # run: pwd
           cache-dependency-path: "./web/pnpm-lock.yaml"
 
-      # ✅ FIX 1: run inside /web
+      # Install from root - pnpm will find the /web folder via pnpm-workspace.yaml
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
-        # working-directory: ./web
 
-      # ✅ FIX 2: build inside /web (no filter needed)
+      # Build specifically the web package
       - name: Build
-        run: pnpm build
-        # working-directory: ./web
+        run: pnpm --filter web build
 
-      # ✅ FIX 3: explicitly name artifact (prevents duplication issues)
       - name: Upload Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          name: github-pages
+          # Verify if your build output is in 'dist' or 'build/client'
           path: ./web/build/client
 
       - name: Deploy to GitHub Pages
