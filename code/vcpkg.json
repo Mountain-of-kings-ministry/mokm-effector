@@ -1,0 +1,24 @@
+{
+  "name": "mokmefx",
+  "version": "0.1.0",
+  "dependencies": ["thorvg", "ffmpeg"],
+  "default-features": [],
+  "features": {
+    "nodes": {
+      "description": "Node graph editor (QtNodes)",
+      "dependencies": ["qtnodes"]
+    },
+    "scripting": {
+      "description": "QuickJS scripting",
+      "dependencies": ["quickjs-ng"]
+    },
+    "interop": {
+      "description": "OpenTimelineIO + OpenFX",
+      "dependencies": ["opentimelineio", "openfx"]
+    },
+    "full": {
+      "description": "All optional components",
+      "dependencies": ["qtnodes", "quickjs-ng", "opentimelineio", "openfx"]
+    }
+  }
+}

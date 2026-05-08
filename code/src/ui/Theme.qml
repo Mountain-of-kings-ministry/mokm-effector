@@ -1,41 +1,33 @@
 pragma Singleton
-import QtQuick
+import QtQuick 2.15
 
 QtObject {
-    // Brand & High Priority
-    readonly property color primary: "#FFD700"
-    readonly property color secondary: "#FFCC10"
-    readonly property color accent: "#E5B70A"
-    
-    // Backgrounds & Layers
-    readonly property color surface: "#1A1B1F"    // Deep space
-    readonly property color base: "#343840"       // Panels base
-    readonly property color panel: "#4E5360"      // Component cards
-    readonly property color border: "#4E5360"     // Same as panel for subtle division
-    
-    // Status & Glows
-    readonly property color glow: "#26FFD700"     // 15% opacity primary
-    readonly property color success: "#10B981"
-    readonly property color warning: "#F59E0B"
-    readonly property color danger: "#EF4444"
+    // Base (dark monochrome — no pure black)
+    readonly property color background: "#09090b"      // zinc-950
+    readonly property color foreground: "#fafafa"      // zinc-50
 
-    // Text colors
-    readonly property color textPrimary: "#F3F4F6"
-    readonly property color textSecondary: "#9CA3AF"
-    readonly property color textDisabled: "#666666"
-    readonly property color textInverse: "#1A1B1F"
+    // Primary (Gold)
+    readonly property color primary: "#eab308"      // gold-500
+    readonly property color primaryHover: "#ca8a04" // gold-600
 
-    // Generic geometry
-    readonly property int radius: 4
-    readonly property int paddingLarge: 16
-    readonly property int paddingMedium: 8
-    readonly property int paddingSmall: 4
+    // Accent
+    readonly property color accent: "#3b82f6"       // blue-500
+    readonly property color accentHover: "#2563eb"  // blue-600
 
-    // Standard font
-    readonly property font defaultFont: Qt.font({ family: "Inter", pixelSize: 13 })
-    readonly property font defaultFontBold: Qt.font({ family: "Inter", pixelSize: 13, weight: Font.Bold })
-    readonly property font headerFont: Qt.font({ family: "Inter", pixelSize: 18, weight: Font.Bold })
-    readonly property font smallFont: Qt.font({ family: "Inter", pixelSize: 11 })
-    readonly property font smallFontBold: Qt.font({ family: "Inter", pixelSize: 11, weight: Font.Bold })
-    readonly property font monoFont: Qt.font({ family: "JetBrains Mono", pixelSize: 10 })
+    // Secondary surfaces (slightly lighter than background)
+    readonly property color secondary: "#18181b"       // zinc-900
+    readonly property color secondaryHover: "#27272a"  // zinc-800
+
+    // Muted / subtle UI
+    readonly property color muted: "#27272a"           // zinc-800
+    readonly property color mutedForeground: "#a1a1aa" // zinc-400
+
+    // Borders & input
+    readonly property color border: "#27272a"          // zinc-800
+    readonly property color input: "#09090b"           // zinc-950
+
+    // States
+    readonly property color success: "#22c55e"
+    readonly property color warning: "#f59e0b"
+    readonly property color error: "#ef4444"
 }

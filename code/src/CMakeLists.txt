@@ -1,6 +1,8 @@
+add_subdirectory(core)
+add_subdirectory(viewport)
+add_subdirectory(nodes)
+add_subdirectory(timeline)
 add_subdirectory(ui)
-add_subdirectory(functions)
-add_subdirectory(third_party)
-
-add_library(mokm_src INTERFACE)
-target_link_libraries(mokm_src INTERFACE ui functions)
+add_subdirectory(rendering)
+add_subdirectory(scripting)
+add_subdirectory(integration)
