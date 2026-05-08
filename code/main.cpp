@@ -18,6 +18,7 @@ int main(int argc, char *argv[])
         []()
         { QCoreApplication::exit(-1); },
         Qt::QueuedConnection);
+    // code/src/ui/SplashScreen.qml
     engine.loadFromModule("mokm_effector", "SplashScreen");
 
     return QCoreApplication::exec();
