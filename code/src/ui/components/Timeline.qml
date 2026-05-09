@@ -169,11 +169,10 @@ Rectangle {
 
                             property var layerObj: modelData
 
-                            // ── Layer strip bar ──
                             Rectangle {
                                 id: stripBar
-                                x: layerObj.startFrame * root.pixelPerFrame
-                                width: Math.max(4, layerObj.duration * root.pixelPerFrame)
+                                x: stripDrag.pressed ? _tempX : layerObj.startFrame * root.pixelPerFrame
+                                width: durationHandle.pressed ? _tempW : Math.max(4, layerObj.duration * root.pixelPerFrame)
                                 height: parent.height - 4
                                 y: 2
                                 radius: 3
@@ -181,28 +180,29 @@ Rectangle {
                                 border.color: Qt.alpha(root.stripColors[index % root.stripColors.length], 0.7)
                                 border.width: 1
 
+                                property real _tempX: 0
+                                property real _tempW: 0
+
                                 MouseArea {
                                     id: stripDrag
                                     anchors.fill: parent
                                     cursorShape: Qt.SizeHorCursor
 
-                                    property int dragStartFrame: 0
-                                    property real dragStartX: 0
+                                    property real startX: 0
 
                                     onPressed: function(mouse) {
-                                        dragStartFrame = layerObj.startFrame;
-                                        dragStartX = mouse.x;
+                                        stripBar._tempX = stripBar.x;
+                                        startX = mouse.x;
                                         stripBar.color = Qt.alpha(root.stripColors[index % root.stripColors.length], 0.6);
                                     }
                                     onReleased: {
                                         stripBar.color = Qt.alpha(root.stripColors[index % root.stripColors.length], 0.4);
                                     }
                                     onPositionChanged: function(mouse) {
-                                        if (!(mouse.buttons & Qt.LeftButton)) return;
-                                        var dx = mouse.x - dragStartX;
-                                        var deltaFrames = Math.round(dx / root.pixelPerFrame);
-                                        var newFrame = Math.max(0, dragStartFrame + deltaFrames);
-                                        layerObj.startFrame = newFrame;
+                                        if (pressed) {
+                                            stripBar._tempX += (mouse.x - startX);
+                                            layerObj.startFrame = Math.max(0, Math.round(stripBar._tempX / root.pixelPerFrame));
+                                        }
                                     }
                                 }
 
@@ -215,26 +215,21 @@ Rectangle {
                                     height: parent.height
                                     cursorShape: Qt.SizeHorCursor
 
-                                    property int dragStartDuration: 0
-                                    property int dragStartFrame: 0
-                                    property point dragGlobalStart: Qt.point(0, 0)
+                                    property real startX: 0
 
                                     onPressed: function(mouse) {
-                                        dragStartDuration = layerObj.duration;
-                                        dragStartFrame = layerObj.startFrame;
-                                        dragGlobalStart = mapToGlobal(mouse.x, mouse.y);
+                                        stripBar._tempW = stripBar.width;
+                                        startX = mouse.x;
                                     }
                                     onPositionChanged: function(mouse) {
-                                        if (!(mouse.buttons & Qt.LeftButton)) return;
-                                        var currentGlobal = mapToGlobal(mouse.x, mouse.y);
-                                        var dx = currentGlobal.x - dragGlobalStart.x;
-                                        var deltaFrames = dx / root.pixelPerFrame;
-                                        var newDuration = Math.max(1, Math.round(dragStartDuration + deltaFrames));
-                                        var compDuration = controller.timelineModel?.composition?.duration ?? 150;
-                                        if (dragStartFrame + newDuration > compDuration)
-                                            newDuration = compDuration - dragStartFrame;
-                                        if (newDuration !== layerObj.duration)
+                                        if (pressed) {
+                                            stripBar._tempW += (mouse.x - startX);
+                                            var newDuration = Math.max(1, Math.round(stripBar._tempW / root.pixelPerFrame));
+                                            var compDuration = controller.timelineModel?.composition?.duration ?? 150;
+                                            if (layerObj.startFrame + newDuration > compDuration)
+                                                newDuration = compDuration - layerObj.startFrame;
                                             layerObj.duration = newDuration;
+                                        }
                                     }
                                 }
                             }

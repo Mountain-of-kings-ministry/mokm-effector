@@ -75,6 +75,7 @@ Window {
                 Layout.preferredWidth: 240
                 Layout.fillHeight: true
                 currentLayer: selectedLayer
+                timelineModel: timelineModel
             }
         }
 

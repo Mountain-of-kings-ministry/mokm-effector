@@ -118,11 +118,13 @@ void TimelineModel::addKeyframe(Layer *layer, const QString &property, int frame
 
     if (propKeyframes.contains(frame)) {
         propKeyframes[frame]->setValue(value);
+        qDebug() << "Updated keyframe:" << property << "at frame" << frame << "val:" << value;
     } else {
         auto *kf = new Keyframe(this);
         kf->setFrame(frame);
         kf->setValue(value);
         propKeyframes[frame] = kf;
+        qDebug() << "Added keyframe:" << property << "at frame" << frame << "val:" << value;
     }
     m_keyframesStamp++;
     emit keyframesChanged();
@@ -132,24 +134,40 @@ void TimelineModel::removeKeyframe(Layer *layer, const QString &property, int fr
 {
     if (!layer) return;
 
-    if (m_keyframes.contains(layer) &&
-        m_keyframes[layer].contains(property) &&
-        m_keyframes[layer][property].contains(frame)) {
-        m_keyframes[layer][property][frame]->deleteLater();
-        m_keyframes[layer][property].remove(frame);
-        if (m_keyframes[layer][property].isEmpty())
-            m_keyframes[layer].remove(property);
+    auto layerIt = m_keyframes.find(layer);
+    if (layerIt == m_keyframes.end()) return;
+
+    auto propIt = layerIt.value().find(property);
+    if (propIt == layerIt.value().end()) return;
+
+    auto kfIt = propIt.value().find(frame);
+    if (kfIt != propIt.value().end()) {
+        kfIt.value()->deleteLater();
+        propIt.value().erase(kfIt);
+
+        if (propIt.value().isEmpty()) {
+            layerIt.value().erase(propIt);
+            if (layerIt.value().isEmpty())
+                m_keyframes.erase(layerIt);
+        }
+
         m_keyframesStamp++;
         emit keyframesChanged();
+        qDebug() << "Removed keyframe:" << property << "at frame" << frame;
     }
 }
 
 QVariant TimelineModel::getValueAt(Layer *layer, const QString &property, int frame) const
 {
-    if (!layer || !m_keyframes.contains(layer) || !m_keyframes[layer].contains(property))
-        return QVariant();
+    if (!layer) return QVariant();
 
-    const auto &propKF = m_keyframes[layer][property];
+    auto layerIt = m_keyframes.find(layer);
+    if (layerIt == m_keyframes.end()) return QVariant();
+
+    auto propIt = layerIt.value().find(property);
+    if (propIt == layerIt.value().end()) return QVariant();
+
+    const auto &propKF = propIt.value();
     if (propKF.isEmpty())
         return QVariant();
 
@@ -164,12 +182,16 @@ QVariant TimelineModel::getValueAt(Layer *layer, const QString &property, int fr
         return it.value()->value();
 
     // After last keyframe
-    if (it == propKF.end())
-        return (--it).value()->value();
+    if (it == propKF.end()) {
+        auto last = propKF.end();
+        --last;
+        return last.value()->value();
+    }
 
     // Between two keyframes — interpolate
     auto next = it;
-    auto prev = --it;
+    auto prev = it;
+    --prev;
     int prevFrame = prev.key();
     int nextFrame = next.key();
     qreal t = qreal(frame - prevFrame) / qreal(nextFrame - prevFrame);
@@ -184,18 +206,26 @@ QVariant TimelineModel::getValueAt(Layer *layer, const QString &property, int fr
 
 bool TimelineModel::hasKeyframe(Layer *layer, const QString &property, int frame) const
 {
-    return m_keyframes.contains(layer) &&
-           m_keyframes[layer].contains(property) &&
-           m_keyframes[layer][property].contains(frame);
+    if (!layer) return false;
+    auto layerIt = m_keyframes.find(layer);
+    if (layerIt == m_keyframes.end()) return false;
+    auto propIt = layerIt.value().find(property);
+    if (propIt == layerIt.value().end()) return false;
+    return propIt.value().contains(frame);
 }
 
 QVector<int> TimelineModel::keyframeFrames(Layer *layer, const QString &property) const
 {
     QVector<int> frames;
-    if (m_keyframes.contains(layer) && m_keyframes[layer].contains(property)) {
-        for (auto it = m_keyframes[layer][property].begin(); it != m_keyframes[layer][property].end(); ++it)
-            frames.append(it.key());
-    }
+    if (!layer) return frames;
+    auto layerIt = m_keyframes.find(layer);
+    if (layerIt == m_keyframes.end()) return frames;
+    auto propIt = layerIt.value().find(property);
+    if (propIt == layerIt.value().end()) return frames;
+
+    for (auto it = propIt.value().begin(); it != propIt.value().end(); ++it)
+        frames.append(it.key());
+        
     std::sort(frames.begin(), frames.end());
     return frames;
 }

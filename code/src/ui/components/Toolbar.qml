@@ -63,7 +63,11 @@ Rectangle {
 
         ToolIconButton {
             source: "qrc:/icons/outline/diamond.svg"
-            badge: root.timelineModel?.hasKeyframe(root.selectedLayer, "opacity", root.timelineModel.currentFrame) ?? false
+            property int _kfStamp: root.timelineModel?.keyframesStamp ?? 0
+            badge: {
+                var dummy = _kfStamp;
+                return root.timelineModel?.hasKeyframe(root.selectedLayer, "opacity", root.timelineModel.currentFrame) ?? false;
+            }
             onClicked: {
                 if (!root.selectedLayer || !root.timelineModel) return
                 var frame = root.timelineModel.currentFrame
