@@ -68,6 +68,7 @@ Window {
                     anchors.margins: 1
                     composition: project.activeComposition
                     currentFrame: timelineModel.currentFrame
+                    onLayerSelected: function(layer) { selectedLayer = layer; }
                 }
             }
 

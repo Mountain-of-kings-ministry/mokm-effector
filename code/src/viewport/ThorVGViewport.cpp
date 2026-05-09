@@ -212,6 +212,7 @@ void ThorVGViewport::mousePressEvent(QMouseEvent *event)
         m_dragOffset = QPointF(compPos.x() - layer->x(),
                                compPos.y() - layer->y());
         setCursor(QCursor(Qt::ClosedHandCursor));
+        emit layerSelected(layer);
         return;
     }
 

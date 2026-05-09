@@ -66,15 +66,35 @@ Rectangle {
             property int _kfStamp: root.timelineModel?.keyframesStamp ?? 0
             badge: {
                 var dummy = _kfStamp;
-                return root.timelineModel?.hasKeyframe(root.selectedLayer, "opacity", root.timelineModel.currentFrame) ?? false;
+                if (!root.selectedLayer || !root.timelineModel) return false;
+                var frame = root.timelineModel.currentFrame;
+                var props = ["opacity", "x", "y", "rotation", "scaleX", "scaleY"];
+                for (var i = 0; i < props.length; i++) {
+                    if (root.timelineModel.hasKeyframe(root.selectedLayer, props[i], frame)) return true;
+                }
+                return false;
             }
             onClicked: {
-                if (!root.selectedLayer || !root.timelineModel) return
-                var frame = root.timelineModel.currentFrame
-                if (root.timelineModel.hasKeyframe(root.selectedLayer, "opacity", frame))
-                    root.timelineModel.removeKeyframe(root.selectedLayer, "opacity", frame)
-                else
-                    root.timelineModel.addKeyframe(root.selectedLayer, "opacity", frame, root.selectedLayer.opacity)
+                if (!root.selectedLayer || !root.timelineModel) return;
+                var frame = root.timelineModel.currentFrame;
+                var props = ["opacity", "x", "y", "rotation", "scaleX", "scaleY"];
+                var hasAny = false;
+                for (var i = 0; i < props.length; i++) {
+                    if (root.timelineModel.hasKeyframe(root.selectedLayer, props[i], frame)) {
+                        hasAny = true;
+                        break;
+                    }
+                }
+                if (hasAny) {
+                    for (var j = 0; j < props.length; j++) {
+                        root.timelineModel.removeKeyframe(root.selectedLayer, props[j], frame);
+                    }
+                } else {
+                    for (var k = 0; k < props.length; k++) {
+                        var val = root.selectedLayer[props[k]];
+                        root.timelineModel.addKeyframe(root.selectedLayer, props[k], frame, val);
+                    }
+                }
             }
         }
 

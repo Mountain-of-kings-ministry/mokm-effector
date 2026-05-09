@@ -11,51 +11,42 @@ Rectangle {
     property alias timelineModel: controller.timelineModel
     property var selectedLayer: null
     signal layerSelected(var layer)
+
     property real pixelPerFrame: 8
     property int layerNameWidth: 140
 
-    readonly property var animProperties: ["opacity", "x", "y", "rotation", "scaleX", "scaleY"]
-    readonly property var propertyColors: [
-        Theme.accent,
-        "#ef4444",
-        "#22c55e",
-        "#f59e0b",
-        "#a855f7",
-        "#ec4899"
-    ]
-
-    readonly property var stripColors: [
-        "#3b82f6", "#8b5cf6", "#ec4899", "#ef4444", "#f59e0b",
-        "#22c55e", "#14b8a6", "#06b6d4", "#6366f1", "#d946ef"
-    ]
+    readonly property var stripColors: ["#3b82f6", "#8b5cf6", "#ec4899", "#ef4444", "#f59e0b", "#22c55e", "#14b8a6", "#06b6d4", "#6366f1", "#d946ef"]
 
     Item {
         id: controller
         property var timelineModel: null
     }
 
+    function snapFrame(v) {
+        return Math.round(v);
+    }
+    function debug(msg) {
+        console.log("[TimelineStrip]", msg);
+    }
+
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
 
+        // Header
         Rectangle {
             Layout.fillWidth: true
             height: 28
             color: Theme.secondaryHover
-
             RowLayout {
                 anchors.fill: parent
                 anchors.leftMargin: 8
-                spacing: 0
-
                 Text {
                     Layout.preferredWidth: root.layerNameWidth
                     text: qsTr("Layers")
                     color: Theme.mutedForeground
                     font.pixelSize: 10
-                    font.letterSpacing: 0.5
                 }
-
                 TimeRuler {
                     Layout.fillWidth: true
                     timelineModel: controller.timelineModel
@@ -73,38 +64,26 @@ Rectangle {
                 width: parent.width
                 spacing: 0
 
-                // ── Layer names column ──
+                // Layer Names
                 Item {
-                    id: layerNames
                     Layout.preferredWidth: root.layerNameWidth
                     Layout.fillHeight: true
-
                     Repeater {
                         model: controller.timelineModel?.composition?.layers ?? 0
-
                         delegate: Rectangle {
-                            id: nameRow
-                            y: index * 24
+                            y: index * 28
                             width: parent.width
-                            height: 24
-                            color: {
-                                if (root.selectedLayer === modelData)
-                                    return Qt.alpha(Theme.accent, 0.2)
-                                if (nameMouse.containsMouse)
-                                    return Theme.secondaryHover
-                                return index % 2 === 0 ? Theme.secondary : Qt.alpha(Theme.secondaryHover, 0.3)
-                            }
+                            height: 28
+                            color: (root.selectedLayer === modelData) ? Qt.alpha(Theme.accent, 0.2) : nameMouse.containsMouse ? Theme.secondaryHover : index % 2 === 0 ? Theme.secondary : Qt.alpha(Theme.secondaryHover, 0.3)
 
                             RowLayout {
                                 anchors.fill: parent
                                 anchors.leftMargin: 8
-                                spacing: 4
-
                                 Rectangle {
                                     width: 10
                                     height: 10
                                     radius: 2
-                                    color: modelData?.enabled ? root.stripColors[index % root.stripColors.length] : Theme.muted
+                                    color: root.stripColors[index % root.stripColors.length]
                                 }
                                 Text {
                                     text: modelData?.name ?? ""
@@ -119,39 +98,13 @@ Rectangle {
                                 id: nameMouse
                                 anchors.fill: parent
                                 hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
                                 onClicked: root.layerSelected(modelData)
-
-                                drag.target: parent
-                                drag.axis: Drag.YAxis
-                                drag.smoothed: false
-
-                                property int startIndex: index
-                                property real startY: 0
-
-                                onPressed: {
-                                    startIndex = index;
-                                    startY = parent.y;
-                                    parent.z = 10;
-                                }
-                                onReleased: {
-                                    parent.z = 0;
-                                    var comp = controller.timelineModel?.composition;
-                                    if (!comp) return;
-                                    var rowHeight = 24;
-                                    var currentY = parent.y;
-                                    var targetIndex = Math.round(currentY / rowHeight);
-                                    targetIndex = Math.max(0, Math.min(targetIndex, comp.layers.length - 1));
-                                    parent.y = startY;
-                                    if (targetIndex !== startIndex)
-                                        comp.moveLayer(startIndex, targetIndex);
-                                }
                             }
                         }
                     }
                 }
 
-                // ── Time strip + diamonds area ──
+                // ==================== STRIP AREA ====================
                 Rectangle {
                     id: stripArea
                     Layout.fillWidth: true
@@ -163,118 +116,186 @@ Rectangle {
 
                         delegate: Item {
                             id: stripRow
-                            y: index * 24
-                            height: 24
-                            width: parent.width
+                            y: index * 28
+                            height: 28
+                            width: stripArea.width
 
                             property var layerObj: modelData
+                            property real visualStart: 0
+                            property real visualDuration: 100
+                            property bool isDragging: false
+
+                            Component.onCompleted: resetFromModel()
+
+                            function resetFromModel() {
+                                if (!layerObj)
+                                    return;
+                                visualStart = layerObj.startFrame * root.pixelPerFrame;
+                                visualDuration = Math.max(40, layerObj.duration * root.pixelPerFrame);
+                            }
 
                             Rectangle {
                                 id: stripBar
-                                x: stripDrag.pressed ? _tempX : layerObj.startFrame * root.pixelPerFrame
-                                width: durationHandle.pressed ? _tempW : Math.max(4, layerObj.duration * root.pixelPerFrame)
-                                height: parent.height - 4
-                                y: 2
-                                radius: 3
-                                color: Qt.alpha(root.stripColors[index % root.stripColors.length], 0.4)
-                                border.color: Qt.alpha(root.stripColors[index % root.stripColors.length], 0.7)
+                                x: stripRow.visualStart
+                                y: 4
+                                width: stripRow.visualDuration
+                                height: 20
+                                radius: 4
+                                color: Qt.alpha(root.stripColors[index % root.stripColors.length], 0.65)
+                                border.color: Qt.lighter(color, 1.4)
                                 border.width: 1
+                                z: stripRow.isDragging ? 10 : 0
 
-                                property real _tempX: 0
-                                property real _tempW: 0
-
-                                MouseArea {
-                                    id: stripDrag
-                                    anchors.fill: parent
-                                    cursorShape: Qt.SizeHorCursor
-
-                                    property real startX: 0
-
-                                    onPressed: function(mouse) {
-                                        stripBar._tempX = stripBar.x;
-                                        startX = mouse.x;
-                                        stripBar.color = Qt.alpha(root.stripColors[index % root.stripColors.length], 0.6);
-                                    }
-                                    onReleased: {
-                                        stripBar.color = Qt.alpha(root.stripColors[index % root.stripColors.length], 0.4);
-                                    }
-                                    onPositionChanged: function(mouse) {
-                                        if (pressed) {
-                                            stripBar._tempX += (mouse.x - startX);
-                                            layerObj.startFrame = Math.max(0, Math.round(stripBar._tempX / root.pixelPerFrame));
-                                        }
-                                    }
-                                }
-
-                                // ── Duration drag handle (right edge) ──
-                                MouseArea {
-                                    id: durationHandle
-                                    anchors.right: parent.right
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    width: 20
+                                // LEFT EDGE - Colored differently
+                                Rectangle {
+                                    id: leftEdge
+                                    width: 6
                                     height: parent.height
+                                    anchors.left: parent.left
+                                    color: "#ffffff"
+                                    opacity: 0.35
+                                    radius: 4
+                                }
+
+                                // RIGHT EDGE - Colored differently
+                                Rectangle {
+                                    id: rightEdge
+                                    width: 6
+                                    height: parent.height
+                                    anchors.right: parent.right
+                                    color: "#ffffff"
+                                    opacity: 0.25
+                                    radius: 4
+                                }
+
+                                // LEFT HANDLE
+                                MouseArea {
+                                    anchors.left: parent.left
+                                    anchors.top: parent.top
+                                    anchors.bottom: parent.bottom
+                                    width: 12
                                     cursorShape: Qt.SizeHorCursor
+                                    hoverEnabled: true
+                                    preventStealing: true
+                                    z: 5
 
-                                    property real startX: 0
+                                    property real startMouseX: 0
+                                    property real startVisualStart: 0
+                                    property real startVisualDuration: 0
 
-                                    onPressed: function(mouse) {
-                                        stripBar._tempW = stripBar.width;
-                                        startX = mouse.x;
+                                    onPressed: mouse => {
+                                        stripRow.isDragging = true;
+                                        startMouseX = mapToItem(stripArea, mouse.x, 0).x;
+                                        startVisualStart = stripRow.visualStart;
+                                        startVisualDuration = stripRow.visualDuration;
+                                        root.layerSelected(stripRow.layerObj);
                                     }
-                                    onPositionChanged: function(mouse) {
-                                        if (pressed) {
-                                            stripBar._tempW += (mouse.x - startX);
-                                            var newDuration = Math.max(1, Math.round(stripBar._tempW / root.pixelPerFrame));
-                                            var compDuration = controller.timelineModel?.composition?.duration ?? 150;
-                                            if (layerObj.startFrame + newDuration > compDuration)
-                                                newDuration = compDuration - layerObj.startFrame;
-                                            layerObj.duration = newDuration;
-                                        }
+
+                                    onPositionChanged: mouse => {
+                                        if (!pressed)
+                                            return;
+                                        let mx = mapToItem(stripArea, mouse.x, 0).x;
+                                        let dx = mx - startMouseX;
+                                        let newDur = Math.max(40, startVisualDuration - dx);
+                                        let newStart = startVisualStart + (startVisualDuration - newDur);
+
+                                        stripRow.visualStart = Math.max(0, newStart);
+                                        stripRow.visualDuration = newDur;
+                                    }
+
+                                    onReleased: {
+                                        stripRow.isDragging = false;
+                                        commitChanges();
+                                    }
+                                }
+
+                                // MAIN DRAG
+                                MouseArea {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 12
+                                    anchors.rightMargin: 12
+                                    cursorShape: pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor
+                                    preventStealing: true
+
+                                    property real startMouseX: 0
+                                    property real startVisualStart: 0
+
+                                    onPressed: mouse => {
+                                        stripRow.isDragging = true;
+                                        startMouseX = mapToItem(stripArea, mouse.x, 0).x;
+                                        startVisualStart = stripRow.visualStart;
+                                        root.layerSelected(stripRow.layerObj);
+                                    }
+
+                                    onPositionChanged: mouse => {
+                                        if (!pressed)
+                                            return;
+                                        let mx = mapToItem(stripArea, mouse.x, 0).x;
+                                        let dx = mx - startMouseX;
+                                        stripRow.visualStart = Math.max(0, startVisualStart + dx);
+                                    }
+
+                                    onReleased: {
+                                        stripRow.isDragging = false;
+                                        commitChanges();
+                                    }
+                                }
+
+                                // RIGHT HANDLE
+                                MouseArea {
+                                    anchors.right: parent.right
+                                    anchors.top: parent.top
+                                    anchors.bottom: parent.bottom
+                                    width: 12
+                                    cursorShape: Qt.SizeHorCursor
+                                    hoverEnabled: true
+                                    preventStealing: true
+                                    z: 5
+
+                                    property real startMouseX: 0
+                                    property real startVisualDuration: 0
+
+                                    onPressed: mouse => {
+                                        stripRow.isDragging = true;
+                                        startMouseX = mapToItem(stripArea, mouse.x, 0).x;
+                                        startVisualDuration = stripRow.visualDuration;
+                                        root.layerSelected(stripRow.layerObj);
+                                    }
+
+                                    onPositionChanged: mouse => {
+                                        if (!pressed)
+                                            return;
+                                        let mx = mapToItem(stripArea, mouse.x, 0).x;
+                                        let dx = mx - startMouseX;
+                                        stripRow.visualDuration = Math.max(40, startVisualDuration + dx);
+                                    }
+
+                                    onReleased: {
+                                        stripRow.isDragging = false;
+                                        commitChanges();
                                     }
                                 }
                             }
 
-                            // ── Keyframe diamonds ──
-                            Repeater {
-                                model: root.animProperties.length
-                                delegate: Item {
-                                    id: kfDelegate
-                                    property var propName: root.animProperties[modelData]
-                                    property var frames: kfDelegate.computeFrames()
-
-                                    function computeFrames() {
-                                        if (!controller.timelineModel) return [];
-                                        var _ = controller.timelineModel.keyframesStamp;
-                                        return controller.timelineModel.keyframeFrames(stripRow.layerObj, propName);
-                                    }
-
-                                    Repeater {
-                                        model: parent.frames
-                                        delegate: Rectangle {
-                                            x: modelData * root.pixelPerFrame - 3
-                                            y: 4 + parent.parent.modelData * 3
-                                            width: 6
-                                            height: 6
-                                            radius: 1
-                                            color: root.propertyColors[parent.parent.modelData % root.animProperties.length]
-                                        }
-                                    }
-                                }
-                            }
-
-                            // ── Playhead line ──
+                            // Playhead
                             Rectangle {
                                 x: (controller.timelineModel?.currentFrame ?? 0) * root.pixelPerFrame
-                                width: 1
+                                width: 2
                                 height: parent.height
-                                color: Qt.alpha(Theme.accent, 0.5)
+                                color: Theme.accent
                             }
 
-                            // ── Click to select ──
                             MouseArea {
                                 anchors.fill: parent
-                                acceptedButtons: Qt.LeftButton
-                                onClicked: root.layerSelected(layerObj)
+                                onClicked: root.layerSelected(stripRow.layerObj)
+                            }
+
+                            function commitChanges() {
+                                if (!layerObj)
+                                    return;
+                                layerObj.startFrame = snapFrame(visualStart / root.pixelPerFrame);
+                                layerObj.duration = snapFrame(visualDuration / root.pixelPerFrame);
+                                Qt.callLater(resetFromModel);
                             }
                         }
                     }

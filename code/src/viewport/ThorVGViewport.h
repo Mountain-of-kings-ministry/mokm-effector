@@ -36,6 +36,7 @@ public:
 signals:
     void compositionChanged();
     void currentFrameChanged();
+    void layerSelected(Layer *layer);
 
 private:
     void renderShapeLayer(QPainter *painter, ShapeLayer *layer);
