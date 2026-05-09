@@ -10,6 +10,8 @@ Item {
     height: 30
 
     property Window window
+    property bool canUndo: false
+    property bool canRedo: false
 
     signal newFileRequested
     signal openFileRequested
@@ -73,8 +75,8 @@ Item {
                 MenuBarButton {
                     text: qsTr("Edit")
                     menu: Menu {
-                        MenuItem { text: qsTr("Undo"); onTriggered: topBar.undoRequested() }
-                        MenuItem { text: qsTr("Redo"); onTriggered: topBar.redoRequested() }
+                        MenuItem { text: qsTr("Undo"); enabled: topBar.canUndo; onTriggered: topBar.undoRequested() }
+                        MenuItem { text: qsTr("Redo"); enabled: topBar.canRedo; onTriggered: topBar.redoRequested() }
                         MenuSeparator {}
                         MenuItem { text: qsTr("Cut") }
                         MenuItem { text: qsTr("Copy") }
@@ -182,8 +184,8 @@ Item {
             MenuItem { text: qsTr("Export Animation..."); onTriggered: topBar.exportVideoRequested() }
             MenuItem { text: qsTr("Export Image Sequence..."); onTriggered: topBar.exportImageSequenceRequested() }
             MenuSeparator {}
-            MenuItem { text: qsTr("Undo"); onTriggered: topBar.undoRequested() }
-            MenuItem { text: qsTr("Redo"); onTriggered: topBar.redoRequested() }
+            MenuItem { text: qsTr("Undo"); enabled: topBar.canUndo; onTriggered: topBar.undoRequested() }
+            MenuItem { text: qsTr("Redo"); enabled: topBar.canRedo; onTriggered: topBar.redoRequested() }
             MenuSeparator {}
             MenuItem { text: qsTr("Preferences"); onTriggered: topBar.preferencesRequested() }
         }

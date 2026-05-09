@@ -6,6 +6,7 @@
 #include <QTimer>
 #include <QVector>
 #include <QPointF>
+#include <QSet>
 
 class Composition;
 class Layer;
@@ -33,23 +34,34 @@ public:
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
 
+    Q_INVOKABLE void setSelectedLayers(const QVariantList &layers);
+
 signals:
     void compositionChanged();
     void currentFrameChanged();
     void layerSelected(Layer *layer);
+    void selectionChanged(QVariantList selected);
 
 private:
     void renderShapeLayer(QPainter *painter, ShapeLayer *layer);
     void renderTextLayer(QPainter *painter, TextLayer *layer);
+    void renderSelectionOutline(QPainter *painter, Layer *layer);
     void reconnectLayerSignals();
     QPointF viewportToComp(QPointF viewportPos) const;
     Layer *hitTest(qreal compX, qreal compY) const;
+    QRectF layerBounds(Layer *layer) const;
 
     Composition *m_composition = nullptr;
     int m_currentFrame = 0;
     QVector<Layer*> m_connectedLayers;
     Layer *m_draggedLayer = nullptr;
     QPointF m_dragOffset;
+    QSet<Layer*> m_selectedLayers;
+
+    // Box select
+    bool m_boxSelecting = false;
+    QPointF m_boxStart;
+    QPointF m_boxCurrent;
 };
 
 #endif

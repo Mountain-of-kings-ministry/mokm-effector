@@ -13,6 +13,7 @@
 #include "src/viewport/ThorVGViewport.h"
 #include "src/timeline/TimelineModel.h"
 #include "src/core/ExportController.h"
+#include "src/core/Track.h"
 
 int main(int argc, char *argv[])
 {
@@ -33,6 +34,7 @@ int main(int argc, char *argv[])
     qmlRegisterType<ThorVGViewport>("mokm_effector", 1, 0, "ThorVGViewport");
     qmlRegisterType<TimelineModel>("mokm_effector", 1, 0, "TimelineModel");
     qmlRegisterType<ExportController>("mokm_effector", 1, 0, "ExportController");
+    qmlRegisterType<Track>("mokm_effector", 1, 0, "Track");
 
     QQmlApplicationEngine engine;
     QObject::connect(

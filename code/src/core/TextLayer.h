@@ -34,6 +34,10 @@ public:
     int alignment() const { return m_alignment; }
     void setAlignment(int alignment);
 
+    Layer* clone(QObject *parent = nullptr) const override;
+    QJsonObject toJson() const override;
+    void fromJson(const QJsonObject &obj) override;
+
 signals:
     void textChanged();
     void fontChanged();

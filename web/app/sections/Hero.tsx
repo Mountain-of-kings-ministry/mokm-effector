@@ -47,7 +47,7 @@ export default function Hero() {
             Start Creating
           </button>
           <a 
-            href="https://github.com/Mountain-of-kings-ministry/mokm-effector"
+            href="/docs"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 px-6 py-2 rounded border border-[var(--color-border)] bg-[var(--color-base)]/50 text-xs font-bold uppercase tracking-wider hover:bg-[var(--color-border)] transition-all"

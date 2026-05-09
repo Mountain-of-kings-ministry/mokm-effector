@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QString>
 #include <QPointF>
+#include <QJsonObject>
 
 class Layer : public QObject
 {
@@ -55,6 +56,12 @@ public:
     void setStartFrame(int frame);
     int duration() const { return m_duration; }
     void setDuration(int frames);
+
+    Q_INVOKABLE virtual Layer* clone(QObject *parent = nullptr) const;
+    virtual QJsonObject toJson() const;
+    virtual void fromJson(const QJsonObject &obj);
+    Q_INVOKABLE QString serialize() const;
+    Q_INVOKABLE void deserialize(const QString &json);
 
 signals:
     void nameChanged();

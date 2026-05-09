@@ -77,6 +77,9 @@ qt_add_qml_module(appmokm_effector
         src/ui/components/TimeRuler.qml
         src/ui/components/Timeline.qml
         src/ui/components/TopBar.qml
+        src/ui/components/BottomTabBar.qml
+        src/ui/components/KeyframeEditor.qml
+        src/ui/components/NodeEditor.qml
         src/ui/components/PreferencesDialog.qml
     SOURCES ${CORE_SOURCES}
     RESOURCES resources/resources.qrc

@@ -17,6 +17,10 @@ Window {
 
     Project {
         id: project
+        onUndoChanged: {
+            topBar.canUndo = project.canUndo;
+            topBar.canRedo = project.canRedo;
+        }
     }
 
     TimelineModel {
@@ -40,6 +44,13 @@ Window {
             onExportVideoRequested: exportDialog.open()
             onExportImageSequenceRequested: exportImageSequenceDialog.open()
             onPreferencesRequested: prefsDialog.open()
+
+            onNewFileRequested: newProject()
+            onOpenFileRequested: openDialog.open()
+            onSaveFileRequested: saveProject()
+            onSaveAsRequested: saveAsDialog.open()
+            onUndoRequested: project.undo()
+            onRedoRequested: project.redo()
         }
 
         SplitView {
@@ -67,6 +78,7 @@ Window {
                     id: projectBin
                     SplitView.preferredWidth: 220
                     composition: project.activeComposition
+                    project: project
 
                     onCreateRectLayer: createShapeLayer(ShapeLayer.Rectangle)
                     onCreateCircleLayer: createShapeLayer(ShapeLayer.Circle)
@@ -107,6 +119,7 @@ Window {
                 Toolbar {
                     id: toolbar
                     Layout.fillWidth: true
+
                     timelineModel: timelineModel
                     selectedLayer: selectedLayer
                 }
@@ -117,15 +130,62 @@ Window {
                     color: Theme.border
                 }
 
-                Timeline {
-                    id: timeline
+                StackView {
+                    id: stackView
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    timelineModel: timelineModel
-                    selectedLayer: selectedLayer
-                    onLayerSelected: function (layer) {
-                        selectedLayer = layer;
+
+                    initialItem: timelinePage
+                }
+
+                BottomTabBar {
+                    id: bottomTabBar
+
+                    Layout.fillWidth: true
+
+                    onTabClicked: function (index) {
+                        switch (index) {
+                        case 0:
+                            stackView.replace(timelinePage);
+                            break;
+                        case 1:
+                            stackView.replace(nodeEditorPage);
+                            break;
+                        case 2:
+                            stackView.replace(keyframeEditorPage);
+                            break;
+                        }
                     }
+                }
+
+                Component {
+                    id: timelinePage
+
+                    Timeline {
+                        timelineModel: timelineModel
+                        selectedLayer: selectedLayer
+                        project: project
+
+                        onLayerSelected: function (layer) {
+                            selectedLayer = layer;
+                        }
+
+                        onSelectionChanged: function (layers) {
+                            viewport.setSelectedLayers(layers);
+                        }
+                    }
+                }
+
+                Component {
+                    id: nodeEditorPage
+
+                    NodeEditor {}
+                }
+
+                Component {
+                    id: keyframeEditorPage
+
+                    KeyframeEditor {}
                 }
             }
         }
@@ -182,45 +242,117 @@ Window {
         }
     }
 
+    FileDialog {
+        id: openDialog
+        title: qsTr("Open Project")
+        acceptLabel: qsTr("Open")
+        nameFilters: ["MOKM Project (*.mokm)", "All Files (*)"]
+        onAccepted: {
+            if (openDialog.selectedFile) {
+                project.loadFromFile(openDialog.selectedFile);
+                timelineModel.composition = project.activeComposition;
+                selectedLayer = null;
+                timeline.clearSelection();
+            }
+        }
+    }
+
+    FileDialog {
+        id: saveAsDialog
+        title: qsTr("Save Project As")
+        acceptLabel: qsTr("Save")
+        nameFilters: ["MOKM Project (*.mokm)", "All Files (*)"]
+        fileMode: FileDialog.SaveFile
+        onAccepted: {
+            if (saveAsDialog.selectedFile)
+                project.saveToFile(saveAsDialog.selectedFile);
+        }
+    }
+
     function createShapeLayer(type) {
-        var comp = project.activeComposition;
-        if (!comp)
+        if (!project)
             return;
         var names = ["Rectangle", "Ellipse", "Circle", "Triangle"];
-        var name = (type >= 0 && type < names.length ? names[type] : "Shape") + " " + (comp.layers.length + 1);
-        var layer = shapeLayerComponent.createObject(comp, {
+        var name = (type >= 0 && type < names.length ? names[type] : "Shape") + " " + (project.assets.length + 1);
+        var layer = shapeLayerComponent.createObject(project, {
             name: name,
             shapeType: type,
             shapeWidth: 200,
             shapeHeight: 200,
             color: Theme.primary
         });
-        comp.addLayer(layer);
+        project.addAsset(layer);
         selectedLayer = layer;
+        project.captureSnapshot();
     }
 
     function deleteSelectedLayer() {
-        if (!selectedLayer)
+        if (!project)
             return;
+        var layers = timeline.selectedLayers;
+        if (!layers || layers.length === 0) {
+            if (selectedLayer)
+                layers = [selectedLayer];
+            else
+                return;
+        }
         var comp = project.activeComposition;
         if (!comp)
             return;
-        comp.removeLayer(selectedLayer);
+        for (var li = 0; li < layers.length; li++) {
+            var layer = layers[li];
+            if (!layer)
+                continue;
+            for (var ti = 0; ti < comp.trackCount; ti++) {
+                var track = comp.trackAt(ti);
+                if (track.indexOf(layer) >= 0) {
+                    track.removeClip(layer);
+                    break;
+                }
+            }
+        }
         selectedLayer = null;
+        timeline.clearSelection();
+        project.captureSnapshot();
     }
 
     function createTextLayer() {
-        var comp = project.activeComposition;
-        if (!comp)
+        if (!project)
             return;
-        var layer = textLayerComponent.createObject(comp, {
-            name: "Text " + (comp.layers.length + 1),
+        var layer = textLayerComponent.createObject(project, {
+            name: "Text " + (project.assets.length + 1),
             text: "Hello MOKM",
             color: Theme.foreground,
             fontSize: 48
         });
-        comp.addLayer(layer);
+        project.addAsset(layer);
         selectedLayer = layer;
+        project.captureSnapshot();
+    }
+
+    function newProject() {
+        // Clear and recreate
+        var comp = project.activeComposition;
+        if (comp) {
+            while (comp.trackCount > 0)
+                comp.removeTrack(comp.trackAt(0));
+        }
+        while (project.assetCount > 0)
+            project.removeAsset(project.assetAt(0));
+        project.setName("Untitled");
+        timelineModel.composition = comp;
+        selectedLayer = null;
+        timeline.clearSelection();
+        // Reset undo/redo
+        project.clearUndoRedo();
+    }
+
+    function saveProject() {
+        if (project.filePath.toString().length > 0) {
+            project.saveToFile(project.filePath);
+        } else {
+            saveAsDialog.open();
+        }
     }
 
     // ── Frameless window resize handles ──
@@ -338,15 +470,20 @@ Window {
 
     Component.onCompleted: {
         var comp = project.activeComposition;
-        if (comp) {
-            var rect = shapeLayerComponent.createObject(comp, {
+        if (comp && project) {
+            var rect = shapeLayerComponent.createObject(project, {
                 name: "Rectangle 1",
                 shapeType: ShapeLayer.Rectangle,
                 shapeWidth: 300,
                 shapeHeight: 200,
                 color: Theme.primary
             });
-            comp.addLayer(rect);
+            project.addAsset(rect);
+            var track = comp.trackCount > 0 ? comp.trackAt(0) : comp.addTrack("Track 1");
+            var clip = rect.clone(track);
+            clip.startFrame = 0;
+            clip.duration = 90;
+            track.addClip(clip);
             timelineModel.composition = comp;
         }
     }

@@ -61,3 +61,52 @@ void ShapeLayer::setStrokeWidth(qreal w)
         emit strokeChanged();
     }
 }
+
+Layer* ShapeLayer::clone(QObject *parent) const
+{
+    auto *s = new ShapeLayer(parent);
+    s->setName(name());
+    s->setEnabled(enabled());
+    s->setOpacity(opacity());
+    s->setVisible(visible());
+    s->setX(x());
+    s->setY(y());
+    s->setRotation(rotation());
+    s->setScaleX(scaleX());
+    s->setScaleY(scaleY());
+    s->setStartFrame(startFrame());
+    s->setDuration(duration());
+    s->m_shapeType = m_shapeType;
+    s->m_shapeWidth = m_shapeWidth;
+    s->m_shapeHeight = m_shapeHeight;
+    s->m_radius = m_radius;
+    s->m_color = m_color;
+    s->m_strokeColor = m_strokeColor;
+    s->m_strokeWidth = m_strokeWidth;
+    return s;
+}
+
+QJsonObject ShapeLayer::toJson() const
+{
+    QJsonObject obj = Layer::toJson();
+    obj["shapeType"] = (int)m_shapeType;
+    obj["shapeWidth"] = m_shapeWidth;
+    obj["shapeHeight"] = m_shapeHeight;
+    obj["radius"] = m_radius;
+    obj["color"] = m_color.name();
+    obj["strokeColor"] = m_strokeColor.name();
+    obj["strokeWidth"] = m_strokeWidth;
+    return obj;
+}
+
+void ShapeLayer::fromJson(const QJsonObject &obj)
+{
+    Layer::fromJson(obj);
+    setShapeType(static_cast<ShapeType>(obj["shapeType"].toInt()));
+    setShapeWidth(obj["shapeWidth"].toDouble(200));
+    setShapeHeight(obj["shapeHeight"].toDouble(200));
+    setRadius(obj["radius"].toDouble());
+    setColor(QColor(obj["color"].toString("#eab308")));
+    setStrokeColor(QColor(obj["strokeColor"].toString("transparent")));
+    setStrokeWidth(obj["strokeWidth"].toDouble());
+}

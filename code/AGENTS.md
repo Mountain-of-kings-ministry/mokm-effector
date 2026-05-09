@@ -34,8 +34,60 @@
 - **Timeline drag rewrite**: Replaced overlapping model-bound `MouseArea`s with a unified "drag-now, commit-later" visual model. Added distinct drag zones with hit testing for smooth repositioning and duration resizing identical to the `TimeRuler` responsiveness.
 - **TimeRuler alignment**: Adjusted `RowLayout` spacing and left margins in `Timeline.qml` Header to precisely match the `layerNameWidth` coordinate space of the scrolling timeline strips. Playhead perfectly aligns.
 
+### Session 5 — Selection Tool
+- **Selection Tool**: Added `selectedLayers` JS array (multi-select support) + `currentTool` property on Timeline
+- **Click vs Drag**: Body `MouseArea` uses 4px drag threshold — click selects without moving, drag past threshold starts strip reposition
+- **Multi-select**: Shift+click on strip name or bar toggles layer in selection. `selectedLayers[0]` is the primary/active layer passed to Properties/Toolbar
+- **Theme.selected visual**: Strip name row, colored bar border, and ProjectBin use `Theme.selected` (`#0066ff`). Selected text turns white for readability
+- **Box select**: Rubber-band rectangle on empty-area drag. Selects all strips intersecting the rectangle. uses `#0066ff` fill + border
+- **Deselect**: Click empty area below strips or press Escape clears selection
+- **Left/right handles**: Trim operations always select single layer (no shift-toggle)
+- **ProjectBin**: Selection highlight changed from `Theme.primary` (gold) to `Theme.selected` (blue)
+- **Sync**: `onSelectedLayerChanged` handler syncs external selection (from viewport/ProjectBin) into Timeline's `selectedLayers` array
+
+### Session 6 — Production Workflow (Phase 1.5)
+
+#### Data Model Changes
+- **Track C++ class** (`src/core/Track.h/.cpp`): holds QVector<Layer*> clips, with Q_PROPERTY(name, locked, clips, clipCount), Q_INVOKABLE addClip/removeClip/removeClipAt/moveClip/indexOf/clipAt
+- **Composition refactored**: now holds `QVector<Track*> m_tracks` instead of direct layers. Backward-compat `layers()` is a flat computed view from all track clips. Methods: addTrack/removeTrack/moveTrack, rebuildLayers slot
+- **Project.assets**: new `QQmlListProperty<Layer> assets` property on Project. Assets are source shapes/text independent of timeline clips
+- **Clone methods**: `Layer::clone()`, `ShapeLayer::clone()`, `TextLayer::clone()` (all Q_INVOKABLE) for deep-copy semantics from asset to clip
+- **Serialization**: toJson/fromJson/serialize/deserialize on Layer/ShapeLayer/TextLayer for JSON round-tripping
+- **Undo/Redo**: 5-step JSON snapshot-based undo/redo on Project. captureSnapshot/undo/redo with canUndo/canRedo properties
+- **Save/Load**: Project.serializeToJson/deserializeFromJson + saveToFile/loadFromFile (.mokm format)
+
+#### UI Changes
+- **ProjectBin.qml**: Shows `project.assets` instead of `composition.layers`. Right-click asset → "Add to Track" submenu (lists existing tracks + "New Track"). Clones asset onto selected track
+- **Timeline.qml**: Complete rewrite for track-based layout:
+  - Track names column (left) + strip area (right) synchronized via computeTrackY/getClipY helpers
+  - Each track has header + clip strips, laid out via Column + nested Repeaters
+  - Global playhead overlay spanning full timeline height
+  - Right-click strip context menu: Cut, Copy, Paste, Duplicate, Split At Playhead, Clear Selection, Delete
+  - copySelectedLayers/cutSelectedLayers/pasteClips/duplicateSelectedLayers/deleteSelectedLayers/splitAtPlayhead functions
+  - Box select fixed with proper Y-coordinate calculation via getClipY()
+  - `selectionChanged` signal emitted on every selection change
+- **TopBar.qml**: canUndo/canRedo properties, enabled/disabled Undo/Redo menu items
+- **Main.qml**: wired project save/open/undo/redo. New createShapeLayer adds to project.assets (not timeline). Demo Rectangle 1 created via asset→clone→clip flow
+- **ThorVGViewport**: selection outlines (2px #0066ff border + corner handles), box select rubber-band, setSelectedLayers Q_INVOKABLE, multi-select via Shift+click
+
+#### New Files
+- `src/core/Track.h`, `src/core/Track.cpp` — Track container class
+
+#### Modified Files
+- `src/core/Layer.h/.cpp` — clone(), toJson/fromJson, serialize/deserialize
+- `src/core/ShapeLayer.h/.cpp` — clone(), toJson/fromJson overrides
+- `src/core/TextLayer.h/.cpp` — clone(), toJson/fromJson overrides
+- `src/core/Composition.h/.cpp` — tracks property, track management, rebuildLayers
+- `src/core/Project.h/.cpp` — assets, undo/redo, save/load
+- `src/viewport/ThorVGViewport.h/.cpp` — selection outlines, box select, setSelectedLayers
+- `src/ui/Main.qml` — asset workflow, save/open dialogs, undo/redo wiring, delete multi-selection
+- `src/ui/components/ProjectBin.qml` — assets display, Add to Track menu
+- `src/ui/components/Timeline.qml` — track-based layout, context menu, operations
+- `src/ui/components/TopBar.qml` — canUndo/canRedo properties
+- `main.cpp` — Track type registration
+
 ### Known Issues
-- None
+- None — builds clean, runs without QML errors
 
 ### Build
 - Dir: `/home/david/Documents/projects/software/MOKM effector/build/debug/`

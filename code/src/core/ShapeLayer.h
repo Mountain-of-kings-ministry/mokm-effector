@@ -38,6 +38,10 @@ public:
     qreal strokeWidth() const { return m_strokeWidth; }
     void setStrokeWidth(qreal w);
 
+    Layer* clone(QObject *parent = nullptr) const override;
+    QJsonObject toJson() const override;
+    void fromJson(const QJsonObject &obj) override;
+
 signals:
     void shapeTypeChanged();
     void shapeGeometryChanged();
