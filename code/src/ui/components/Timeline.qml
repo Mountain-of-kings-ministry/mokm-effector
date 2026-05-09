@@ -40,13 +40,22 @@ Rectangle {
             color: Theme.secondaryHover
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: 8
-                Text {
+                spacing: 0
+                
+                Item {
                     Layout.preferredWidth: root.layerNameWidth
-                    text: qsTr("Layers")
-                    color: Theme.mutedForeground
-                    font.pixelSize: 10
+                    Layout.fillHeight: true
+
+                    Text {
+                        anchors.left: parent.left
+                        anchors.leftMargin: 8
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: qsTr("Layers")
+                        color: Theme.mutedForeground
+                        font.pixelSize: 10
+                    }
                 }
+                
                 TimeRuler {
                     Layout.fillWidth: true
                     timelineModel: controller.timelineModel

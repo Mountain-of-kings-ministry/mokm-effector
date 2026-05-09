@@ -7,7 +7,9 @@ import QtQuick.Effects
 Item {
     id: topBar
     width: parent.width
-    height: 40
+    height: 30
+
+    property Window window
 
     signal newFileRequested
     signal openFileRequested
@@ -22,11 +24,12 @@ Item {
     signal deleteSelectedLayer
     signal exportVideoRequested
     signal exportImageSequenceRequested
+    signal preferencesRequested
 
     Rectangle {
         anchors.fill: parent
-        color: Theme.primary
-        border.color: Theme.primaryHover
+        color: Theme.background
+        border.color: Theme.border
         border.width: 1
 
         RowLayout {
@@ -61,7 +64,7 @@ Item {
                         MenuItem { text: qsTr("Export Animation..."); onTriggered: topBar.exportVideoRequested() }
                         MenuItem { text: qsTr("Export Image Sequence..."); onTriggered: topBar.exportImageSequenceRequested() }
                         MenuSeparator {}
-                        MenuItem { text: qsTr("Preferences") }
+                        MenuItem { text: qsTr("Preferences"); onTriggered: topBar.preferencesRequested() }
                         MenuSeparator {}
                         MenuItem { text: qsTr("Quit"); onTriggered: Qt.quit() }
                     }
@@ -182,7 +185,7 @@ Item {
             MenuItem { text: qsTr("Undo"); onTriggered: topBar.undoRequested() }
             MenuItem { text: qsTr("Redo"); onTriggered: topBar.redoRequested() }
             MenuSeparator {}
-            MenuItem { text: qsTr("Preferences") }
+            MenuItem { text: qsTr("Preferences"); onTriggered: topBar.preferencesRequested() }
         }
     }
 
@@ -214,7 +217,7 @@ Item {
             hoverEnabled: true
             onClicked: {
                 if (root.menu)
-                    root.menu.popup(root.mapToGlobal(0, root.height).x, root.mapToGlobal(0, root.height).y)
+                    root.menu.popup(root, 0, root.height)
             }
         }
     }

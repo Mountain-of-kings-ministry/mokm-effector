@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Controls
 import QtQuick.Dialogs
 import mokm_effector
 
@@ -29,6 +30,7 @@ Window {
         TopBar {
             id: topBar
             Layout.fillWidth: true
+            window: mainWindow
 
             onCreateRectLayer: createShapeLayer(ShapeLayer.Rectangle)
             onCreateCircleLayer: createShapeLayer(ShapeLayer.Circle)
@@ -37,75 +39,93 @@ Window {
             onDeleteSelectedLayer: deleteSelectedLayer()
             onExportVideoRequested: exportDialog.open()
             onExportImageSequenceRequested: exportImageSequenceDialog.open()
+            onPreferencesRequested: prefsDialog.open()
         }
 
-        RowLayout {
+        SplitView {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            spacing: 1
+            orientation: Qt.Vertical
 
-            ProjectBin {
-                id: projectBin
-                Layout.preferredWidth: 220
-                Layout.fillHeight: true
-                composition: project.activeComposition
-
-                onCreateRectLayer: createShapeLayer(ShapeLayer.Rectangle)
-                onCreateCircleLayer: createShapeLayer(ShapeLayer.Circle)
-                onCreateTriangleLayer: createShapeLayer(ShapeLayer.Triangle)
-                onCreateTextLayer: createTextLayer()
-                onLayerSelected: function(layer) { selectedLayer = layer }
+            handle: Rectangle {
+                implicitWidth: 2
+                implicitHeight: 2
+                color: SplitHandle.pressed ? Theme.accent : (SplitHandle.hovered ? Theme.borderHover : Theme.border)
             }
 
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                color: Theme.background
+            SplitView {
+                SplitView.fillHeight: true
+                orientation: Qt.Horizontal
 
-                ThorVGViewport {
-                    id: viewport
-                    anchors.fill: parent
-                    anchors.margins: 1
+                handle: Rectangle {
+                    implicitWidth: 2
+                    implicitHeight: 2
+                    color: SplitHandle.pressed ? Theme.accent : (SplitHandle.hovered ? Theme.borderHover : Theme.border)
+                }
+
+                ProjectBin {
+                    id: projectBin
+                    SplitView.preferredWidth: 220
                     composition: project.activeComposition
-                    currentFrame: timelineModel.currentFrame
-                    onLayerSelected: function(layer) { selectedLayer = layer; }
+
+                    onCreateRectLayer: createShapeLayer(ShapeLayer.Rectangle)
+                    onCreateCircleLayer: createShapeLayer(ShapeLayer.Circle)
+                    onCreateTriangleLayer: createShapeLayer(ShapeLayer.Triangle)
+                    onCreateTextLayer: createTextLayer()
+                    onLayerSelected: function (layer) {
+                        selectedLayer = layer;
+                    }
+                }
+
+                Rectangle {
+                    SplitView.fillWidth: true
+                    color: Theme.background
+
+                    ThorVGViewport {
+                        id: viewport
+                        anchors.fill: parent
+                        anchors.margins: 1
+                        composition: project.activeComposition
+                        currentFrame: timelineModel.currentFrame
+                        onLayerSelected: function (layer) {
+                            selectedLayer = layer;
+                        }
+                    }
+                }
+
+                PropertiesPanel {
+                    SplitView.preferredWidth: 240
+                    currentLayer: selectedLayer
+                    timelineModel: timelineModel
                 }
             }
 
-            PropertiesPanel {
-                Layout.preferredWidth: 240
-                Layout.fillHeight: true
-                currentLayer: selectedLayer
-                timelineModel: timelineModel
-            }
-        }
+            ColumnLayout {
+                SplitView.preferredHeight: 250
+                spacing: 0
 
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 0
+                Toolbar {
+                    id: toolbar
+                    Layout.fillWidth: true
+                    timelineModel: timelineModel
+                    selectedLayer: selectedLayer
+                }
 
-            Toolbar {
-                id: toolbar
-                Layout.fillWidth: true
-                timelineModel: timelineModel
-                selectedLayer: selectedLayer
-            }
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 1
+                    color: Theme.border
+                }
 
-            Rectangle {
-                Layout.fillWidth: true
-                height: 1
-                color: Theme.border
-            }
-
-            Timeline {
-                id: timeline
-                Layout.fillWidth: true
-                Layout.preferredHeight: 200
-                Layout.minimumHeight: 80
-                timelineModel: timelineModel
-                selectedLayer: selectedLayer
-                onLayerSelected: function (layer) {
-                    selectedLayer = layer;
+                Timeline {
+                    id: timeline
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    timelineModel: timelineModel
+                    selectedLayer: selectedLayer
+                    onLayerSelected: function (layer) {
+                        selectedLayer = layer;
+                    }
                 }
             }
         }
@@ -129,13 +149,20 @@ Window {
         fileMode: FileDialog.Directory
         onAccepted: function () {
             var comp = project.activeComposition;
-            if (!comp || !timelineModel) return;
+            if (!comp || !timelineModel)
+                return;
             var folderUrl = exportDialog.selectedFolder || exportDialog.currentFolder;
-            if (!folderUrl) return;
+            if (!folderUrl)
+                return;
             var folder = String(folderUrl).replace(/^file:\/\//, "");
             var videoPath = folder + "/output.mp4";
             exportController.exportSequence(comp, timelineModel, folder, videoPath);
         }
+    }
+
+    PreferencesDialog {
+        id: prefsDialog
+        project: project
     }
 
     FileDialog {
@@ -145,9 +172,11 @@ Window {
         fileMode: FileDialog.Directory
         onAccepted: function () {
             var comp = project.activeComposition;
-            if (!comp || !timelineModel) return;
+            if (!comp || !timelineModel)
+                return;
             var folderUrl = exportImageSequenceDialog.selectedFolder || exportImageSequenceDialog.currentFolder;
-            if (!folderUrl) return;
+            if (!folderUrl)
+                return;
             var folder = String(folderUrl).replace(/^file:\/\//, "");
             exportController.exportSequence(comp, timelineModel, folder);
         }

@@ -30,6 +30,10 @@
 - **Export null-safety**: `selectedFolder` access guarded with fallback to `currentFolder` + `if (!folderUrl) return` — prevents `toString of undefined` crash
 - **Build**: Zero errors, zero warnings, clean 10s run
 
+### Session 4 fixes (Timeline interaction & TopBar)
+- **Timeline drag rewrite**: Replaced overlapping model-bound `MouseArea`s with a unified "drag-now, commit-later" visual model. Added distinct drag zones with hit testing for smooth repositioning and duration resizing identical to the `TimeRuler` responsiveness.
+- **TimeRuler alignment**: Adjusted `RowLayout` spacing and left margins in `Timeline.qml` Header to precisely match the `layerNameWidth` coordinate space of the scrolling timeline strips. Playhead perfectly aligns.
+
 ### Known Issues
 - None
 
