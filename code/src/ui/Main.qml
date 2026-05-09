@@ -127,9 +127,10 @@ Window {
         fileMode: FileDialog.Directory
         onAccepted: function () {
             var comp = project.activeComposition;
-            if (!comp || !timelineModel)
-                return;
-            var folder = exportDialog.selectedFolder.toString().replace("file://", "");
+            if (!comp || !timelineModel) return;
+            var folderUrl = exportDialog.selectedFolder || exportDialog.currentFolder;
+            if (!folderUrl) return;
+            var folder = String(folderUrl).replace(/^file:\/\//, "");
             var videoPath = folder + "/output.mp4";
             exportController.exportSequence(comp, timelineModel, folder, videoPath);
         }
@@ -142,9 +143,10 @@ Window {
         fileMode: FileDialog.Directory
         onAccepted: function () {
             var comp = project.activeComposition;
-            if (!comp || !timelineModel)
-                return;
-            var folder = exportImageSequenceDialog.selectedFolder.toString().replace("file://", "");
+            if (!comp || !timelineModel) return;
+            var folderUrl = exportImageSequenceDialog.selectedFolder || exportImageSequenceDialog.currentFolder;
+            if (!folderUrl) return;
+            var folder = String(folderUrl).replace(/^file:\/\//, "");
             exportController.exportSequence(comp, timelineModel, folder);
         }
     }

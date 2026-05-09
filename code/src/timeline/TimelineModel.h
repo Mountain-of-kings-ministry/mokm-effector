@@ -36,6 +36,8 @@ public:
     qreal playbackSpeed() const { return m_playbackSpeed; }
     void setPlaybackSpeed(qreal speed);
 
+    int keyframesStamp() const { return m_keyframesStamp; }
+
     Q_INVOKABLE void play();
     Q_INVOKABLE void pause();
     Q_INVOKABLE void stop();
@@ -75,6 +77,7 @@ private:
     int m_currentFrame = 0;
     bool m_playing = false;
     qreal m_playbackSpeed = 1.0;
+    int m_keyframesStamp = 0;
     QTimer *m_timer = nullptr;
 
     // keyframes grouped by layer ptr -> property name -> frame -> keyframe

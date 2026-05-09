@@ -189,7 +189,7 @@ Rectangle {
                                     property int dragStartFrame: 0
                                     property real dragStartX: 0
 
-                                    onPressed: {
+                                    onPressed: function(mouse) {
                                         dragStartFrame = layerObj.startFrame;
                                         dragStartX = mouse.x;
                                         stripBar.color = Qt.alpha(root.stripColors[index % root.stripColors.length], 0.6);
@@ -197,7 +197,7 @@ Rectangle {
                                     onReleased: {
                                         stripBar.color = Qt.alpha(root.stripColors[index % root.stripColors.length], 0.4);
                                     }
-                                    onPositionChanged: {
+                                    onPositionChanged: function(mouse) {
                                         if (!(mouse.buttons & Qt.LeftButton)) return;
                                         var dx = mouse.x - dragStartX;
                                         var deltaFrames = Math.round(dx / root.pixelPerFrame);
@@ -208,26 +208,28 @@ Rectangle {
 
                                 // ── Duration drag handle (right edge) ──
                                 MouseArea {
+                                    id: durationHandle
                                     anchors.right: parent.right
                                     anchors.verticalCenter: parent.verticalCenter
-                                    width: 6
+                                    width: 20
                                     height: parent.height
                                     cursorShape: Qt.SizeHorCursor
 
                                     property int dragStartDuration: 0
                                     property int dragStartFrame: 0
-                                    property real dragStartX: 0
+                                    property point dragGlobalStart: Qt.point(0, 0)
 
-                                    onPressed: {
+                                    onPressed: function(mouse) {
                                         dragStartDuration = layerObj.duration;
                                         dragStartFrame = layerObj.startFrame;
-                                        dragStartX = mouse.x;
+                                        dragGlobalStart = mapToGlobal(mouse.x, mouse.y);
                                     }
-                                    onPositionChanged: {
+                                    onPositionChanged: function(mouse) {
                                         if (!(mouse.buttons & Qt.LeftButton)) return;
-                                        var dx = mouse.x - dragStartX;
-                                        var deltaFrames = Math.round(dx / root.pixelPerFrame);
-                                        var newDuration = Math.max(1, dragStartDuration + deltaFrames);
+                                        var currentGlobal = mapToGlobal(mouse.x, mouse.y);
+                                        var dx = currentGlobal.x - dragGlobalStart.x;
+                                        var deltaFrames = dx / root.pixelPerFrame;
+                                        var newDuration = Math.max(1, Math.round(dragStartDuration + deltaFrames));
                                         var compDuration = controller.timelineModel?.composition?.duration ?? 150;
                                         if (dragStartFrame + newDuration > compDuration)
                                             newDuration = compDuration - dragStartFrame;
@@ -241,9 +243,15 @@ Rectangle {
                             Repeater {
                                 model: root.animProperties.length
                                 delegate: Item {
+                                    id: kfDelegate
                                     property var propName: root.animProperties[modelData]
-                                    property var frames: controller.timelineModel
-                                        ? controller.timelineModel.keyframeFrames(layerObj, propName) : []
+                                    property var frames: kfDelegate.computeFrames()
+
+                                    function computeFrames() {
+                                        if (!controller.timelineModel) return [];
+                                        var _ = controller.timelineModel.keyframesStamp;
+                                        return controller.timelineModel.keyframeFrames(stripRow.layerObj, propName);
+                                    }
 
                                     Repeater {
                                         model: parent.frames

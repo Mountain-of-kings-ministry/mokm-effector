@@ -22,6 +22,14 @@
 - **Layer data model**: `startFrame` (int, default 0) + `duration` (int, default 150) properties with signals
 - **Composition**: `moveLayer(int fromIndex, int toIndex)` Q_INVOKABLE for reordering layers
 
+### Session 3 fixes (bug squashing)
+- **Deprecation warnings**: Fixed 4 signal handlers in `Timeline.qml` that used implicit `mouse` parameter — changed to `function(mouse)`
+- **RangeError crash**: Eliminated by fixing keyframes binding reactivity + duration resize feedback loop
+- **Keyframes reactive**: Added `keyframesStamp` Q_PROPERTY to `TimelineModel` (incremented on add/remove/clear). Timeline.qml `frames` binding now reads `keyframesStamp` as a dependency → diamonds appear/update instantly on keyframe toggle
+- **Strip resize**: Duration handle now uses `mapToItem` for proper coordinate mapping + start-value-only calculation (no feedback loop). Strips resize correctly in both directions
+- **Export null-safety**: `selectedFolder` access guarded with fallback to `currentFolder` + `if (!folderUrl) return` — prevents `toString of undefined` crash
+- **Build**: Zero errors, zero warnings, clean 10s run
+
 ### Known Issues
 - None
 

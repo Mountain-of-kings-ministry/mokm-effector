@@ -27,7 +27,6 @@ QImage ExportController::renderFrame(Composition *comp, int frame)
     QPainter painter(&image);
     painter.setRenderHint(QPainter::Antialiasing, true);
 
-    // checkerboard background
     int checkSize = 16;
     QColor c1(40, 40, 40);
     QColor c2(50, 50, 50);
@@ -37,49 +36,38 @@ QImage ExportController::renderFrame(Composition *comp, int frame)
                              ((x / checkSize + y / checkSize) % 2) ? c1 : c2);
         }
     }
-
     painter.fillRect(0, 0, w, h, QColor(18, 18, 18));
 
     for (int i = 0; i < comp->layerCount(); ++i) {
         auto *layer = comp->layerAt(i);
         if (!layer || !layer->enabled() || !layer->visible())
             continue;
+        if (frame < layer->startFrame() || frame >= layer->startFrame() + layer->duration())
+            continue;
 
-        renderLayer(image, layer);
+        painter.save();
+        painter.setOpacity(layer->opacity());
+        painter.translate(layer->x(), layer->y());
+        painter.translate(w / 2.0, h / 2.0);
+        painter.rotate(layer->rotation());
+        painter.scale(layer->scaleX(), layer->scaleY());
+        painter.translate(-w / 2.0, -h / 2.0);
+
+        if (layer->type() == Layer::ShapeLayer)
+            renderShapeLayer(painter, qobject_cast<ShapeLayer*>(layer));
+        else if (layer->type() == Layer::TextLayer)
+            renderTextLayer(painter, qobject_cast<TextLayer*>(layer));
+
+        painter.restore();
     }
 
     painter.end();
     return image;
 }
 
-void ExportController::renderLayer(QImage &image, Layer *layer)
-{
-    QPainter painter(&image);
-    painter.setRenderHint(QPainter::Antialiasing, true);
-
-    qreal compW = image.width();
-    qreal compH = image.height();
-
-    painter.save();
-    painter.setOpacity(layer->opacity());
-    painter.translate(layer->x(), layer->y());
-    painter.translate(compW / 2.0, compH / 2.0);
-    painter.rotate(layer->rotation());
-    painter.scale(layer->scaleX(), layer->scaleY());
-    painter.translate(-compW / 2.0, -compH / 2.0);
-
-    if (layer->type() == Layer::ShapeLayer)
-        renderShapeLayer(image, qobject_cast<ShapeLayer*>(layer));
-    else if (layer->type() == Layer::TextLayer)
-        renderTextLayer(image, qobject_cast<TextLayer*>(layer));
-
-    painter.restore();
-}
-
-void ExportController::renderShapeLayer(QImage &image, ShapeLayer *layer)
+void ExportController::renderShapeLayer(QPainter &painter, ShapeLayer *layer)
 {
     if (!layer) return;
-    QPainter painter(&image);
 
     qreal w = layer->shapeWidth();
     qreal h = layer->shapeHeight();
@@ -118,10 +106,9 @@ void ExportController::renderShapeLayer(QImage &image, ShapeLayer *layer)
     }
 }
 
-void ExportController::renderTextLayer(QImage &image, TextLayer *layer)
+void ExportController::renderTextLayer(QPainter &painter, TextLayer *layer)
 {
     if (!layer) return;
-    QPainter painter(&image);
 
     QFont font(layer->fontFamily(), (int)layer->fontSize());
     font.setWeight(static_cast<QFont::Weight>(layer->fontWeight()));

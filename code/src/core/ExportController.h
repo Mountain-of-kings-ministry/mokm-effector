@@ -29,9 +29,8 @@ signals:
     void exportFinished(bool success, const QString &message);
 
 private:
-    static void renderLayer(QImage &image, Layer *layer);
-    static void renderShapeLayer(QImage &image, ShapeLayer *layer);
-    static void renderTextLayer(QImage &image, TextLayer *layer);
+    static void renderShapeLayer(QPainter &painter, ShapeLayer *layer);
+    static void renderTextLayer(QPainter &painter, TextLayer *layer);
 };
 
 #endif

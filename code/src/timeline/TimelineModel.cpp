@@ -26,6 +26,7 @@ void TimelineModel::setComposition(Composition *comp)
         }
         m_currentFrame = 0;
         m_keyframes.clear();
+        m_keyframesStamp++;
         emit compositionChanged();
         emit currentFrameChanged();
         emit keyframesChanged();
@@ -123,6 +124,7 @@ void TimelineModel::addKeyframe(Layer *layer, const QString &property, int frame
         kf->setValue(value);
         propKeyframes[frame] = kf;
     }
+    m_keyframesStamp++;
     emit keyframesChanged();
 }
 
@@ -137,6 +139,7 @@ void TimelineModel::removeKeyframe(Layer *layer, const QString &property, int fr
         m_keyframes[layer][property].remove(frame);
         if (m_keyframes[layer][property].isEmpty())
             m_keyframes[layer].remove(property);
+        m_keyframesStamp++;
         emit keyframesChanged();
     }
 }

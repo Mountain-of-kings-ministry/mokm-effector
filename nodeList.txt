@@ -1,0 +1,653 @@
+# COMPLETE NODE SYSTEM ARCHITECTURE
+
+For your next-generation motion graphics engine.
+
+The biggest mistake node editors make is:
+
+* no organization
+* random nodes everywhere
+* unclear workflow
+* weak scalability
+
+You need a **professional node taxonomy**.
+
+Exactly like:
+
+* Houdini
+* Unreal
+* Blender Geometry Nodes
+* Cavalry
+* Nuke
+
+---
+
+# BEST NODE ORGANIZATION
+
+```text id="nodetree"
+Scene
+├── Generators
+├── Geometry
+├── Text
+├── Media
+├── Animation
+├── Motion
+├── Procedural
+├── Simulation
+├── Modifiers
+├── Materials
+├── Effects
+├── Audio
+├── Utility
+├── Logic
+├── Rendering
+├── Compositing
+├── 3D
+├── Camera
+├── Lighting
+├── Data
+├── Scripting
+├── IO
+└── Debug
+```
+
+This scales properly.
+
+---
+
+# 1. GENERATORS
+
+Creates objects from nothing.
+
+```text id="gen_nodes"
+[ Rectangle ]
+[ Circle ]
+[ Ellipse ]
+[ Polygon ]
+[ Star ]
+[ Line ]
+[ Arc ]
+[ Grid ]
+[ Spiral ]
+[ Arrow ]
+[ Rounded Rectangle ]
+[ Bezier Shape ]
+[ Path ]
+[ SVG ]
+[ Spline ]
+[ Lottie ]
+[ Gradient Shape ]
+[ Parametric Shape ]
+[ Waveform ]
+```
+
+---
+
+# 2. TEXT NODES
+
+Typography system.
+
+```text id="text_nodes"
+[ Text ]
+[ Text Along Path ]
+[ Text Animator ]
+[ Text Range Selector ]
+[ Text Repeater ]
+[ Text Layout ]
+[ Rich Text ]
+[ Glyph Extract ]
+[ Font Style ]
+[ Kerning ]
+[ Text Warp ]
+[ Text Counter ]
+[ Typewriter ]
+```
+
+---
+
+# 3. MEDIA NODES
+
+External media assets.
+
+```text id="media_nodes"
+[ Image ]
+[ Video ]
+[ Image Sequence ]
+[ Audio File ]
+[ Webcam ]
+[ Screen Capture ]
+[ PDF ]
+[ EXR ]
+[ GIF ]
+[ Sprite Sheet ]
+[ LUT ]
+```
+
+---
+
+# 4. GEOMETRY NODES
+
+Shape processing.
+
+```text id="geometry_nodes"
+[ Extrude ]
+[ Bevel ]
+[ Subdivide ]
+[ Boolean ]
+[ Offset Path ]
+[ Merge Shapes ]
+[ Trim Path ]
+[ Path Deform ]
+[ Resample Path ]
+[ Scatter ]
+[ Instance ]
+[ Array ]
+[ Shape Weld ]
+[ Mesh Convert ]
+[ Triangulate ]
+```
+
+---
+
+# 5. ANIMATION NODES
+
+Timeline-independent animation.
+
+```text id="anim_nodes"
+[ Keyframe ]
+[ Animation Clip ]
+[ Curve ]
+[ Easing ]
+[ Spring ]
+[ Bounce ]
+[ Oscillator ]
+[ Wiggle ]
+[ Delay ]
+[ Time Offset ]
+[ Loop ]
+[ Ping Pong ]
+[ Time Stretch ]
+[ Retime ]
+[ Motion Clip ]
+```
+
+---
+
+# 6. MOTION NODES
+
+Motion graphics focused.
+
+```text id="motion_nodes"
+[ Duplicate ]
+[ Cloner ]
+[ Radial Clone ]
+[ Grid Clone ]
+[ Spiral Clone ]
+[ Follow Path ]
+[ Look At ]
+[ Align ]
+[ Distribute ]
+[ Random Transform ]
+[ Stagger ]
+[ Trail ]
+[ Echo ]
+[ Motion Trails ]
+```
+
+VERY important category.
+
+This is where you beat After Effects.
+
+---
+
+# 7. PROCEDURAL NODES
+
+Cavalry/Houdini-inspired systems.
+
+```text id="proc_nodes"
+[ Noise ]
+[ Curl Noise ]
+[ Random ]
+[ Fractal ]
+[ Voronoi ]
+[ Perlin ]
+[ Turbulence ]
+[ Attractor ]
+[ Data Mapper ]
+[ Range Mapper ]
+[ Expression ]
+[ Formula ]
+[ Function ]
+[ Script ]
+```
+
+---
+
+# 8. SIMULATION NODES
+
+Future expansion.
+
+```text id="sim_nodes"
+[ Particle Emit ]
+[ Particle Force ]
+[ Particle Render ]
+[ Gravity ]
+[ Collision ]
+[ Wind ]
+[ Vortex ]
+[ Fluid ]
+[ Cloth ]
+[ Soft Body ]
+[ Rigid Body ]
+```
+
+Huge future potential.
+
+---
+
+# 9. MODIFIER NODES
+
+Object manipulation.
+
+```text id="modifier_nodes"
+[ Transform ]
+[ Scale ]
+[ Rotate ]
+[ Shear ]
+[ Bend ]
+[ Twist ]
+[ Taper ]
+[ Mirror ]
+[ Lattice ]
+[ Deform ]
+[ Warp ]
+[ Smooth ]
+```
+
+---
+
+# 10. MATERIAL NODES
+
+For 2D and 3D shading.
+
+```text id="material_nodes"
+[ Color ]
+[ Gradient ]
+[ Texture ]
+[ Normal Map ]
+[ Roughness ]
+[ Metallic ]
+[ Emission ]
+[ Fresnel ]
+[ UV Transform ]
+[ Pattern ]
+[ Noise Texture ]
+```
+
+---
+
+# 11. EFFECT NODES
+
+Very important.
+
+```text id="effect_nodes"
+[ Blur ]
+[ Directional Blur ]
+[ Motion Blur ]
+[ Glow ]
+[ Bloom ]
+[ Shadow ]
+[ Outline ]
+[ Edge Detect ]
+[ Chromatic Aberration ]
+[ Distortion ]
+[ Pixelate ]
+[ Sharpen ]
+[ Lens Distortion ]
+[ VHS ]
+[ Glitch ]
+[ Film Grain ]
+[ Color Correction ]
+[ Curves ]
+[ Levels ]
+[ LUT ]
+[ Keyer ]
+[ Matte ]
+```
+
+This becomes your OFX integration category too.
+
+---
+
+# 12. AUDIO NODES
+
+Massive opportunity.
+
+```text id="audio_nodes"
+[ Audio Reactive ]
+[ Audio Spectrum ]
+[ Audio Waveform ]
+[ Beat Detection ]
+[ BPM ]
+[ FFT ]
+[ Envelope ]
+[ Peak ]
+[ MIDI Input ]
+```
+
+---
+
+# 13. UTILITY NODES
+
+Essential glue nodes.
+
+```text id="utility_nodes"
+[ Clamp ]
+[ Remap ]
+[ Lerp ]
+[ Mix ]
+[ Switch ]
+[ Compare ]
+[ Math ]
+[ Vector Math ]
+[ Float ]
+[ Integer ]
+[ Boolean ]
+[ Color ]
+[ Vector ]
+[ Timer ]
+[ Counter ]
+```
+
+---
+
+# 14. LOGIC NODES
+
+For advanced procedural workflows.
+
+```text id="logic_nodes"
+[ If ]
+[ Branch ]
+[ Loop ]
+[ For Each ]
+[ Trigger ]
+[ Event ]
+[ State ]
+[ Sequence ]
+[ Gate ]
+```
+
+---
+
+# 15. RENDERING NODES
+
+Final output pipeline.
+
+```text id="render_nodes"
+[ Render Layer ]
+[ Render Pass ]
+[ Viewport ]
+[ Composite ]
+[ Depth Pass ]
+[ Normal Pass ]
+[ AO Pass ]
+[ Reflection Pass ]
+[ Shadow Pass ]
+[ Multi Render ]
+```
+
+---
+
+# 16. COMPOSITING NODES
+
+Nuke-style workflows.
+
+```text id="comp_nodes"
+[ Merge ]
+[ Alpha Over ]
+[ Multiply ]
+[ Screen ]
+[ Overlay ]
+[ Add ]
+[ Mask ]
+[ Channel Shuffle ]
+[ Premult ]
+[ Unpremult ]
+[ Crop ]
+[ Transform 2D ]
+```
+
+---
+
+# 17. 3D NODES
+
+Modern motion graphics requires this.
+
+```text id="threeD_nodes"
+[ Mesh ]
+[ Cube ]
+[ Sphere ]
+[ Plane ]
+[ Import Model ]
+[ Skeleton ]
+[ Skin ]
+[ Instancer ]
+[ Geometry Cache ]
+[ USD Scene ]
+```
+
+---
+
+# 18. CAMERA NODES
+
+Critical for cinematic workflows.
+
+```text id="camera_nodes"
+[ Camera ]
+[ Camera Rig ]
+[ Orbit Camera ]
+[ Dolly ]
+[ Crane ]
+[ Shake ]
+[ DOF ]
+[ Projection ]
+[ Frustum ]
+```
+
+---
+
+# 19. LIGHTING NODES
+
+```text id="light_nodes"
+[ Light ]
+[ Directional Light ]
+[ Point Light ]
+[ Spot Light ]
+[ HDRI ]
+[ Shadow ]
+[ Volumetric ]
+[ Fog ]
+```
+
+---
+
+# 20. DATA NODES
+
+For procedural systems.
+
+```text id="data_nodes"
+[ JSON ]
+[ CSV ]
+[ XML ]
+[ API Request ]
+[ Live Data ]
+[ Spreadsheet ]
+[ Data Table ]
+```
+
+This is a HUGE opportunity.
+
+Data-driven motion graphics are exploding.
+
+---
+
+# 21. SCRIPTING NODES
+
+Your QuickJS system.
+
+```text id="script_nodes"
+[ Expression ]
+[ Script ]
+[ Function ]
+[ JS Module ]
+[ Python Bridge ]
+```
+
+---
+
+# 22. IO NODES
+
+Interchange system.
+
+```text id="io_nodes"
+[ Import ]
+[ Export ]
+[ USD Export ]
+[ glTF Export ]
+[ OTIO Export ]
+[ Cache ]
+[ Recorder ]
+```
+
+---
+
+# 23. DEBUG NODES
+
+Professional systems need this.
+
+```text id="debug_nodes"
+[ Print ]
+[ Inspector ]
+[ FPS ]
+[ Profiler ]
+[ Graph Debug ]
+[ Memory Usage ]
+```
+
+---
+
+# MOST IMPORTANT NODE CATEGORIES
+
+Focus FIRST on:
+
+| Priority  | Category    |
+| --------- | ----------- |
+| VERY HIGH | Motion      |
+| VERY HIGH | Animation   |
+| VERY HIGH | Effects     |
+| VERY HIGH | Procedural  |
+| VERY HIGH | Compositing |
+| HIGH      | Audio       |
+| HIGH      | Camera      |
+| HIGH      | Text        |
+| HIGH      | Rendering   |
+
+These define modern motion graphics.
+
+---
+
+# THE SECRET TO WINNING
+
+Most software:
+
+* separates compositing
+* separates motion design
+* separates procedural systems
+* separates 3D
+
+Your advantage is:
+
+# ONE UNIFIED GRAPH
+
+```text id="unified_graph"
+Animation
++
+Compositing
++
+Procedural
++
+2D
++
+3D
++
+Audio
++
+Rendering
+```
+
+This is extremely powerful.
+
+---
+
+# BEST INTERNAL NODE DESIGN
+
+Every node should have:
+
+```cpp id="node_cpp"
+class Node
+{
+public:
+
+    Inputs;
+    Outputs;
+    Parameters;
+
+    evaluate();
+
+    serialize();
+
+    cache();
+};
+```
+
+---
+
+# RECOMMENDED FUTURE SYSTEM
+
+Eventually build:
+
+# Lazy Evaluation
+
+Only recalculate:
+
+* changed nodes
+* dependent nodes
+
+This massively improves low-end performance.
+
+---
+
+# FINAL RECOMMENDATION
+
+Your MVP should begin with:
+
+# MVP NODE SET
+
+```text id="mvp_nodes"
+Generators
+Animation
+Motion
+Effects
+Compositing
+Text
+Camera
+Rendering
+Audio Reactive
+```
+
+That alone can already rival:
+
+* After Effects
+* Cavalry
+* Apple Motion
+
+for many workflows.

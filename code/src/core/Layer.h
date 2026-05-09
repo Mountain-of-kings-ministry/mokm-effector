@@ -77,7 +77,7 @@ private:
     qreal m_scaleX = 1.0;
     qreal m_scaleY = 1.0;
     int m_startFrame = 0;
-    int m_duration = 150;
+    int m_duration = 90;
 };
 
 #endif
