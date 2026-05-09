@@ -151,6 +151,7 @@
 
 ### Phase 6: 3D Integration
 
+- Install vcpkg install imguizmo [ add it to vcpkg.json and i will install manually ]
 - Integrate Filament renderer
 - USD scene support
 - 3D object import (glTF)

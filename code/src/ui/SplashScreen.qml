@@ -6,58 +6,70 @@ import mokm_effector
 Window {
     id: splash
     width: 640
-    height: 480
+    height: 400
     visible: true
     title: qsTr("Starting...")
 
     color: Theme.background
     flags: Qt.FramelessWindowHint
 
+    opacity: 1
+
+    NumberAnimation on opacity {
+        id: fadeOut
+        from: 1
+        to: 0
+        duration: 300
+        running: false
+        onFinished: splash.visible = false
+    }
+
     ColumnLayout {
         anchors.centerIn: parent
-        spacing: 12
+        spacing: 16
 
         Rectangle {
-            width: 120
-            height: 120
+            width: 80
+            height: 80
             color: Theme.primary
-            radius: 12
-            border.color: Theme.border
-            anchors.horizontalCenter: parent.horizontalCenter
+            radius: 8
+            Layout.alignment: Qt.AlignHCenter
+
+            Text {
+                anchors.centerIn: parent
+                text: "M"
+                color: Theme.foreground
+                font.pixelSize: 36
+                font.bold: true
+            }
         }
 
         Text {
-            text: qsTr("learConnection")
+            text: qsTr("MOKM Effector")
             color: Theme.foreground
-            font.pixelSize: 20
+            font.pixelSize: 22
+            font.bold: true
+            horizontalAlignment: Text.AlignHCenter
+        }
+
+        Text {
+            text: qsTr("Loading…")
+            color: Theme.mutedForeground
+            font.pixelSize: 12
             horizontalAlignment: Text.AlignHCenter
         }
     }
 
-    Loader {
-        id: mainLoader
-        anchors.fill: parent
-        visible: false
-    }
-
     Timer {
-        interval: 1400
+        interval: 1000
         running: true
         repeat: false
-        onTriggered: {
-            // load Main.qml (same dir)
-            mainLoader.source = "Main.qml";
-            mainLoader.asynchronous = false;
-        }
+        onTriggered: mainLoader.source = "Main.qml"
     }
 
-    // hide splash when main Window is ready
-    Connections {
-        target: mainLoader
-        onStatusChanged: {
-            if (mainLoader.status === Loader.Ready && mainLoader.item && mainLoader.item.visible) {
-                splash.visible = false;
-            }
-        }
+    Loader {
+        id: mainLoader
+        asynchronous: false
+        onLoaded: fadeOut.start()
     }
 }

@@ -71,6 +71,12 @@ qt_add_qml_module(appmokm_effector
         src/ui/Main.qml
         src/ui/Theme.qml
         src/ui/SplashScreen.qml
+        src/ui/components/ProjectBin.qml
+        src/ui/components/PropertiesPanel.qml
+        src/ui/components/Toolbar.qml
+        src/ui/components/TimeRuler.qml
+        src/ui/components/Timeline.qml
+        src/ui/components/TopBar.qml
     SOURCES ${CORE_SOURCES}
     RESOURCES resources/resources.qrc
 )
