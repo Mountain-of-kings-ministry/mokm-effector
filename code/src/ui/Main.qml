@@ -24,7 +24,7 @@ Window {
     }
 
     TimelineModel {
-        id: timelineModel
+        id: globalTimelineModel
     }
 
     ColumnLayout {
@@ -98,7 +98,7 @@ Window {
                         anchors.fill: parent
                         anchors.margins: 1
                         composition: project.activeComposition
-                        currentFrame: timelineModel.currentFrame
+                        currentFrame: globalTimelineModel.currentFrame
                         onLayerSelected: function (layer) {
                             selectedLayer = layer;
                         }
@@ -108,7 +108,7 @@ Window {
                 PropertiesPanel {
                     SplitView.preferredWidth: 240
                     currentLayer: selectedLayer
-                    timelineModel: timelineModel
+                    timelineModel: globalTimelineModel
                 }
             }
 
@@ -120,7 +120,7 @@ Window {
                     id: toolbar
                     Layout.fillWidth: true
 
-                    timelineModel: timelineModel
+                    timelineModel: globalTimelineModel
                     selectedLayer: selectedLayer
                 }
 
@@ -162,7 +162,7 @@ Window {
                     id: timelinePage
 
                     Timeline {
-                        timelineModel: timelineModel
+                        timelineModel: globalTimelineModel
                         selectedLayer: selectedLayer
                         project: project
 
@@ -209,14 +209,14 @@ Window {
         fileMode: FileDialog.Directory
         onAccepted: function () {
             var comp = project.activeComposition;
-            if (!comp || !timelineModel)
+            if (!comp || !globalTimelineModel)
                 return;
             var folderUrl = exportDialog.selectedFolder || exportDialog.currentFolder;
             if (!folderUrl)
                 return;
             var folder = String(folderUrl).replace(/^file:\/\//, "");
             var videoPath = folder + "/output.mp4";
-            exportController.exportSequence(comp, timelineModel, folder, videoPath);
+            exportController.exportSequence(comp, globalTimelineModel, folder, videoPath);
         }
     }
 
@@ -232,13 +232,13 @@ Window {
         fileMode: FileDialog.Directory
         onAccepted: function () {
             var comp = project.activeComposition;
-            if (!comp || !timelineModel)
+            if (!comp || !globalTimelineModel)
                 return;
             var folderUrl = exportImageSequenceDialog.selectedFolder || exportImageSequenceDialog.currentFolder;
             if (!folderUrl)
                 return;
             var folder = String(folderUrl).replace(/^file:\/\//, "");
-            exportController.exportSequence(comp, timelineModel, folder);
+            exportController.exportSequence(comp, globalTimelineModel, folder);
         }
     }
 
@@ -250,9 +250,10 @@ Window {
         onAccepted: {
             if (openDialog.selectedFile) {
                 project.loadFromFile(openDialog.selectedFile);
-                timelineModel.composition = project.activeComposition;
+                globalTimelineModel.composition = project.activeComposition;
                 selectedLayer = null;
-                timeline.clearSelection();
+                if (stackView.currentItem && stackView.currentItem.clearSelection)
+                    stackView.currentItem.clearSelection();
             }
         }
     }
@@ -289,8 +290,9 @@ Window {
     function deleteSelectedLayer() {
         if (!project)
             return;
-        var layers = timeline.selectedLayers;
-        if (!layers || layers.length === 0) {
+        var tl = stackView.currentItem;
+        var layers = (tl && tl.selectedLayers) ? tl.selectedLayers : [];
+        if (layers.length === 0) {
             if (selectedLayer)
                 layers = [selectedLayer];
             else
@@ -312,7 +314,8 @@ Window {
             }
         }
         selectedLayer = null;
-        timeline.clearSelection();
+        if (tl && tl.clearSelection)
+            tl.clearSelection();
         project.captureSnapshot();
     }
 
@@ -340,9 +343,10 @@ Window {
         while (project.assetCount > 0)
             project.removeAsset(project.assetAt(0));
         project.setName("Untitled");
-        timelineModel.composition = comp;
+        globalTimelineModel.composition = comp;
         selectedLayer = null;
-        timeline.clearSelection();
+        if (stackView.currentItem && stackView.currentItem.clearSelection)
+            stackView.currentItem.clearSelection();
         // Reset undo/redo
         project.clearUndoRedo();
     }
@@ -469,8 +473,10 @@ Window {
     }
 
     Component.onCompleted: {
+        console.log("MAIN_DEBUG: Component.onCompleted, globalTimelineModel=" + (globalTimelineModel !== null));
         var comp = project.activeComposition;
         if (comp && project) {
+            console.log("MAIN_DEBUG: creating demo rectangle, comp.trackCount=" + comp.trackCount);
             var rect = shapeLayerComponent.createObject(project, {
                 name: "Rectangle 1",
                 shapeType: ShapeLayer.Rectangle,
@@ -484,7 +490,7 @@ Window {
             clip.startFrame = 0;
             clip.duration = 90;
             track.addClip(clip);
-            timelineModel.composition = comp;
+            globalTimelineModel.composition = comp;
         }
     }
 }

@@ -4,9 +4,12 @@ import QtQuick.Layouts
 import mokm_effector
 
 Rectangle {
-    id: root
+    id: binRoot
     color: Theme.secondary
     clip: true
+
+    // Robust root reference for delegates
+    readonly property var bin: binRoot
 
     property Composition composition: null
     property Project project: null
@@ -40,12 +43,15 @@ Rectangle {
         }
 
         ScrollView {
+            id: binScrollView
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
             ColumnLayout {
-                width: parent.width
+                id: binContent
+                width: binScrollView.availableWidth
                 spacing: 0
 
                 Rectangle {
@@ -64,13 +70,14 @@ Rectangle {
                 }
 
                 Repeater {
-                    model: root.project && root.project.assets ? root.project.assets : 0
+                    model: bin.project && bin.project.assets ? bin.project.assets : 0
 
                     delegate: Rectangle {
+                        id: assetDelegate
                         Layout.fillWidth: true
                         height: 22
                         color: {
-                            if (root._selected === modelData) return Theme.selected
+                            if (bin._selected === modelData) return Theme.selected
                             if (assetMouse.containsMouse) return Theme.secondaryHover
                             return index % 2 === 0 ? "transparent" : Qt.alpha(Theme.secondaryHover, 0.15)
                         }
@@ -89,7 +96,7 @@ Rectangle {
 
                             Text {
                                 text: modelData?.name ?? ""
-                                color: root._selected === modelData ? "#ffffff" : Theme.foreground
+                                color: bin._selected === modelData ? "#ffffff" : Theme.foreground
                                 font.pixelSize: 11
                                 elide: Text.ElideRight
                                 Layout.fillWidth: true
@@ -104,14 +111,14 @@ Rectangle {
                             acceptedButtons: Qt.LeftButton | Qt.RightButton
                             onClicked: mouse => {
                                 if (mouse.button === Qt.LeftButton) {
-                                    root._selected = modelData
-                                    root.layerSelected(modelData)
+                                    bin._selected = modelData
+                                    bin.layerSelected(modelData)
                                 }
                             }
                             onPressed: mouse => {
                                 if (mouse.button === Qt.RightButton) {
-                                    root._selected = modelData
-                                    root.layerSelected(modelData)
+                                    bin._selected = modelData
+                                    bin.layerSelected(modelData)
                                     assetContextMenu.asset = modelData
                                     assetContextMenu.popup(assetMouse, mouse.x, mouse.y)
                                 }
@@ -120,27 +127,31 @@ Rectangle {
                     }
                 }
 
-                Item { Layout.fillHeight: true }
-            }
-        }
-    }
+                Item {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    Layout.minimumHeight: 50
 
-    MouseArea {
-        anchors.fill: parent
-        acceptedButtons: Qt.RightButton
-        onPressed: function(m) {
-            if (!root.project) return;
-            contextMenu.popup(m.x, m.y);
+                    MouseArea {
+                        anchors.fill: parent
+                        acceptedButtons: Qt.RightButton
+                        onPressed: function(m) {
+                            if (!bin.project) return;
+                            contextMenu.popup(m.x, m.y);
+                        }
+                    }
+                }
+            }
         }
     }
 
     Menu {
         id: contextMenu
-        MenuItem { text: qsTr("Add Rectangle"); onTriggered: root.createRectLayer() }
-        MenuItem { text: qsTr("Add Circle"); onTriggered: root.createCircleLayer() }
-        MenuItem { text: qsTr("Add Triangle"); onTriggered: root.createTriangleLayer() }
+        MenuItem { text: qsTr("Add Rectangle"); onTriggered: bin.createRectLayer() }
+        MenuItem { text: qsTr("Add Circle"); onTriggered: bin.createCircleLayer() }
+        MenuItem { text: qsTr("Add Triangle"); onTriggered: bin.createTriangleLayer() }
         MenuSeparator {}
-        MenuItem { text: qsTr("Add Text"); onTriggered: root.createTextLayer() }
+        MenuItem { text: qsTr("Add Text"); onTriggered: bin.createTextLayer() }
     }
 
     Menu {
@@ -149,21 +160,21 @@ Rectangle {
 
         MenuItem {
             text: qsTr("Add to Track")
-            enabled: root.composition !== null && assetContextMenu.asset !== null
+            enabled: bin.composition !== null && assetContextMenu.asset !== null
             Menu {
                 id: trackSubmenu
                 Instantiator {
-                    model: root.composition && root.composition.tracks ? root.composition.tracks : 0
+                    model: bin.composition && bin.composition.tracks ? bin.composition.tracks : 0
                     delegate: MenuItem {
                         text: modelData?.name ?? "Track " + (index + 1)
                         onTriggered: {
-                            if (assetContextMenu.asset && root.composition) {
+                            if (assetContextMenu.asset && bin.composition) {
                                 var track = modelData;
                                 var clip = assetContextMenu.asset.clone(track);
                                 clip.startFrame = 0;
                                 clip.duration = 90;
                                 track.addClip(clip);
-                                if (root.project) root.project.captureSnapshot();
+                                if (bin.project) bin.project.captureSnapshot();
                             }
                         }
                     }
@@ -174,13 +185,13 @@ Rectangle {
                 MenuItem {
                     text: qsTr("+ New Track")
                     onTriggered: {
-                        if (assetContextMenu.asset && root.composition) {
-                            var track = root.composition.addTrack();
+                        if (assetContextMenu.asset && bin.composition) {
+                            var track = bin.composition.addTrack();
                             var clip = assetContextMenu.asset.clone(track);
                             clip.startFrame = 0;
                             clip.duration = 90;
                             track.addClip(clip);
-                            if (root.project) root.project.captureSnapshot();
+                            if (bin.project) bin.project.captureSnapshot();
                         }
                     }
                 }
@@ -192,11 +203,11 @@ Rectangle {
         MenuItem {
             text: qsTr("Delete Asset")
             onTriggered: {
-                if (assetContextMenu.asset && root.project) {
-                    root.project.removeAsset(assetContextMenu.asset);
-                    if (root._selected === assetContextMenu.asset)
-                        root._selected = null;
-                    if (root.project) root.project.captureSnapshot();
+                if (assetContextMenu.asset && bin.project) {
+                    bin.project.removeAsset(assetContextMenu.asset);
+                    if (bin._selected === assetContextMenu.asset)
+                        bin._selected = null;
+                    if (bin.project) bin.project.captureSnapshot();
                 }
             }
         }

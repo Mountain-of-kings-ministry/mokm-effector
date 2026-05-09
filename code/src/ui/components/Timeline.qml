@@ -4,11 +4,11 @@ import QtQuick.Layouts
 import mokm_effector
 
 Rectangle {
-    id: root
+    id: timelineControlRoot
     color: Theme.secondary
     clip: true
 
-    property alias timelineModel: controller.timelineModel
+    property var timelineModel: null
     property var selectedLayer: null
     property var project: null
     signal layerSelected(var layer)
@@ -28,36 +28,36 @@ Rectangle {
     property var clipboardData: []
 
     onSelectedLayerChanged: {
-        if (selectedLayer === null)
-            selectedLayers = [];
-        else if (selectedLayers.indexOf(selectedLayer) < 0)
-            selectedLayers = [selectedLayer];
+        if (timelineControlRoot.selectedLayer === null)
+            timelineControlRoot.selectedLayers = [];
+        else if (timelineControlRoot.selectedLayers.indexOf(timelineControlRoot.selectedLayer) < 0)
+            timelineControlRoot.selectedLayers = [timelineControlRoot.selectedLayer];
     }
 
     function selectLayer(layer, addToSelection) {
         if (!layer) return;
         if (addToSelection) {
-            var idx = selectedLayers.indexOf(layer);
+            var idx = timelineControlRoot.selectedLayers.indexOf(layer);
             if (idx >= 0)
-                selectedLayers.splice(idx, 1);
+                timelineControlRoot.selectedLayers.splice(idx, 1);
             else
-                selectedLayers.push(layer);
-            selectedLayers = selectedLayers.slice();
-        } else if (selectedLayers.indexOf(layer) >= 0) {
+                timelineControlRoot.selectedLayers.push(layer);
+            timelineControlRoot.selectedLayers = timelineControlRoot.selectedLayers.slice();
+        } else if (timelineControlRoot.selectedLayers.indexOf(layer) >= 0) {
             // preserve multi-select
         } else {
-            selectedLayers = [layer];
+            timelineControlRoot.selectedLayers = [layer];
         }
-        selectionStamp++;
-        root.layerSelected(selectedLayers.length > 0 ? selectedLayers[0] : null);
-        root.selectionChanged(selectedLayers);
+        timelineControlRoot.selectionStamp++;
+        timelineControlRoot.layerSelected(timelineControlRoot.selectedLayers.length > 0 ? timelineControlRoot.selectedLayers[0] : null);
+        timelineControlRoot.selectionChanged(timelineControlRoot.selectedLayers);
     }
 
     function clearSelection() {
-        selectedLayers = [];
-        selectionStamp++;
-        root.layerSelected(null);
-        root.selectionChanged([]);
+        timelineControlRoot.selectedLayers = [];
+        timelineControlRoot.selectionStamp++;
+        timelineControlRoot.layerSelected(null);
+        timelineControlRoot.selectionChanged([]);
     }
 
     function rectsIntersect(r1, r2) {
@@ -68,8 +68,8 @@ Rectangle {
     function snapFrame(v) { return Math.round(v); }
 
     function findTrackForClip(clip) {
-        if (!controller.timelineModel?.composition) return null;
-        var comp = controller.timelineModel.composition;
+        if (!timelineControlRoot.timelineModel?.composition) return null;
+        var comp = timelineControlRoot.timelineModel.composition;
         for (var ti = 0; ti < comp.trackCount; ti++) {
             var t = comp.trackAt(ti);
             for (var ci = 0; ci < t.clipCount; ci++) {
@@ -79,17 +79,11 @@ Rectangle {
         return null;
     }
 
-    function findClipIndex(clip) {
-        var track = findTrackForClip(clip);
-        if (!track) return -1;
-        return track.indexOf(clip);
-    }
-
     function copySelectedLayers() {
-        clipboardData = [];
-        for (var i = 0; i < selectedLayers.length; i++) {
-            var layer = selectedLayers[i];
-            clipboardData.push({
+        timelineControlRoot.clipboardData = [];
+        for (var i = 0; i < timelineControlRoot.selectedLayers.length; i++) {
+            var layer = timelineControlRoot.selectedLayers[i];
+            timelineControlRoot.clipboardData.push({
                 json: layer.serialize(),
                 startFrame: layer.startFrame,
                 duration: layer.duration
@@ -98,19 +92,19 @@ Rectangle {
     }
 
     function cutSelectedLayers() {
-        copySelectedLayers();
-        deleteSelectedLayers();
+        timelineControlRoot.copySelectedLayers();
+        timelineControlRoot.deleteSelectedLayers();
     }
 
     function pasteClips() {
-        if (clipboardData.length === 0 || !controller.timelineModel?.composition) return;
-        var comp = controller.timelineModel.composition;
+        if (timelineControlRoot.clipboardData.length === 0 || !timelineControlRoot.timelineModel?.composition) return;
+        var comp = timelineControlRoot.timelineModel.composition;
         var targetTrack = comp.trackCount > 0 ? comp.trackAt(0) : comp.addTrack();
         var newSelection = [];
-        var baseFrame = controller.timelineModel?.currentFrame ?? 0;
-        for (var i = 0; i < clipboardData.length; i++) {
-            var data = clipboardData[i];
-            var layer = createLayerFromJson(data.json, targetTrack);
+        var baseFrame = timelineControlRoot.timelineModel?.currentFrame ?? 0;
+        for (var i = 0; i < timelineControlRoot.clipboardData.length; i++) {
+            var data = timelineControlRoot.clipboardData[i];
+            var layer = timelineControlRoot.createLayerFromJson(data.json, targetTrack);
             if (layer) {
                 layer.startFrame = baseFrame + i * 10;
                 layer.duration = data.duration;
@@ -118,30 +112,23 @@ Rectangle {
                 newSelection.push(layer);
             }
         }
-        selectedLayers = newSelection;
-        selectionStamp++;
-        root.layerSelected(selectedLayers.length > 0 ? selectedLayers[0] : null);
-        root.selectionChanged(selectedLayers);
-        if (project) project.captureSnapshot();
+        timelineControlRoot.selectedLayers = newSelection;
+        timelineControlRoot.selectionStamp++;
+        timelineControlRoot.layerSelected(timelineControlRoot.selectedLayers.length > 0 ? timelineControlRoot.selectedLayers[0] : null);
+        timelineControlRoot.selectionChanged(timelineControlRoot.selectedLayers);
+        if (timelineControlRoot.project) timelineControlRoot.project.captureSnapshot();
     }
 
     function duplicateSelectedLayers() {
-        if (selectedLayers.length === 0 || !controller.timelineModel?.composition) return;
-        clipboardData = [];
-        var comp = controller.timelineModel.composition;
+        if (timelineControlRoot.selectedLayers.length === 0 || !timelineControlRoot.timelineModel?.composition) return;
+        var comp = timelineControlRoot.timelineModel.composition;
         var newSelection = [];
-        var baseFrame = (controller.timelineModel?.currentFrame ?? 0) + 10;
-        for (var i = 0; i < selectedLayers.length; i++) {
-            var src = selectedLayers[i];
-            var track = findTrackForClip(src);
+        for (var i = 0; i < timelineControlRoot.selectedLayers.length; i++) {
+            var src = timelineControlRoot.selectedLayers[i];
+            var track = timelineControlRoot.findTrackForClip(src);
             if (!track) continue;
             var jsonStr = src.serialize();
-            clipboardData.push({
-                json: jsonStr,
-                startFrame: src.startFrame,
-                duration: src.duration
-            });
-            var layer = createLayerFromJson(jsonStr, track);
+            var layer = timelineControlRoot.createLayerFromJson(jsonStr, track);
             if (layer) {
                 layer.startFrame = src.startFrame + src.duration + 5;
                 layer.duration = src.duration;
@@ -149,32 +136,32 @@ Rectangle {
                 newSelection.push(layer);
             }
         }
-        selectedLayers = newSelection;
-        selectionStamp++;
-        if (project) project.captureSnapshot();
+        timelineControlRoot.selectedLayers = newSelection;
+        timelineControlRoot.selectionStamp++;
+        if (timelineControlRoot.project) timelineControlRoot.project.captureSnapshot();
     }
 
     function deleteSelectedLayers() {
-        if (selectedLayers.length === 0) return;
-        for (var i = selectedLayers.length - 1; i >= 0; i--) {
-            var track = findTrackForClip(selectedLayers[i]);
-            if (track) track.removeClip(selectedLayers[i]);
+        if (timelineControlRoot.selectedLayers.length === 0) return;
+        for (var i = timelineControlRoot.selectedLayers.length - 1; i >= 0; i--) {
+            var track = timelineControlRoot.findTrackForClip(timelineControlRoot.selectedLayers[i]);
+            if (track) track.removeClip(timelineControlRoot.selectedLayers[i]);
         }
-        selectedLayers = [];
-        selectionStamp++;
-        root.layerSelected(null);
-        if (project) project.captureSnapshot();
+        timelineControlRoot.selectedLayers = [];
+        timelineControlRoot.selectionStamp++;
+        timelineControlRoot.layerSelected(null);
+        if (timelineControlRoot.project) timelineControlRoot.project.captureSnapshot();
     }
 
     function splitAtPlayhead() {
-        if (selectedLayers.length !== 1 || !controller.timelineModel) return;
-        var layer = selectedLayers[0];
-        var cutFrame = controller.timelineModel.currentFrame;
+        if (timelineControlRoot.selectedLayers.length !== 1 || !timelineControlRoot.timelineModel) return;
+        var layer = timelineControlRoot.selectedLayers[0];
+        var cutFrame = timelineControlRoot.timelineModel.currentFrame;
         if (cutFrame <= layer.startFrame || cutFrame >= layer.startFrame + layer.duration) return;
-        var track = findTrackForClip(layer);
+        var track = timelineControlRoot.findTrackForClip(layer);
         if (!track) return;
         var jsonStr = layer.serialize();
-        var newLayer = createLayerFromJson(jsonStr, track);
+        var newLayer = timelineControlRoot.createLayerFromJson(jsonStr, track);
         if (newLayer) {
             var splitPoint = cutFrame;
             var originalEnd = layer.startFrame + layer.duration;
@@ -182,30 +169,11 @@ Rectangle {
             newLayer.startFrame = splitPoint;
             newLayer.duration = originalEnd - splitPoint;
             track.addClip(newLayer);
-            if (project) project.captureSnapshot();
-        }
-    }
-
-    function bladeAtFrame(frame) {
-        if (selectedLayers.length !== 1) return;
-        var layer = selectedLayers[0];
-        if (frame <= layer.startFrame || frame >= layer.startFrame + layer.duration) return;
-        var track = findTrackForClip(layer);
-        if (!track) return;
-        var jsonStr = layer.serialize();
-        var newLayer = createLayerFromJson(jsonStr, track);
-        if (newLayer) {
-            var originalEnd = layer.startFrame + layer.duration;
-            layer.duration = frame - layer.startFrame;
-            newLayer.startFrame = frame;
-            newLayer.duration = originalEnd - frame;
-            track.addClip(newLayer);
-            if (project) project.captureSnapshot();
+            if (timelineControlRoot.project) timelineControlRoot.project.captureSnapshot();
         }
     }
 
     function createLayerFromJson(jsonStr, parent) {
-        // Deserialize from JSON string using the C++ serialize/deserialize mechanism
         var temp;
         var obj = JSON.parse(jsonStr);
         if (obj.type === "shape")
@@ -214,7 +182,6 @@ Rectangle {
             temp = textComponent.createObject(parent, {});
         else
             return null;
-        // QJsonDocument -> QJsonObject conversion happens at C++ level
         temp.deserialize(jsonStr);
         return temp;
     }
@@ -223,7 +190,7 @@ Rectangle {
     property Component textComponent: TextLayer {}
 
     function globalColorIndex(layer) {
-        var comp = controller.timelineModel ? controller.timelineModel.composition : null;
+        var comp = timelineControlRoot.timelineModel ? timelineControlRoot.timelineModel.composition : null;
         if (!comp) return 0;
         var idx = 0;
         for (var ti = 0; ti < comp.trackCount; ti++) {
@@ -235,13 +202,6 @@ Rectangle {
         }
         return 0;
     }
-
-    Item {
-        id: controller
-        property var timelineModel: null
-    }
-
-    function debug(msg) { console.log("[Timeline]", msg); }
 
     ColumnLayout {
         anchors.fill: parent
@@ -256,7 +216,7 @@ Rectangle {
                 anchors.fill: parent
                 spacing: 0
                 Item {
-                    Layout.preferredWidth: root.layerNameWidth
+                    Layout.preferredWidth: timelineControlRoot.layerNameWidth
                     Layout.fillHeight: true
                     Text {
                         anchors.left: parent.left
@@ -269,74 +229,89 @@ Rectangle {
                 }
                 TimeRuler {
                     Layout.fillWidth: true
-                    timelineModel: controller.timelineModel
-                    pixelPerFrame: root.pixelPerFrame
+                    timelineModel: timelineControlRoot.timelineModel
+                    pixelPerFrame: timelineControlRoot.pixelPerFrame
                 }
             }
         }
 
         ScrollView {
+            id: timelineScrollView
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
 
             RowLayout {
-                width: parent.width
+                id: timelineContent
+                width: Math.max(timelineScrollView.availableWidth, (timelineControlRoot.timelineModel?.composition?.duration ?? 0) * timelineControlRoot.pixelPerFrame + timelineControlRoot.layerNameWidth)
+                height: Math.max(trackColumn.implicitHeight, timelineScrollView.availableHeight)
                 spacing: 0
 
                 // Track names column
                 Item {
                     id: trackNamesColumn
-                    Layout.preferredWidth: root.layerNameWidth
+                    Layout.preferredWidth: timelineControlRoot.layerNameWidth
                     Layout.fillHeight: true
 
                     function computeTrackY(trackIndex) {
-                        var comp = controller.timelineModel ? controller.timelineModel.composition : null;
+                        var comp = timelineControlRoot.timelineModel ? timelineControlRoot.timelineModel.composition : null;
                         if (!comp) return 0;
                         var y = 0;
-                        for (var ti = 0; ti < trackIndex; ti++)
-                            y += root.trackHeaderHeight + comp.trackAt(ti).clipCount * root.stripRowHeight;
+                        for (var ti = 0; ti < trackIndex; ti++) {
+                            var t = comp.trackAt(ti);
+                            y += timelineControlRoot.trackHeaderHeight + Math.max(1, t.clipCount) * timelineControlRoot.stripRowHeight;
+                        }
                         return y;
                     }
 
                     Repeater {
-                        model: controller.timelineModel && controller.timelineModel.composition ? controller.timelineModel.composition.tracks : 0
+                        id: trackNamesRepeater
+                        model: timelineControlRoot.timelineModel && timelineControlRoot.timelineModel.composition ? timelineControlRoot.timelineModel.composition.tracks : 0
+                        
                         delegate: Rectangle {
                             y: trackNamesColumn.computeTrackY(index)
-                            width: parent.width
-                            height: root.trackHeaderHeight
-                            color: Theme.secondaryHover
+                            width: timelineControlRoot.layerNameWidth
+                            height: timelineControlRoot.trackHeaderHeight + Math.max(1, modelData?.clipCount ?? 0) * timelineControlRoot.stripRowHeight
+                            color: "transparent"
 
-                            RowLayout {
-                                anchors.fill: parent
-                                anchors.leftMargin: 8
-                                anchors.rightMargin: 4
-                                Text {
-                                    text: modelData?.name ?? "Track"
-                                    color: Theme.foreground
-                                    font.pixelSize: 11
-                                    font.bold: true
-                                    Layout.fillWidth: true
-                                    elide: Text.ElideRight
-                                }
-                                Rectangle {
-                                    width: 14
-                                    height: 14
-                                    radius: 3
-                                    color: Theme.muted
+                            Rectangle {
+                                width: parent.width
+                                height: timelineControlRoot.trackHeaderHeight
+                                color: Theme.secondaryHover
+                                border.color: Theme.border
+                                border.width: 1
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 8
+                                    anchors.rightMargin: 4
                                     Text {
-                                        anchors.centerIn: parent
-                                        text: "+"
+                                        text: modelData?.name ?? "Track"
                                         color: Theme.foreground
-                                        font.pixelSize: 10
+                                        font.pixelSize: 11
+                                        font.bold: true
+                                        Layout.fillWidth: true
+                                        elide: Text.ElideRight
                                     }
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: {
-                                            if (controller.timelineModel?.composition) {
-                                                controller.timelineModel.composition.addTrack();
-                                                if (root.project) root.project.captureSnapshot();
+                                    Rectangle {
+                                        width: 14
+                                        height: 14
+                                        radius: 3
+                                        color: Theme.muted
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: "+"
+                                            color: Theme.foreground
+                                            font.pixelSize: 10
+                                        }
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: {
+                                                if (timelineControlRoot.timelineModel?.composition) {
+                                                    timelineControlRoot.timelineModel.composition.addTrack();
+                                                    if (timelineControlRoot.project) timelineControlRoot.project.captureSnapshot();
+                                                }
                                             }
                                         }
                                     }
@@ -355,27 +330,26 @@ Rectangle {
 
                     Column {
                         id: trackColumn
-                        anchors.fill: parent
+                        width: parent.width
                         spacing: 0
 
                         Repeater {
-                            model: controller.timelineModel && controller.timelineModel.composition ? controller.timelineModel.composition.tracks : 0
+                            id: trackRowsRepeater
+                            model: timelineControlRoot.timelineModel && timelineControlRoot.timelineModel.composition ? timelineControlRoot.timelineModel.composition.tracks : 0
 
                             delegate: Item {
                                 id: trackRow
                                 width: stripArea.width
-                                height: root.trackHeaderHeight + root.stripRowHeight * Math.max(1, modelData && modelData.clipCount ? modelData.clipCount : 1)
+                                height: timelineControlRoot.trackHeaderHeight + timelineControlRoot.stripRowHeight * Math.max(1, modelData && modelData.clipCount ? modelData.clipCount : 1)
 
                                 property var trackObj: modelData
 
-                                // Empty space fill
                                 Rectangle {
-                                    y: root.trackHeaderHeight
+                                    y: timelineControlRoot.trackHeaderHeight
                                     width: parent.width
-                                    height: parent.height - root.trackHeaderHeight
+                                    height: parent.height - timelineControlRoot.trackHeaderHeight
                                     color: Qt.alpha(Theme.secondaryHover, 0.08)
 
-                                    // Right-click on empty track space
                                     MouseArea {
                                         anchors.fill: parent
                                         acceptedButtons: Qt.RightButton
@@ -385,39 +359,46 @@ Rectangle {
                                         }
                                     }
                                 }
+                                
+                                Rectangle {
+                                    width: parent.width
+                                    height: 1
+                                    color: Theme.border
+                                    opacity: 0.5
+                                }
 
-                                // Clips
                                 Repeater {
+                                    id: clipsRepeater
                                     model: trackRow.trackObj && trackRow.trackObj.clips ? trackRow.trackObj.clips : 0
 
                                     delegate: Item {
                                         id: stripRow
-                                        y: root.trackHeaderHeight + index * root.stripRowHeight
-                                        height: root.stripRowHeight
+                                        y: timelineControlRoot.trackHeaderHeight + index * timelineControlRoot.stripRowHeight
+                                        height: timelineControlRoot.stripRowHeight
                                         width: stripArea.width
 
                                         property var layerObj: modelData
-                                        property real visualStart: layerObj ? layerObj.startFrame * root.pixelPerFrame : 0
-                                        property real visualDuration: layerObj ? Math.max(40, layerObj.duration * root.pixelPerFrame) : 100
+                                        property real visualStart: 0
+                                        property real visualDuration: 100
                                         property bool isDragging: false
-                                        property int globalIdx: root.globalColorIndex(layerObj)
+                                        property int globalIdx: timelineControlRoot.globalColorIndex(layerObj)
+
+                                        Component.onCompleted: resetFromModel()
+                                        
+                                        function resetFromModel() {
+                                            if (!layerObj) return;
+                                            visualStart = layerObj.startFrame * timelineControlRoot.pixelPerFrame;
+                                            visualDuration = Math.max(40, layerObj.duration * timelineControlRoot.pixelPerFrame);
+                                        }
 
                                         Connections {
                                             target: layerObj
                                             function onStartFrameChanged() {
-                                                if (!stripRow.isDragging)
-                                                    stripRow.visualStart = stripRow.layerObj.startFrame * root.pixelPerFrame;
+                                                if (!stripRow.isDragging) resetFromModel();
                                             }
                                             function onDurationChanged() {
-                                                if (!stripRow.isDragging)
-                                                    stripRow.visualDuration = Math.max(40, stripRow.layerObj.duration * root.pixelPerFrame);
+                                                if (!stripRow.isDragging) resetFromModel();
                                             }
-                                        }
-
-                                        Component.onCompleted: {
-                                            if (!layerObj) return;
-                                            visualStart = layerObj.startFrame * root.pixelPerFrame;
-                                            visualDuration = Math.max(40, layerObj.duration * root.pixelPerFrame);
                                         }
 
                                         Rectangle {
@@ -427,11 +408,12 @@ Rectangle {
                                             width: stripRow.visualDuration
                                             height: 20
                                             radius: 4
-                                            color: Qt.alpha(root.stripColors[stripRow.globalIdx % root.stripColors.length], 0.65)
-                                            border.color: { root.selectionStamp; return root.selectedLayers.indexOf(stripRow.layerObj) >= 0 ? Theme.selected : Qt.lighter(color, 1.4); }
-                                            border.width: { root.selectionStamp; return root.selectedLayers.indexOf(stripRow.layerObj) >= 0 ? 2 : 1; }
+                                            color: Qt.alpha(timelineControlRoot.stripColors[stripRow.globalIdx % timelineControlRoot.stripColors.length], 0.65)
+                                            border.color: { timelineControlRoot.selectionStamp; return timelineControlRoot.selectedLayers.indexOf(stripRow.layerObj) >= 0 ? Theme.selected : Qt.lighter(color, 1.4); }
+                                            border.width: { timelineControlRoot.selectionStamp; return timelineControlRoot.selectedLayers.indexOf(stripRow.layerObj) >= 0 ? 2 : 1; }
                                             z: stripRow.isDragging ? 10 : 0
 
+                                            // LEFT EDGE
                                             Rectangle {
                                                 id: leftEdge
                                                 width: 6
@@ -442,6 +424,7 @@ Rectangle {
                                                 radius: 4
                                             }
 
+                                            // RIGHT EDGE
                                             Rectangle {
                                                 id: rightEdge
                                                 width: 6
@@ -462,7 +445,6 @@ Rectangle {
                                                 hoverEnabled: true
                                                 preventStealing: true
                                                 z: 5
-
                                                 property real startMouseX: 0
                                                 property real startVisualStart: 0
                                                 property real startVisualDuration: 0
@@ -472,7 +454,7 @@ Rectangle {
                                                     startMouseX = mapToItem(stripArea, mouse.x, 0).x;
                                                     startVisualStart = stripRow.visualStart;
                                                     startVisualDuration = stripRow.visualDuration;
-                                                    root.selectLayer(stripRow.layerObj, false);
+                                                    timelineControlRoot.selectLayer(stripRow.layerObj, false);
                                                 }
                                                 onPositionChanged: mouse => {
                                                     if (!pressed) return;
@@ -485,65 +467,7 @@ Rectangle {
                                                 }
                                                 onReleased: {
                                                     stripRow.isDragging = false;
-                                                    commitChanges();
-                                                }
-                                            }
-
-                                            // MAIN DRAG
-                                            MouseArea {
-                                                anchors.fill: parent
-                                                anchors.leftMargin: 12
-                                                anchors.rightMargin: 12
-                                                cursorShape: dragStarted ? Qt.ClosedHandCursor : Qt.ArrowCursor
-                                                preventStealing: true
-
-                                                property real startMouseX: 0
-                                                property real startVisualStart: 0
-                                                property bool dragStarted: false
-                                                property point pressPos: Qt.point(0,0)
-                                                readonly property int dragThreshold: 4
-                                                property var dragData: []
-
-                                                onPressed: mouse => {
-                                                    pressPos = Qt.point(mouse.x, mouse.y);
-                                                    dragStarted = false;
-                                                    dragData = [];
-                                                    root.selectLayer(stripRow.layerObj, mouse.modifiers & Qt.ShiftModifier);
-                                                    for (var di = 0; di < root.selectedLayers.length; di++)
-                                                        dragData.push({layer: root.selectedLayers[di], initialStartFrame: root.selectedLayers[di].startFrame});
-                                                }
-                                                onPositionChanged: mouse => {
-                                                    if (!pressed) return;
-                                                    if (!dragStarted) {
-                                                        if (Math.abs(mouse.x - pressPos.x) < dragThreshold && Math.abs(mouse.y - pressPos.y) < dragThreshold)
-                                                            return;
-                                                        dragStarted = true;
-                                                        stripRow.isDragging = true;
-                                                        startMouseX = mapToItem(stripArea, mouse.x, 0).x;
-                                                        startVisualStart = stripRow.visualStart;
-                                                    }
-                                                    let mx = mapToItem(stripArea, mouse.x, 0).x;
-                                                    let frameDelta = (mx - startMouseX) / root.pixelPerFrame;
-                                                    for (var di = 0; di < dragData.length; di++) {
-                                                        var d = dragData[di];
-                                                        var newFrame = Math.max(0, Math.round(d.initialStartFrame + frameDelta));
-                                                        if (d.layer === stripRow.layerObj) {
-                                                            stripRow.visualStart = newFrame * root.pixelPerFrame;
-                                                        } else {
-                                                            d.layer.startFrame = newFrame;
-                                                        }
-                                                    }
-                                                }
-                                                onReleased: {
-                                                    if (dragStarted) {
-                                                        stripRow.isDragging = false;
-                                                        if (layerObj) {
-                                                            layerObj.startFrame = root.snapFrame(stripRow.visualStart / root.pixelPerFrame);
-                                                            layerObj.duration = root.snapFrame(stripRow.visualDuration / root.pixelPerFrame);
-                                                        }
-                                                    }
-                                                    dragStarted = false;
-                                                    dragData = [];
+                                                    stripRow.commitChanges();
                                                 }
                                             }
 
@@ -557,7 +481,6 @@ Rectangle {
                                                 hoverEnabled: true
                                                 preventStealing: true
                                                 z: 5
-
                                                 property real startMouseX: 0
                                                 property real startVisualDuration: 0
 
@@ -565,7 +488,7 @@ Rectangle {
                                                     stripRow.isDragging = true;
                                                     startMouseX = mapToItem(stripArea, mouse.x, 0).x;
                                                     startVisualDuration = stripRow.visualDuration;
-                                                    root.selectLayer(stripRow.layerObj, false);
+                                                    timelineControlRoot.selectLayer(stripRow.layerObj, false);
                                                 }
                                                 onPositionChanged: mouse => {
                                                     if (!pressed) return;
@@ -575,49 +498,94 @@ Rectangle {
                                                 }
                                                 onReleased: {
                                                     stripRow.isDragging = false;
-                                                    commitChanges();
+                                                    stripRow.commitChanges();
                                                 }
                                             }
 
-                                            // Context menu area on strip
+                                            // MAIN DRAG / CONTEXT MENU
                                             MouseArea {
                                                 anchors.fill: parent
-                                                acceptedButtons: Qt.RightButton
-                                                preventStealing: false
-                                                z: 6
-                                                onClicked: mouse => {
-                                                    root.selectLayer(stripRow.layerObj, mouse.modifiers & Qt.ShiftModifier);
-                                                    stripContextMenu.stripLayer = stripRow.layerObj;
-                                                    stripContextMenu.popup(mouse.x, mouse.y);
+                                                anchors.leftMargin: 12
+                                                anchors.rightMargin: 12
+                                                cursorShape: dragStarted ? Qt.ClosedHandCursor : Qt.ArrowCursor
+                                                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                                                preventStealing: true
+
+                                                property real startMouseX: 0
+                                                property real startVisualStart: 0
+                                                property bool dragStarted: false
+                                                property point pressPos: Qt.point(0,0)
+                                                readonly property int dragThreshold: 4
+                                                property var dragData: []
+
+                                                onPressed: mouse => {
+                                                    if (mouse.button === Qt.RightButton) {
+                                                        timelineControlRoot.selectLayer(stripRow.layerObj, mouse.modifiers & Qt.ShiftModifier);
+                                                        stripContextMenu.stripLayer = stripRow.layerObj;
+                                                        stripContextMenu.popup(mouse.x, mouse.y);
+                                                        return;
+                                                    }
+                                                    pressPos = Qt.point(mouse.x, mouse.y);
+                                                    dragStarted = false;
+                                                    dragData = [];
+                                                    timelineControlRoot.selectLayer(stripRow.layerObj, mouse.modifiers & Qt.ShiftModifier);
+                                                    for (var di = 0; di < timelineControlRoot.selectedLayers.length; di++)
+                                                        dragData.push({layer: timelineControlRoot.selectedLayers[di], initialStartFrame: timelineControlRoot.selectedLayers[di].startFrame});
+                                                }
+                                                onPositionChanged: mouse => {
+                                                    if (!pressed || mouse.button === Qt.RightButton) return;
+                                                    if (!dragStarted) {
+                                                        if (Math.abs(mouse.x - pressPos.x) < dragThreshold && Math.abs(mouse.y - pressPos.y) < dragThreshold)
+                                                            return;
+                                                        dragStarted = true;
+                                                        stripRow.isDragging = true;
+                                                        startMouseX = mapToItem(stripArea, mouse.x, 0).x;
+                                                        startVisualStart = stripRow.visualStart;
+                                                    }
+                                                    let mx = mapToItem(stripArea, mouse.x, 0).x;
+                                                    let frameDelta = (mx - startMouseX) / timelineControlRoot.pixelPerFrame;
+                                                    for (var di = 0; di < dragData.length; di++) {
+                                                        var d = dragData[di];
+                                                        var newFrame = Math.max(0, Math.round(d.initialStartFrame + frameDelta));
+                                                        if (d.layer === stripRow.layerObj) {
+                                                            stripRow.visualStart = newFrame * timelineControlRoot.pixelPerFrame;
+                                                        } else {
+                                                            d.layer.startFrame = newFrame;
+                                                        }
+                                                    }
+                                                }
+                                                onReleased: {
+                                                    if (dragStarted) {
+                                                        stripRow.isDragging = false;
+                                                        if (layerObj) {
+                                                            layerObj.startFrame = timelineControlRoot.snapFrame(stripRow.visualStart / timelineControlRoot.pixelPerFrame);
+                                                            layerObj.duration = timelineControlRoot.snapFrame(stripRow.visualDuration / timelineControlRoot.pixelPerFrame);
+                                                        }
+                                                    }
+                                                    dragStarted = false;
+                                                    dragData = [];
                                                 }
                                             }
-                                        }
 
-                                        // Label
-                                        Text {
-                                            x: stripRow.visualStart + 6
-                                            y: 5
-                                            text: stripRow.layerObj?.name ?? ""
-                                            color: "#ffffff"
-                                            font.pixelSize: 10
-                                            elide: Text.ElideRight
-                                            width: stripRow.visualDuration - 12
-                                            clip: true
+                                            Text {
+                                                anchors.fill: parent
+                                                anchors.leftMargin: 14
+                                                anchors.rightMargin: 14
+                                                text: stripRow.layerObj?.name ?? ""
+                                                color: "#ffffff"
+                                                font.pixelSize: 10
+                                                elide: Text.ElideRight
+                                                verticalAlignment: Text.AlignVCenter
+                                            }
                                         }
 
                                         function commitChanges() {
                                             if (!layerObj) return;
-                                            layerObj.startFrame = root.snapFrame(visualStart / root.pixelPerFrame);
-                                            layerObj.duration = root.snapFrame(visualDuration / root.pixelPerFrame);
+                                            layerObj.startFrame = timelineControlRoot.snapFrame(visualStart / timelineControlRoot.pixelPerFrame);
+                                            layerObj.duration = timelineControlRoot.snapFrame(visualDuration / timelineControlRoot.pixelPerFrame);
+                                            Qt.callLater(resetFromModel);
                                         }
                                     }
-                                }
-
-                                // Track drop area for inter-track moves
-                                MouseArea {
-                                    anchors.fill: parent
-                                    acceptedButtons: Qt.LeftButton
-                                    z: -1
                                 }
                             }
                         }
@@ -625,7 +593,7 @@ Rectangle {
 
                     // ── Global playhead ──
                     Rectangle {
-                        x: (controller.timelineModel ? controller.timelineModel.currentFrame : 0) * root.pixelPerFrame
+                        x: (timelineControlRoot.timelineModel ? timelineControlRoot.timelineModel.currentFrame : 0) * timelineControlRoot.pixelPerFrame
                         width: 2
                         height: parent.height
                         color: Theme.accent
@@ -656,29 +624,28 @@ Rectangle {
                         }
 
                         function getClipY(trackIndex, clipIndex) {
-                            var comp = controller.timelineModel ? controller.timelineModel.composition : null;
+                            var comp = timelineControlRoot.timelineModel ? timelineControlRoot.timelineModel.composition : null;
                             if (!comp) return 0;
                             var y = 0;
                             for (var ti = 0; ti < trackIndex; ti++) {
-                                y += root.trackHeaderHeight;
-                                y += comp.trackAt(ti).clipCount * root.stripRowHeight;
+                                var t = comp.trackAt(ti);
+                                y += timelineControlRoot.trackHeaderHeight + Math.max(1, t.clipCount) * timelineControlRoot.stripRowHeight;
                             }
-                            y += root.trackHeaderHeight;
-                            y += clipIndex * root.stripRowHeight;
+                            y += timelineControlRoot.trackHeaderHeight + clipIndex * timelineControlRoot.stripRowHeight;
                             return y;
                         }
 
                         function hitTestStripBars(mx, my) {
-                            var comp = controller.timelineModel ? controller.timelineModel.composition : null;
+                            var comp = timelineControlRoot.timelineModel ? timelineControlRoot.timelineModel.composition : null;
                             if (!comp) return false;
                             for (var ti = 0; ti < comp.trackCount; ti++) {
                                 var track = comp.trackAt(ti);
                                 for (var ci = 0; ci < track.clipCount; ci++) {
                                     var layer = track.clipAt(ci);
                                     if (!layer) continue;
-                                    var barX = layer.startFrame * root.pixelPerFrame;
+                                    var barX = layer.startFrame * timelineControlRoot.pixelPerFrame;
                                     var barY = getClipY(ti, ci) + 4;
-                                    if (mx >= barX && mx <= barX + layer.duration * root.pixelPerFrame &&
+                                    if (mx >= barX && mx <= barX + layer.duration * timelineControlRoot.pixelPerFrame &&
                                         my >= barY && my <= barY + 20)
                                         return true;
                                 }
@@ -709,8 +676,8 @@ Rectangle {
                                     Math.abs(mouse.x - startPos.x),
                                     Math.abs(mouse.y - startPos.y)
                                 );
-                                selectedLayers = [];
-                                var comp = controller.timelineModel?.composition;
+                                var newSelection = [];
+                                var comp = timelineControlRoot.timelineModel?.composition;
                                 if (comp) {
                                     for (var ti = 0; ti < comp.trackCount; ti++) {
                                         var track = comp.trackAt(ti);
@@ -718,18 +685,18 @@ Rectangle {
                                             var layer = track.clipAt(ci);
                                             if (!layer) continue;
                                             var stripY = getClipY(ti, ci);
-                                            var stripX = layer.startFrame * root.pixelPerFrame;
-                                            if (root.rectsIntersect(selRect, Qt.rect(stripX, stripY, layer.duration * root.pixelPerFrame, root.stripRowHeight)))
-                                                selectedLayers.push(layer);
+                                            var stripX = layer.startFrame * timelineControlRoot.pixelPerFrame;
+                                            if (timelineControlRoot.rectsIntersect(selRect, Qt.rect(stripX, stripY, layer.duration * timelineControlRoot.pixelPerFrame, timelineControlRoot.stripRowHeight)))
+                                                newSelection.push(layer);
                                         }
                                     }
                                 }
-                                selectedLayers = selectedLayers.slice();
-                                selectionStamp++;
-                                root.layerSelected(selectedLayers.length > 0 ? selectedLayers[0] : null);
-                                root.selectionChanged(selectedLayers);
-                            } else if (!mouse.modifiers) {
-                                root.clearSelection();
+                                timelineControlRoot.selectedLayers = newSelection;
+                                timelineControlRoot.selectionStamp++;
+                                timelineControlRoot.layerSelected(timelineControlRoot.selectedLayers.length > 0 ? timelineControlRoot.selectedLayers[0] : null);
+                                timelineControlRoot.selectionChanged(timelineControlRoot.selectedLayers);
+                            } else if (!(mouse.modifiers & Qt.ShiftModifier)) {
+                                timelineControlRoot.clearSelection();
                             }
                             selecting = false;
                         }
@@ -748,8 +715,8 @@ Rectangle {
             text: qsTr("Cut")
             onTriggered: {
                 if (stripContextMenu.stripLayer) {
-                    root.selectLayer(stripContextMenu.stripLayer, false);
-                    root.cutSelectedLayers();
+                    timelineControlRoot.selectLayer(stripContextMenu.stripLayer, false);
+                    timelineControlRoot.cutSelectedLayers();
                 }
             }
         }
@@ -757,22 +724,22 @@ Rectangle {
             text: qsTr("Copy")
             onTriggered: {
                 if (stripContextMenu.stripLayer) {
-                    root.selectLayer(stripContextMenu.stripLayer, false);
-                    root.copySelectedLayers();
+                    timelineControlRoot.selectLayer(stripContextMenu.stripLayer, false);
+                    timelineControlRoot.copySelectedLayers();
                 }
             }
         }
         MenuItem {
             text: qsTr("Paste")
-            enabled: root.clipboardData.length > 0
-            onTriggered: root.pasteClips()
+            enabled: timelineControlRoot.clipboardData.length > 0
+            onTriggered: timelineControlRoot.pasteClips()
         }
         MenuItem {
             text: qsTr("Duplicate")
             onTriggered: {
                 if (stripContextMenu.stripLayer) {
-                    root.selectLayer(stripContextMenu.stripLayer, false);
-                    root.duplicateSelectedLayers();
+                    timelineControlRoot.selectLayer(stripContextMenu.stripLayer, false);
+                    timelineControlRoot.duplicateSelectedLayers();
                 }
             }
         }
@@ -781,34 +748,33 @@ Rectangle {
             text: qsTr("Split At Playhead")
             onTriggered: {
                 if (stripContextMenu.stripLayer) {
-                    root.selectLayer(stripContextMenu.stripLayer, false);
-                    root.splitAtPlayhead();
+                    timelineControlRoot.selectLayer(stripContextMenu.stripLayer, false);
+                    timelineControlRoot.splitAtPlayhead();
                 }
             }
         }
         MenuItem {
             text: qsTr("Clear Selection")
-            onTriggered: root.clearSelection()
+            onTriggered: timelineControlRoot.clearSelection()
         }
         MenuSeparator {}
-                MenuItem {
-                    text: qsTr("Move to Track")
-                    enabled: stripContextMenu.stripLayer !== null
-                    Menu {
-                        id: moveTrackMenu
-                        Instantiator {
-                            model: controller.timelineModel && controller.timelineModel.composition ? controller.timelineModel.composition.tracks : 0
+        MenuItem {
+            text: qsTr("Move to Track")
+            enabled: stripContextMenu.stripLayer !== null
+            Menu {
+                id: moveTrackMenu
+                Instantiator {
+                    model: timelineControlRoot.timelineModel && timelineControlRoot.timelineModel.composition ? timelineControlRoot.timelineModel.composition.tracks : 0
                     delegate: MenuItem {
                         text: modelData?.name ?? "Track " + (index + 1)
-                        enabled: modelData !== root.findTrackForClip(stripContextMenu.stripLayer)
+                        enabled: modelData !== timelineControlRoot.findTrackForClip(stripContextMenu.stripLayer)
                         onTriggered: {
                             var layer = stripContextMenu.stripLayer;
-                            var srcTrack = root.findTrackForClip(layer);
+                            var srcTrack = timelineControlRoot.findTrackForClip(layer);
                             if (srcTrack && modelData && modelData !== srcTrack) {
-                                // Remove from source, add to target
                                 srcTrack.removeClip(layer);
                                 modelData.addClip(layer);
-                                if (root.project) root.project.captureSnapshot();
+                                if (timelineControlRoot.project) timelineControlRoot.project.captureSnapshot();
                             }
                         }
                     }
@@ -820,12 +786,12 @@ Rectangle {
                     text: qsTr("+ New Track")
                     onTriggered: {
                         var layer = stripContextMenu.stripLayer;
-                        var srcTrack = root.findTrackForClip(layer);
-                        if (srcTrack && controller.timelineModel?.composition) {
-                            var newTrack = controller.timelineModel.composition.addTrack();
+                        var srcTrack = timelineControlRoot.findTrackForClip(layer);
+                        if (srcTrack && timelineControlRoot.timelineModel?.composition) {
+                            var newTrack = timelineControlRoot.timelineModel.composition.addTrack();
                             srcTrack.removeClip(layer);
                             newTrack.addClip(layer);
-                            if (root.project) root.project.captureSnapshot();
+                            if (timelineControlRoot.project) timelineControlRoot.project.captureSnapshot();
                         }
                     }
                 }
@@ -836,8 +802,8 @@ Rectangle {
             text: qsTr("Delete")
             onTriggered: {
                 if (stripContextMenu.stripLayer) {
-                    root.selectLayer(stripContextMenu.stripLayer, false);
-                    root.deleteSelectedLayers();
+                    timelineControlRoot.selectLayer(stripContextMenu.stripLayer, false);
+                    timelineControlRoot.deleteSelectedLayers();
                 }
             }
         }
@@ -847,14 +813,14 @@ Rectangle {
     Menu {
         id: emptyMenu
         property var track: null
-        MenuItem { text: qsTr("Paste"); enabled: root.clipboardData.length > 0; onTriggered: root.pasteClips() }
+        MenuItem { text: qsTr("Paste"); enabled: timelineControlRoot.clipboardData.length > 0; onTriggered: timelineControlRoot.pasteClips() }
         MenuSeparator {}
         MenuItem {
             text: qsTr("Add Track")
             onTriggered: {
-                if (controller.timelineModel?.composition) {
-                    controller.timelineModel.composition.addTrack();
-                    if (root.project) root.project.captureSnapshot();
+                if (timelineControlRoot.timelineModel?.composition) {
+                    timelineControlRoot.timelineModel.composition.addTrack();
+                    if (timelineControlRoot.project) timelineControlRoot.project.captureSnapshot();
                 }
             }
         }
@@ -864,8 +830,8 @@ Rectangle {
     Item {
         anchors.fill: parent
         focus: true
-        Keys.onDeletePressed: root.deleteSelectedLayers()
-        Keys.onEscapePressed: root.clearSelection()
+        Keys.onDeletePressed: timelineControlRoot.deleteSelectedLayers()
+        Keys.onEscapePressed: timelineControlRoot.clearSelection()
         Keys.onShortcutOverride: event.accepted = true
     }
 }

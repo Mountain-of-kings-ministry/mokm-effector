@@ -1,63 +1,13 @@
-Here's my comprehensive Phase 1 plan. Let me lay it out before creating the tracking file.
-
----
-
-## Phase 1 — Core Foundation (MVP) Plan
-
-Based on `Project_details.md` requirements + your layout spec, here's the breakdown:
-
-### UI Layout
-```
-ColumnLayout {
-    RowLayout {
-        ProjectBin (panel) | Viewport (ThorVG canvas) | Properties (panel)
-    }
-    ColumnLayout {
-        Toolbar
-        Timeline (layer list + time ruler + keyframes)
-    }
+layer 1 -> {
+    [add support to drag one strip from one trak to another in same layer since thats what have been implimented]
+    track 1 : strip1 strip2
+    track 2 :      strip3 strip4
 }
-```
 
-### New C++ Classes Needed
-| Class | Location | Purpose |
-|---|---|---|
-| `Project` | `src/core/Project.h/.cpp` | Document model: metadata, composition list, frame rate, resolution |
-| `Composition` | `src/core/Composition.h/.cpp` | Holds layers, duration, dimensions |
-| `Layer` | `src/core/Layer.h/.cpp` | Base layer (name, enabled, transform, opacity) |
-| `ShapeLayer` | `src/core/ShapeLayer.h/.cpp` | Rectangle / Ellipse / Circle shape layer |
-| `TextLayer` | `src/core/TextLayer.h/.cpp` | Text layer with font, content, size |
-| `Keyframe` | `src/core/Keyframe.h/.cpp` | Keyframe data structure (time, value, easing) |
-| `ThorVGViewport` | `src/viewport/ThorVGViewport.h/.cpp` | QQuickPaintedItem that renders layers via ThorVG |
-| `TimelineModel` | `src/timeline/TimelineModel.h/.cpp` | Data model for timeline (layers, keyframes, playhead) |
-| `ExportController` | `src/core/ExportController.h/.cpp` | FFmpeg-based frame export |
+when spliting or duplicating it automatically creates a new track in the layer
 
-### New QML Components Needed
-| File | Purpose |
-|---|---|
-| `src/ui/Main.qml` | **Rewritten** — full layout with panels |
-| `src/ui/components/ProjectBin.qml` | File/asset tree panel |
-| `src/ui/components/ViewportItem.qml` | Wraps ThorVGViewport C++ item |
-| `src/ui/components/PropertiesPanel.qml` | Selected layer property editor |
-| `src/ui/components/Toolbar.qml` | Transport + tool buttons |
-| `src/ui/components/Timeline.qml` | Layer list + time ruler + keyframe area |
-| `src/ui/components/TimeRuler.qml` | Time ruler with playhead |
-
-### Implementation Steps (in order)
-
-1. **Core model** — `Project`, `Composition`, `Layer`, `ShapeLayer`, `TextLayer`, `Keyframe`
-2. **Viewport** — `ThorVGViewport` C++ class + `ViewportItem.qml`
-3. **Timeline model** — `TimelineModel` C++ class
-4. **UI layout** — Rewrite `Main.qml` with the ColumnLayout/RowLayout structure
-5. **Panels** — `ProjectBin.qml`, `PropertiesPanel.qml`, `Toolbar.qml`
-6. **Timeline UI** — `Timeline.qml`, `TimeRuler.qml` with layer list, playhead
-7. **Shape rendering** — Wire ThorVG rendering for Rect/Circle in viewport
-8. **Keyframe animation** — Keyframe data + linear interpolation + playhead scrubbing
-9. **Export** — `ExportController` + FFmpeg frame encoding (basic image sequence)
-10. **Build integration** — Update CMakeLists.txt to include new sources
-11. **Cleanup** — Remove old `someclass` boilerplate, update `main.cpp`
-12. **Create tracking file** — `phase_one.md` with line-by-line checklist
-
-### File to create: `/code/phase_one.md`
-
-This will be a markdown file with every step listed as a checkbox, updated as work progresses. Want me to create the full plan file and then start implementing?
+layer 2 -> {
+    [add support to drag one strip from one trak to another in same layer since thats what have been implimented]
+    track 1 : strip1 strip2
+    track 2 :      strip3 strip4
+}
