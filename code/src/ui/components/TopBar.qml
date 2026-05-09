@@ -246,6 +246,9 @@ Item {
             layer.effect: MultiEffect {
                 colorization: 1.0
                 colorizationColor: btn.iconColor
+                brightness: 1.0
+                contrast: 1.0
+                saturation: 0.0
             }
         }
 

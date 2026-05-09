@@ -50,7 +50,7 @@ Window {
             handle: Rectangle {
                 implicitWidth: 2
                 implicitHeight: 2
-                color: SplitHandle.pressed ? Theme.accent : (SplitHandle.hovered ? Theme.borderHover : Theme.border)
+                color: SplitHandle.pressed ? Theme.accent : (SplitHandle.hovered ? Theme.input : Theme.border)
             }
 
             SplitView {
@@ -60,7 +60,7 @@ Window {
                 handle: Rectangle {
                     implicitWidth: 2
                     implicitHeight: 2
-                    color: SplitHandle.pressed ? Theme.accent : (SplitHandle.hovered ? Theme.borderHover : Theme.border)
+                    color: SplitHandle.pressed ? Theme.accent : (SplitHandle.hovered ? Theme.input : Theme.border)
                 }
 
                 ProjectBin {

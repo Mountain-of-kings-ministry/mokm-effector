@@ -28,6 +28,7 @@ QtObject {
 
     // States
     readonly property color success: "#22c55e"
+    readonly property color selected: '#0066ff'
     readonly property color warning: "#f59e0b"
     readonly property color error: "#ef4444"
 }
