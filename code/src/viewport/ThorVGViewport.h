@@ -12,6 +12,8 @@ class Composition;
 class Layer;
 class ShapeLayer;
 class TextLayer;
+class ImageLayer;
+class VideoLayer;
 
 class ThorVGViewport : public QQuickPaintedItem
 {
@@ -46,6 +48,8 @@ signals:
 private:
     void renderShapeLayer(QPainter *painter, ShapeLayer *layer);
     void renderTextLayer(QPainter *painter, TextLayer *layer);
+    void renderImageLayer(QPainter *painter, ImageLayer *layer);
+    void renderVideoLayer(QPainter *painter, VideoLayer *layer);
     void renderSelectionOutline(QPainter *painter, Layer *layer);
     void reconnectLayerSignals();
     QPointF viewportToComp(QPointF viewportPos) const;

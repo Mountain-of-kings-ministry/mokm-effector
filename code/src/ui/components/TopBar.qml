@@ -26,6 +26,7 @@ Item {
     signal deleteSelectedLayer
     signal importImageRequested
     signal importAudioRequested
+    signal importVideoRequested
     signal exportVideoRequested
     signal exportImageSequenceRequested
     signal preferencesRequested
@@ -67,6 +68,7 @@ Item {
                         Menu { title: qsTr("Import")
                             MenuItem { text: qsTr("Image..."); onTriggered: topBar.importImageRequested() }
                             MenuItem { text: qsTr("Audio..."); onTriggered: topBar.importAudioRequested() }
+                            MenuItem { text: qsTr("Video..."); onTriggered: topBar.importVideoRequested() }
                         }
                         MenuItem { text: qsTr("Export Animation..."); onTriggered: topBar.exportVideoRequested() }
                         MenuItem { text: qsTr("Export Image Sequence..."); onTriggered: topBar.exportImageSequenceRequested() }

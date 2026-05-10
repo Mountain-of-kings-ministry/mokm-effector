@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QString>
+#include <QColor>
 #include <QPointF>
 #include <QJsonObject>
 
@@ -29,6 +30,9 @@ class Layer : public QObject
     Q_PROPERTY(qreal gain READ gain WRITE setGain NOTIFY colorGradeChanged)
     Q_PROPERTY(qreal saturation READ saturation WRITE setSaturation NOTIFY colorGradeChanged)
     Q_PROPERTY(qreal contrast READ contrast WRITE setContrast NOTIFY colorGradeChanged)
+    Q_PROPERTY(QColor liftColor READ liftColor WRITE setLiftColor NOTIFY colorGradeChanged)
+    Q_PROPERTY(QColor gammaColor READ gammaColor WRITE setGammaColor NOTIFY colorGradeChanged)
+    Q_PROPERTY(QColor gainColor READ gainColor WRITE setGainColor NOTIFY colorGradeChanged)
 public:
     enum Type { ShapeLayer, TextLayer, ImageLayer, AudioLayer, VideoLayer, NullLayer };
     Q_ENUM(Type)
@@ -84,6 +88,13 @@ public:
     qreal contrast() const { return m_contrast; }
     void setContrast(qreal v);
 
+    QColor liftColor() const { return m_liftColor; }
+    void setLiftColor(const QColor &c);
+    QColor gammaColor() const { return m_gammaColor; }
+    void setGammaColor(const QColor &c);
+    QColor gainColor() const { return m_gainColor; }
+    void setGainColor(const QColor &c);
+
     Q_INVOKABLE virtual Layer* clone(QObject *parent = nullptr) const;
     virtual QJsonObject toJson() const;
     virtual void fromJson(const QJsonObject &obj);
@@ -124,6 +135,10 @@ private:
     qreal m_gain = 1.0;
     qreal m_saturation = 1.0;
     qreal m_contrast = 0.0;
+
+    QColor m_liftColor = QColor(0, 0, 0);
+    QColor m_gammaColor = QColor(0, 0, 0);
+    QColor m_gainColor = QColor(0, 0, 0);
 };
 
 #endif

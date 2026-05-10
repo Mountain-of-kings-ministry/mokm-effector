@@ -192,7 +192,6 @@ Rectangle {
             color: Theme.secondaryHover
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: 8
                 spacing: 0
 
                 Text {
@@ -612,7 +611,7 @@ Rectangle {
 
             Rectangle {
                 id: playhead
-                x: (root.timelineModel ? root.timelineModel.currentFrame : 0) * root.pixelPerFrame
+                x: root.layerNameWidth + (root.timelineModel ? root.timelineModel.currentFrame : 0) * root.pixelPerFrame
                 y: 0; width: 2; height: parent.height; z: 20; color: Theme.error
                 visible: root.timelineModel != null
 
@@ -628,10 +627,10 @@ Rectangle {
                     width: 20; height: parent.height
                     cursorShape: Qt.SizeHorCursor
                     drag.target: parent; drag.axis: Drag.XAxis
-                    drag.minimumX: 0
+                    drag.minimumX: root.layerNameWidth
                     onPositionChanged: {
                         if (drag.active && root.timelineModel) {
-                            var f = Math.round(playhead.x / root.pixelPerFrame);
+                            var f = Math.round((playhead.x - root.layerNameWidth) / root.pixelPerFrame);
                             root.timelineModel.currentFrame = Math.max(0, f);
                         }
                     }

@@ -19,8 +19,8 @@ Item {
         anchors.left: parent.left
         anchors.right: parent.right
         height: 36
-        color: Theme.headerBackground
-        border.color: Theme.border
+        color: (typeof Theme !== 'undefined' && Theme.headerBackground ? Theme.headerBackground : "#2b2b2b")
+        border.color: (typeof Theme !== 'undefined' && Theme.border ? Theme.border : "#444444")
 
         RowLayout {
             anchors.fill: parent
@@ -50,13 +50,11 @@ Item {
             }
 
             Text {
-                anchors.right: parent.right
-                anchors.rightMargin: 12
-                anchors.verticalCenter: parent.verticalCenter
-                text: root.nodeGraph ? (root.nodeGraph.nodeCount + " nodes") : "No Graph Selected"
-                color: Theme.mutedForeground
-                font.pixelSize: 10
+                Layout.rightMargin: 12
                 Layout.alignment: Qt.AlignVCenter
+                text: root.nodeGraph ? (root.nodeGraph.nodeCount + " nodes") : "No Graph Selected"
+                color: (typeof Theme !== 'undefined' && Theme.mutedForeground ? Theme.mutedForeground : "#a0a0a0")
+                font.pixelSize: 10
             }
         }
     }

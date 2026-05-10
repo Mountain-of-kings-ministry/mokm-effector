@@ -1,6 +1,7 @@
 #include "Layer.h"
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QColor>
 
 Layer::Layer(Type type, QObject *parent)
     : QObject(parent), m_type(type), m_name("Layer")
@@ -146,6 +147,21 @@ void Layer::setContrast(qreal v)
     if (!qFuzzyCompare(m_contrast, v)) { m_contrast = v; emit colorGradeChanged(); }
 }
 
+void Layer::setLiftColor(const QColor &c)
+{
+    if (m_liftColor != c) { m_liftColor = c; emit colorGradeChanged(); }
+}
+
+void Layer::setGammaColor(const QColor &c)
+{
+    if (m_gammaColor != c) { m_gammaColor = c; emit colorGradeChanged(); }
+}
+
+void Layer::setGainColor(const QColor &c)
+{
+    if (m_gainColor != c) { m_gainColor = c; emit colorGradeChanged(); }
+}
+
 Layer* Layer::clone(QObject *parent) const
 {
     auto *l = new Layer(m_type, parent);
@@ -167,6 +183,9 @@ Layer* Layer::clone(QObject *parent) const
     l->m_gain = m_gain;
     l->m_saturation = m_saturation;
     l->m_contrast = m_contrast;
+    l->m_liftColor = m_liftColor;
+    l->m_gammaColor = m_gammaColor;
+    l->m_gainColor = m_gainColor;
     return l;
 }
 
@@ -192,6 +211,9 @@ QJsonObject Layer::toJson() const
     obj["gain"] = m_gain;
     obj["saturation"] = m_saturation;
     obj["contrast"] = m_contrast;
+    obj["liftColor"] = m_liftColor.name(QColor::HexArgb);
+    obj["gammaColor"] = m_gammaColor.name(QColor::HexArgb);
+    obj["gainColor"] = m_gainColor.name(QColor::HexArgb);
     return obj;
 }
 
@@ -215,6 +237,12 @@ void Layer::fromJson(const QJsonObject &obj)
     setGain(obj["gain"].toDouble(1.0));
     setSaturation(obj["saturation"].toDouble(1.0));
     setContrast(obj["contrast"].toDouble());
+    if (obj.contains("liftColor"))
+        setLiftColor(QColor(obj["liftColor"].toString()));
+    if (obj.contains("gammaColor"))
+        setGammaColor(QColor(obj["gammaColor"].toString()));
+    if (obj.contains("gainColor"))
+        setGainColor(QColor(obj["gainColor"].toString()));
 }
 
 QString Layer::serialize() const

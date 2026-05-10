@@ -43,6 +43,7 @@ Window {
             onDeleteSelectedLayer: deleteSelectedLayer()
             onImportImageRequested: importImageDialog.open()
             onImportAudioRequested: importAudioDialog.open()
+            onImportVideoRequested: importVideoDialog.open()
             onExportVideoRequested: exportDialog.open()
             onExportImageSequenceRequested: exportImageSequenceDialog.open()
             onPreferencesRequested: prefsDialog.open()
@@ -84,6 +85,7 @@ Window {
 
                     onImportImageRequested: importImageDialog.open()
                     onImportAudioRequested: importAudioDialog.open()
+                    onImportVideoRequested: importVideoDialog.open()
                     onCreateRectLayer: createShapeLayer(ShapeLayer.Rectangle)
                     onCreateCircleLayer: createShapeLayer(ShapeLayer.Circle)
                     onCreateTriangleLayer: createShapeLayer(ShapeLayer.Triangle)
@@ -234,6 +236,7 @@ Window {
     property Component textLayerComponent: TextLayer {}
     property Component imageLayerComponent: ImageLayer {}
     property Component audioLayerComponent: AudioLayer {}
+    property Component videoLayerComponent: VideoLayer {}
     property var selectedObject: null
 
     ExportController {
@@ -522,10 +525,23 @@ Window {
         nameFilters: ["Images (*.png *.jpg *.jpeg *.gif *.bmp *.webp)", "All Files (*)"]
         onAccepted: {
             if (!importImageDialog.selectedFile) return;
+            var url = importImageDialog.selectedFile;
             var layer = imageLayerComponent.createObject(project, {
-                name: "Image " + (project.assetCount + 1),
-                source: importImageDialog.selectedFile
+                name: "Image " + (project.assets.length + 1),
+                source: url
             });
+            var comp = project.activeComposition;
+            if (comp && layer.imageWidth > 0 && layer.imageHeight > 0) {
+                var cw = comp.width;
+                var ch = comp.height;
+                var iw = layer.imageWidth;
+                var ih = layer.imageHeight;
+                var s = Math.min(cw / iw, ch / ih) * 0.8;
+                layer.x = cw / 2;
+                layer.y = ch / 2;
+                layer.scaleX = s;
+                layer.scaleY = s;
+            }
             project.addAsset(layer);
             selectedObject = layer;
             project.captureSnapshot();
@@ -539,11 +555,49 @@ Window {
         onAccepted: {
             if (!importAudioDialog.selectedFile) return;
             var layer = audioLayerComponent.createObject(project, {
-                name: "Audio " + (project.assetCount + 1),
+                name: "Audio " + (project.assets.length + 1),
                 source: importAudioDialog.selectedFile
             });
             project.addAsset(layer);
             selectedObject = layer;
+            project.captureSnapshot();
+        }
+    }
+
+    FileDialog {
+        id: importVideoDialog
+        title: qsTr("Import Video")
+        nameFilters: ["Video (*.mp4 *.mov *.avi *.mkv *.webm *.m4v *.ts)", "All Files (*)"]
+        onAccepted: {
+            if (!importVideoDialog.selectedFile) return;
+            var url = importVideoDialog.selectedFile;
+            var name = "Video " + (project.assets.length + 1);
+            var layer = videoLayerComponent.createObject(project, {
+                name: name,
+                source: url
+            });
+            var comp = project.activeComposition;
+            if (comp && layer.videoWidth > 0 && layer.videoHeight > 0) {
+                var cw = comp.width;
+                var ch = comp.height;
+                var iw = layer.videoWidth;
+                var ih = layer.videoHeight;
+                var s = Math.min(cw / iw, ch / ih) * 0.8;
+                layer.x = cw / 2;
+                layer.y = ch / 2;
+                layer.scaleX = s;
+                layer.scaleY = s;
+            }
+            project.addAsset(layer);
+            selectedObject = layer;
+            var audioUrl = project.extractAudioFromVideo(url, name + " Audio");
+            if (audioUrl) {
+                var audioLayer = audioLayerComponent.createObject(project, {
+                    name: name + " Audio",
+                    source: audioUrl
+                });
+                project.addAsset(audioLayer);
+            }
             project.captureSnapshot();
         }
     }

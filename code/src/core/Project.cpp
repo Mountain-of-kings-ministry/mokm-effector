@@ -8,10 +8,20 @@
 #include "TextLayer.h"
 #include "ImageLayer.h"
 #include "AudioLayer.h"
+#include "VideoLayer.h"
 #include "Keyframe.h"
 
 #include <QFile>
 #include <QJsonDocument>
+#include <QStandardPaths>
+#include <QDir>
+
+extern "C" {
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libavutil/avutil.h>
+#include <libswresample/swresample.h>
+}
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QDir>
@@ -195,6 +205,8 @@ QString Project::serializeToJson() const
             assetsArr.append(il->toJson());
         else if (auto *al = qobject_cast<AudioLayer*>(asset))
             assetsArr.append(al->toJson());
+        else if (auto *vl = qobject_cast<VideoLayer*>(asset))
+            assetsArr.append(vl->toJson());
     }
     root["assets"] = assetsArr;
 
@@ -372,6 +384,140 @@ bool Project::loadFromFile(const QUrl &path)
     return true;
 }
 
+QString Project::extractAudioFromVideo(const QUrl &videoUrl, const QString &outputName)
+{
+    QString inPath = videoUrl.toLocalFile();
+    if (inPath.isEmpty()) return {};
+
+    AVFormatContext *fmtCtx = nullptr;
+    if (avformat_open_input(&fmtCtx, inPath.toUtf8().constData(), nullptr, nullptr) != 0)
+        return {};
+    if (avformat_find_stream_info(fmtCtx, nullptr) < 0) {
+        avformat_close_input(&fmtCtx);
+        return {};
+    }
+
+    int audioIdx = av_find_best_stream(fmtCtx, AVMEDIA_TYPE_AUDIO, -1, -1, nullptr, 0);
+    if (audioIdx < 0) {
+        avformat_close_input(&fmtCtx);
+        return {};
+    }
+
+    const AVStream *stream = fmtCtx->streams[audioIdx];
+    const AVCodec *codec = avcodec_find_decoder(stream->codecpar->codec_id);
+    if (!codec) {
+        avformat_close_input(&fmtCtx);
+        return {};
+    }
+
+    AVCodecContext *codecCtx = avcodec_alloc_context3(codec);
+    if (!codecCtx || avcodec_parameters_to_context(codecCtx, stream->codecpar) < 0) {
+        avcodec_free_context(&codecCtx);
+        avformat_close_input(&fmtCtx);
+        return {};
+    }
+    codecCtx->thread_count = 0;
+    if (avcodec_open2(codecCtx, codec, nullptr) < 0) {
+        avcodec_free_context(&codecCtx);
+        avformat_close_input(&fmtCtx);
+        return {};
+    }
+
+    int sampleRate = codecCtx->sample_rate;
+    int channels = codecCtx->ch_layout.nb_channels;
+    AVSampleFormat sampleFmt = codecCtx->sample_fmt;
+
+    // Use SWR for format conversion to s16
+    SwrContext *swr = nullptr;
+    swr_alloc_set_opts2(&swr,
+        &codecCtx->ch_layout, AV_SAMPLE_FMT_S16, sampleRate,
+        &codecCtx->ch_layout, sampleFmt, sampleRate,
+        0, nullptr);
+
+    if (!swr || swr_init(swr) < 0) {
+        swr_free(&swr);
+        avcodec_free_context(&codecCtx);
+        avformat_close_input(&fmtCtx);
+        return {};
+    }
+
+    QByteArray pcm;
+    AVPacket *pkt = av_packet_alloc();
+    AVFrame *frame = av_frame_alloc();
+
+    while (av_read_frame(fmtCtx, pkt) >= 0) {
+        if (pkt->stream_index != audioIdx) {
+            av_packet_unref(pkt);
+            continue;
+        }
+        if (avcodec_send_packet(codecCtx, pkt) < 0) {
+            av_packet_unref(pkt);
+            continue;
+        }
+        av_packet_unref(pkt);
+
+        while (avcodec_receive_frame(codecCtx, frame) == 0) {
+            uint8_t *s16Data = nullptr;
+            int outSamples = swr_get_out_samples(swr, frame->nb_samples);
+            av_samples_alloc(&s16Data, nullptr, channels, outSamples, AV_SAMPLE_FMT_S16, 0);
+            int converted = swr_convert(swr, &s16Data, outSamples,
+                                        (const uint8_t**)frame->data, frame->nb_samples);
+            if (converted > 0) {
+                int bytes = av_samples_get_buffer_size(nullptr, channels, converted, AV_SAMPLE_FMT_S16, 1);
+                pcm.append(reinterpret_cast<const char*>(s16Data), bytes);
+            }
+            av_freep(&s16Data);
+        }
+    }
+
+    av_frame_free(&frame);
+    av_packet_free(&pkt);
+    swr_free(&swr);
+    avcodec_free_context(&codecCtx);
+    avformat_close_input(&fmtCtx);
+
+    if (pcm.isEmpty()) return {};
+
+    // Write WAV file
+    QString cacheDir = QStandardPaths::writableLocation(QStandardPaths::TempLocation)
+                       + "/mokm_audio";
+    QDir().mkpath(cacheDir);
+    QString wavPath = cacheDir + "/" + outputName + ".wav";
+
+    QFile wavFile(wavPath);
+    if (!wavFile.open(QIODevice::WriteOnly))
+        return {};
+
+    auto write32 = [&](quint32 v) {
+        wavFile.write(reinterpret_cast<const char*>(&v), 4);
+    };
+    auto write16 = [&](quint16 v) {
+        wavFile.write(reinterpret_cast<const char*>(&v), 2);
+    };
+
+    int dataSize = pcm.size();
+    int fmtSize = 16;
+    int headerSize = 4 + 8 + fmtSize + 8;
+
+    wavFile.write("RIFF", 4);
+    write32(headerSize + dataSize);
+    wavFile.write("WAVE", 4);
+    wavFile.write("fmt ", 4);
+    write32(fmtSize);
+    write16(1); // PCM
+    write16(channels);
+    write32(sampleRate);
+    write32(sampleRate * channels * 2); // byte rate
+    write16(channels * 2); // block align
+    write16(16); // bits per sample
+    wavFile.write("data", 4);
+    write32(dataSize);
+    wavFile.write(pcm);
+    wavFile.close();
+
+    return QUrl::fromLocalFile(wavPath).toString();
+}
+
 // ── Private Helpers ──
 
 QJsonObject Project::layerToJson(Layer *layer) const
@@ -380,6 +526,12 @@ QJsonObject Project::layerToJson(Layer *layer) const
         return sl->toJson();
     if (auto *tl = qobject_cast<TextLayer*>(layer))
         return tl->toJson();
+    if (auto *il = qobject_cast<ImageLayer*>(layer))
+        return il->toJson();
+    if (auto *al = qobject_cast<AudioLayer*>(layer))
+        return al->toJson();
+    if (auto *vl = qobject_cast<VideoLayer*>(layer))
+        return vl->toJson();
     return layer->toJson();
 }
 
@@ -402,6 +554,10 @@ Layer* Project::layerFromJson(const QJsonObject &obj, QObject *parent) const
         auto *al = new AudioLayer(parent);
         al->fromJson(obj);
         return al;
+    } else if (type == "video") {
+        auto *vl = new VideoLayer(parent);
+        vl->fromJson(obj);
+        return vl;
     }
     return nullptr;
 }

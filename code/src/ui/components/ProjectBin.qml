@@ -31,6 +31,7 @@ Rectangle {
 
     signal importImageRequested()
     signal importAudioRequested()
+    signal importVideoRequested()
 
     function createNodeStrip(type) {
         if (!bin.project)
@@ -109,7 +110,11 @@ Rectangle {
             binRoot.importImageRequested();
             return;
         case "Audio File":
+        case "AudioFile":
             binRoot.importAudioRequested();
+            return;
+        case "Video":
+            binRoot.importVideoRequested();
             return;
         default:
             layer = shapeLayerComponent.createObject(proj, {

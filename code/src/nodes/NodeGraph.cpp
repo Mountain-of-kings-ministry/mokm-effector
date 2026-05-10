@@ -29,6 +29,8 @@
 #include <QGraphicsScene>
 #include <QSize>
 #include <QPointF>
+#include <QTimer>
+#include <QDebug>
 
 NodeGraph::NodeGraph(QObject *parent)
     : QObject(parent)
@@ -92,6 +94,19 @@ NodeGraph::NodeGraph(QObject *parent)
     // Make the auto-created output node compact so it doesn't dominate the canvas
     QSize outputSize(120, 32);
     m_graphModel->setNodeData(static_cast<QtNodes::NodeId>(m_outputNodeId), QtNodes::NodeRole::Size, outputSize);
+    // Place the output node at a visible canvas location so it's not hidden offscreen
+    m_graphModel->setNodeData(static_cast<QtNodes::NodeId>(m_outputNodeId), QtNodes::NodeRole::Position, QPointF(200, 200));
+    // Ensure the output node has a clear header style
+    QVariantMap outStyle;
+    QVariantMap outInner;
+    outInner["GradientColor0"] = QVariant::fromValue(QList<int>({50, 50, 60}));
+    outInner["GradientColor1"] = QVariant::fromValue(QList<int>({30, 30, 40}));
+    outInner["FontColor"] = QString("white");
+    outStyle["NodeStyle"] = outInner;
+    m_graphModel->setNodeData(static_cast<QtNodes::NodeId>(m_outputNodeId), QtNodes::NodeRole::Style, outStyle);
+    // Re-apply the compact size after construction (some delegates may override on creation)
+    QTimer::singleShot(150, this, [this]()
+                       { ensureOutputCompact(); });
 }
 
 NodeGraph::~NodeGraph() = default;
@@ -228,6 +243,18 @@ int NodeGraph::addNodeAt(const QString &type, qreal x, qreal y)
     return nodeId;
 }
 
+void NodeGraph::ensureOutputCompact()
+{
+    if (!m_hasAutoOutput)
+        return;
+    if (m_outputNodeId >= 0 && m_graphModel)
+    {
+        QSize outputSize(120, 32);
+        m_graphModel->setNodeData(static_cast<QtNodes::NodeId>(m_outputNodeId), QtNodes::NodeRole::Size, outputSize);
+        qDebug() << "ensureOutputCompact: enforced size on output node" << m_outputNodeId;
+    }
+}
+
 int NodeGraph::addNodeAutoConnectAt(const QString &type, qreal x, qreal y)
 {
     int nodeId = addNodeAt(type, x, y);
@@ -259,9 +286,29 @@ void NodeGraph::connectNodes(int outNodeId, int outPort, int inNodeId, int inPor
         static_cast<QtNodes::PortIndex>(outPort),
         static_cast<QtNodes::NodeId>(inNodeId),
         static_cast<QtNodes::PortIndex>(inPort)};
-    if (m_graphModel->connectionPossible(conn))
-        m_graphModel->addConnection(conn);
+    bool possible = false;
+    if (m_graphModel)
+        possible = m_graphModel->connectionPossible(conn);
+    if (!possible)
+    {
+        qDebug() << "connectNodes: connection not possible:" << outNodeId << outPort << "->" << inNodeId << inPort;
+        return;
+    }
+    m_graphModel->addConnection(conn);
+    qDebug() << "connectNodes: added connection:" << outNodeId << outPort << "->" << inNodeId << inPort;
     emit graphChanged();
+}
+
+bool NodeGraph::testConnectionPossible(int outNodeId, int outPort, int inNodeId, int inPort) const
+{
+    if (!m_graphModel)
+        return false;
+    QtNodes::ConnectionId conn{
+        static_cast<QtNodes::NodeId>(outNodeId),
+        static_cast<QtNodes::PortIndex>(outPort),
+        static_cast<QtNodes::NodeId>(inNodeId),
+        static_cast<QtNodes::PortIndex>(inPort)};
+    return m_graphModel->connectionPossible(conn);
 }
 
 void NodeGraph::disconnectAll()

@@ -63,6 +63,7 @@ public:
 
     Q_INVOKABLE bool saveToFile(const QUrl &path);
     Q_INVOKABLE bool loadFromFile(const QUrl &path);
+    Q_INVOKABLE QString extractAudioFromVideo(const QUrl &videoUrl, const QString &outputName);
     Q_INVOKABLE QString serializeToJson() const;
     Q_INVOKABLE bool deserializeFromJson(const QString &json);
 

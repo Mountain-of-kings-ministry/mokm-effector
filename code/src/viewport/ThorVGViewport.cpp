@@ -3,6 +3,8 @@
 #include "../core/Layer.h"
 #include "../core/ShapeLayer.h"
 #include "../core/TextLayer.h"
+#include "../core/ImageLayer.h"
+#include "../core/VideoLayer.h"
 #include "../core/Track.h"
 
 #include <QPainter>
@@ -143,6 +145,10 @@ void ThorVGViewport::paint(QPainter *painter)
             renderShapeLayer(painter, qobject_cast<ShapeLayer*>(layer));
         else if (layer->type() == Layer::TextLayer)
             renderTextLayer(painter, qobject_cast<TextLayer*>(layer));
+        else if (layer->type() == Layer::ImageLayer)
+            renderImageLayer(painter, qobject_cast<ImageLayer*>(layer));
+        else if (layer->type() == Layer::VideoLayer)
+            renderVideoLayer(painter, qobject_cast<VideoLayer*>(layer));
 
         painter->restore();
 
@@ -338,6 +344,22 @@ void ThorVGViewport::renderTextLayer(QPainter *painter, TextLayer *layer)
     painter->drawText(textRect, layer->alignment() | Qt::TextWordWrap, layer->text());
 }
 
+void ThorVGViewport::renderImageLayer(QPainter *painter, ImageLayer *layer)
+{
+    if (!layer) return;
+    QImage img = layer->image();
+    if (img.isNull()) return;
+    painter->drawImage(-img.width() / 2.0, -img.height() / 2.0, img);
+}
+
+void ThorVGViewport::renderVideoLayer(QPainter *painter, VideoLayer *layer)
+{
+    if (!layer) return;
+    QImage img = layer->frameAt(m_currentFrame);
+    if (img.isNull()) return;
+    painter->drawImage(-img.width() / 2.0, -img.height() / 2.0, img);
+}
+
 void ThorVGViewport::renderSelectionOutline(QPainter *painter, Layer *layer)
 {
     QRectF bounds = layerBounds(layer);
@@ -386,6 +408,20 @@ QRectF ThorVGViewport::layerBounds(Layer *layer) const
     }
     if (auto *tl = qobject_cast<TextLayer*>(layer)) {
         return QRectF(-500, -200, 1000, 400);
+    }
+    if (auto *il = qobject_cast<ImageLayer*>(layer)) {
+        qreal w = il->imageWidth();
+        qreal h = il->imageHeight();
+        if (w > 0 && h > 0)
+            return QRectF(-w / 2.0, -h / 2.0, w, h);
+        return QRectF(-100, -50, 200, 100);
+    }
+    if (auto *vl = qobject_cast<VideoLayer*>(layer)) {
+        qreal w = vl->videoWidth();
+        qreal h = vl->videoHeight();
+        if (w > 0 && h > 0)
+            return QRectF(-w / 2.0, -h / 2.0, w, h);
+        return QRectF(-100, -50, 200, 100);
     }
     return QRectF(-100, -50, 200, 100);
 }

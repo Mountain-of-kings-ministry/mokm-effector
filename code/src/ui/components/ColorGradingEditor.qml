@@ -159,17 +159,21 @@ Rectangle {
                             RowLayout {
                                 spacing: 10
                                 Repeater {
-                                    model: ["Shadows", "Midtones", "Highlights"]
+                                    model: [
+                                        {name: "Shadows",   prop: "liftColor"},
+                                        {name: "Midtones",  prop: "gammaColor"},
+                                        {name: "Highlights",prop: "gainColor"}
+                                    ]
                                     delegate: ColumnLayout {
                                         spacing: 6
-                                        Text { text: modelData; color: Theme.foreground; font.pixelSize: 12; Layout.alignment: Qt.AlignHCenter }
+                                        Text { text: modelData.name; color: Theme.foreground; font.pixelSize: 12; Layout.alignment: Qt.AlignHCenter }
 
-                                        Rectangle {
-                                            width: 78; height: 78; radius: 39; color: Theme.input
-                                            border.color: Theme.border
-
-                                            Text { anchors.centerIn: parent; text: "Wheel"; color: Theme.mutedForeground; font.pixelSize: 9 }
-                                            MouseArea { anchors.fill: parent; onClicked: colorDialog.open() }
+                                        ColorWheelItem {
+                                            width: 90; height: 90
+                                            color: _target ? (_target[modelData.prop] || "#000000") : "#000000"
+                                            onColorChanged: function(c) {
+                                                if (_target) _target[modelData.prop] = c
+                                            }
                                         }
                                     }
                                 }

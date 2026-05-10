@@ -36,6 +36,8 @@ public:
     Q_INVOKABLE int outputNodeId() const;
     Q_INVOKABLE int addNodeAutoConnect(const QString &type);
     Q_INVOKABLE int addNodeAutoConnectAt(const QString &type, qreal x, qreal y);
+    Q_INVOKABLE void ensureOutputCompact();
+    Q_INVOKABLE bool testConnectionPossible(int outNodeId, int outPort, int inNodeId, int inPort) const;
 
     int selectedNodeId() const { return m_selectedNodeId; }
 
