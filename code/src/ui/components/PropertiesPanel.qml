@@ -9,16 +9,6 @@ Rectangle {
     clip: true
 
     property var selectedObject: null
-    onSelectedObjectChanged: {
-        console.log("PropertiesPanel.selectedObject CHANGED:", selectedObject, typeof selectedObject);
-        console.log("  _isLayer:", _isLayer(selectedObject));
-        console.log("  _isTrack:", _isTrack(selectedObject));
-        console.log("  _isStrip:", _isStrip(selectedObject));
-        console.log("  _isRawElement:", _isRawElement(selectedObject));
-        if (selectedObject) {
-            console.log("  name:", selectedObject.name, "deleteLayer:", selectedObject.deleteLayer, "tracks:", selectedObject.tracks);
-        }
-    }
     property var timelineModel: null
 
     // ── Type detection helpers ──
@@ -78,7 +68,7 @@ Rectangle {
 
                 // ==================== NODESTRIP PROPERTIES ====================
                 ColumnLayout {
-                    visible: root.selectedObject && _isNodeStrip(root.selectedObject)
+                    visible: root.selectedObject != null && _isNodeStrip(root.selectedObject)
                     spacing: 6
 
                     Text {
@@ -90,19 +80,19 @@ Rectangle {
 
                     EditablePropertyRow {
                         label: "Name"
-                        value: root.selectedObject ? root.selectedObject.name : ""
+                        value: root.selectedObject?.name ?? ""
                         onEditingFinished: function(v) { if (root.selectedObject) root.selectedObject.name = v }
                     }
 
                     EditablePropertyRow {
                         label: "Start Frame"
-                        value: root.selectedObject ? root.selectedObject.startFrame : "0"
+                        value: root.selectedObject?.startFrame != null ? String(root.selectedObject.startFrame) : "0"
                         onEditingFinished: function(v) { if (root.selectedObject) root.selectedObject.startFrame = parseInt(v) || 0 }
                     }
 
                     EditablePropertyRow {
                         label: "Duration"
-                        value: root.selectedObject ? root.selectedObject.duration : "90"
+                        value: root.selectedObject?.duration != null ? String(root.selectedObject.duration) : "90"
                         onEditingFinished: function(v) { if (root.selectedObject) root.selectedObject.duration = parseInt(v) || 1 }
                     }
 
@@ -127,15 +117,15 @@ Rectangle {
                         color: Theme.mutedForeground
                         font.pixelSize: 10
                         font.bold: true
-                        visible: root.selectedObject && root.selectedObject.element
+                        visible: root.selectedObject != null && root.selectedObject.element != null
                     }
 
                     EditablePropertyRow {
                         propName: "opacity"
                         label: "Opacity"
-                        value: root.selectedObject && root.selectedObject.element ? (root.selectedObject.element.opacity * 100).toFixed(0) : "100"
+                        value: root.selectedObject != null && root.selectedObject.element != null ? (root.selectedObject.element.opacity * 100).toFixed(0) : "100"
                         suffix: "%"
-                        visible: root.selectedObject && root.selectedObject.element
+                        visible: root.selectedObject != null && root.selectedObject.element != null
                         onEditingFinished: function(v) {
                             var val = Math.max(0, Math.min(1, parseFloat(v) / 100 || 0));
                             root.updateProperty("opacity", val);
@@ -145,48 +135,48 @@ Rectangle {
                     EditablePropertyRow {
                         propName: "x"
                         label: "Position X"
-                        value: root.selectedObject && root.selectedObject.element ? root.selectedObject.element.x.toFixed(1) : "0"
-                        visible: root.selectedObject && root.selectedObject.element
+                        value: root.selectedObject != null && root.selectedObject.element != null ? root.selectedObject.element.x.toFixed(1) : "0"
+                        visible: root.selectedObject != null && root.selectedObject.element != null
                         onEditingFinished: function(v) { root.updateProperty("x", parseFloat(v) || 0) }
                     }
 
                     EditablePropertyRow {
                         propName: "y"
                         label: "Position Y"
-                        value: root.selectedObject && root.selectedObject.element ? root.selectedObject.element.y.toFixed(1) : "0"
-                        visible: root.selectedObject && root.selectedObject.element
+                        value: root.selectedObject != null && root.selectedObject.element != null ? root.selectedObject.element.y.toFixed(1) : "0"
+                        visible: root.selectedObject != null && root.selectedObject.element != null
                         onEditingFinished: function(v) { root.updateProperty("y", parseFloat(v) || 0) }
                     }
 
                     EditablePropertyRow {
                         propName: "rotation"
                         label: "Rotation"
-                        value: root.selectedObject && root.selectedObject.element ? root.selectedObject.element.rotation.toFixed(1) : "0"
+                        value: root.selectedObject != null && root.selectedObject.element != null ? root.selectedObject.element.rotation.toFixed(1) : "0"
                         suffix: "°"
-                        visible: root.selectedObject && root.selectedObject.element
+                        visible: root.selectedObject != null && root.selectedObject.element != null
                         onEditingFinished: function(v) { root.updateProperty("rotation", parseFloat(v) || 0) }
                     }
 
                     EditablePropertyRow {
                         propName: "scaleX"
                         label: "Scale X"
-                        value: root.selectedObject && root.selectedObject.element ? root.selectedObject.element.scaleX.toFixed(2) : "1"
-                        visible: root.selectedObject && root.selectedObject.element
+                        value: root.selectedObject != null && root.selectedObject.element != null ? root.selectedObject.element.scaleX.toFixed(2) : "1"
+                        visible: root.selectedObject != null && root.selectedObject.element != null
                         onEditingFinished: function(v) { root.updateProperty("scaleX", parseFloat(v) || 0) }
                     }
 
                     EditablePropertyRow {
                         propName: "scaleY"
                         label: "Scale Y"
-                        value: root.selectedObject && root.selectedObject.element ? root.selectedObject.element.scaleY.toFixed(2) : "1"
-                        visible: root.selectedObject && root.selectedObject.element
+                        value: root.selectedObject != null && root.selectedObject.element != null ? root.selectedObject.element.scaleY.toFixed(2) : "1"
+                        visible: root.selectedObject != null && root.selectedObject.element != null
                         onEditingFinished: function(v) { root.updateProperty("scaleY", parseFloat(v) || 0) }
                     }
                 }
 
                 // ==================== TIMELINE LAYER PROPERTIES ====================
                 ColumnLayout {
-                    visible: root.selectedObject && _isLayer(root.selectedObject)
+                    visible: root.selectedObject != null && _isLayer(root.selectedObject)
                     spacing: 6
 
                     Text {
@@ -198,82 +188,82 @@ Rectangle {
 
                     EditablePropertyRow {
                         label: "Name"
-                        value: root.selectedObject ? root.selectedObject.name : ""
+                        value: root.selectedObject?.name ?? ""
                         onEditingFinished: function(v) { if (root.selectedObject) root.selectedObject.name = v }
                     }
 
                     BoolPropertyRow {
                         label: "Visible"
-                        checked: root.selectedObject ? root.selectedObject.visible : true
+                        checked: root.selectedObject?.visible != null ? root.selectedObject.visible : true
                         onToggled: function(v) { if (root.selectedObject) root.selectedObject.visible = v }
                     }
 
                     BoolPropertyRow {
                         label: "Mute"
-                        checked: root.selectedObject ? root.selectedObject.mute : false
+                        checked: root.selectedObject?.mute != null ? root.selectedObject.mute : false
                         onToggled: function(v) { if (root.selectedObject) root.selectedObject.mute = v }
                     }
 
                     BoolPropertyRow {
                         label: "Solo"
-                        checked: root.selectedObject ? root.selectedObject.solo : false
+                        checked: root.selectedObject?.solo != null ? root.selectedObject.solo : false
                         onToggled: function(v) { if (root.selectedObject) root.selectedObject.solo = v }
                     }
 
                     SliderPropertyRow {
                         label: "Opacity"
-                        value: root.selectedObject ? root.selectedObject.opacity : 1.0
+                        value: root.selectedObject?.opacity != null ? root.selectedObject.opacity : 1.0
                         from: 0; to: 1; stepSize: 0.01
                         onChanged: function(v) { if (root.selectedObject) root.selectedObject.opacity = v }
                     }
 
                     EditablePropertyRow {
                         label: "Offset X"
-                        value: root.selectedObject ? root.selectedObject.offsetX.toFixed(1) : "0"
+                        value: root.selectedObject?.offsetX?.toFixed(1) ?? "0"
                         onEditingFinished: function(v) { if (root.selectedObject) root.selectedObject.offsetX = parseFloat(v) || 0 }
                     }
 
                     EditablePropertyRow {
                         label: "Offset Y"
-                        value: root.selectedObject ? root.selectedObject.offsetY.toFixed(1) : "0"
+                        value: root.selectedObject?.offsetY?.toFixed(1) ?? "0"
                         onEditingFinished: function(v) { if (root.selectedObject) root.selectedObject.offsetY = parseFloat(v) || 0 }
                     }
 
                     EditablePropertyRow {
                         label: "Rotation"
-                        value: root.selectedObject ? root.selectedObject.rotation.toFixed(1) : "0"
+                        value: root.selectedObject?.rotation?.toFixed(1) ?? "0"
                         suffix: "°"
                         onEditingFinished: function(v) { if (root.selectedObject) root.selectedObject.rotation = parseFloat(v) || 0 }
                     }
 
                     EditablePropertyRow {
                         label: "Scale X"
-                        value: root.selectedObject ? root.selectedObject.scaleX.toFixed(2) : "1"
+                        value: root.selectedObject?.scaleX?.toFixed(2) ?? "1"
                         onEditingFinished: function(v) { if (root.selectedObject) root.selectedObject.scaleX = parseFloat(v) || 0 }
                     }
 
                     EditablePropertyRow {
                         label: "Scale Y"
-                        value: root.selectedObject ? root.selectedObject.scaleY.toFixed(2) : "1"
+                        value: root.selectedObject?.scaleY?.toFixed(2) ?? "1"
                         onEditingFinished: function(v) { if (root.selectedObject) root.selectedObject.scaleY = parseFloat(v) || 0 }
                     }
 
                     EditablePropertyRow {
                         label: "Anchor X"
-                        value: root.selectedObject ? root.selectedObject.anchorX.toFixed(1) : "0"
+                        value: root.selectedObject?.anchorX?.toFixed(1) ?? "0"
                         onEditingFinished: function(v) { if (root.selectedObject) root.selectedObject.anchorX = parseFloat(v) || 0 }
                     }
 
                     EditablePropertyRow {
                         label: "Anchor Y"
-                        value: root.selectedObject ? root.selectedObject.anchorY.toFixed(1) : "0"
+                        value: root.selectedObject?.anchorY?.toFixed(1) ?? "0"
                         onEditingFinished: function(v) { if (root.selectedObject) root.selectedObject.anchorY = parseFloat(v) || 0 }
                     }
                 }
 
                 // ==================== TRACK PROPERTIES ====================
                 ColumnLayout {
-                    visible: root.selectedObject && _isTrack(root.selectedObject)
+                    visible: root.selectedObject != null && _isTrack(root.selectedObject)
                     spacing: 6
 
                     Text {
@@ -285,76 +275,76 @@ Rectangle {
 
                     EditablePropertyRow {
                         label: "Name"
-                        value: root.selectedObject ? root.selectedObject.name : ""
+                        value: root.selectedObject?.name ?? ""
                         onEditingFinished: function(v) { if (root.selectedObject) root.selectedObject.name = v }
                     }
 
                     BoolPropertyRow {
                         label: "Enabled"
-                        checked: root.selectedObject ? root.selectedObject.enabled : true
+                        checked: root.selectedObject?.enabled != null ? root.selectedObject.enabled : true
                         onToggled: function(v) { if (root.selectedObject) root.selectedObject.enabled = v }
                     }
 
                     BoolPropertyRow {
                         label: "Mute"
-                        checked: root.selectedObject ? root.selectedObject.mute : false
+                        checked: root.selectedObject?.mute != null ? root.selectedObject.mute : false
                         onToggled: function(v) { if (root.selectedObject) root.selectedObject.mute = v }
                     }
 
                     BoolPropertyRow {
                         label: "Solo"
-                        checked: root.selectedObject ? root.selectedObject.solo : false
+                        checked: root.selectedObject?.solo != null ? root.selectedObject.solo : false
                         onToggled: function(v) { if (root.selectedObject) root.selectedObject.solo = v }
                     }
 
                     SliderPropertyRow {
                         label: "Opacity"
-                        value: root.selectedObject ? root.selectedObject.opacity : 1.0
+                        value: root.selectedObject?.opacity != null ? root.selectedObject.opacity : 1.0
                         from: 0; to: 1; stepSize: 0.01
                         onChanged: function(v) { if (root.selectedObject) root.selectedObject.opacity = v }
                     }
 
                     SliderPropertyRow {
                         label: "Pan"
-                        value: root.selectedObject ? root.selectedObject.pan : 0.0
+                        value: root.selectedObject?.pan != null ? root.selectedObject.pan : 0.0
                         from: -1; to: 1; stepSize: 0.01
                         onChanged: function(v) { if (root.selectedObject) root.selectedObject.pan = v }
                     }
 
                     BoolPropertyRow {
                         label: "Collapsed"
-                        checked: root.selectedObject ? root.selectedObject.collapsed : false
+                        checked: root.selectedObject?.collapsed != null ? root.selectedObject.collapsed : false
                         onToggled: function(v) { if (root.selectedObject) root.selectedObject.collapsed = v }
                     }
 
                     BoolPropertyRow {
                         label: "Locked"
-                        checked: root.selectedObject ? root.selectedObject.locked : false
+                        checked: root.selectedObject?.locked != null ? root.selectedObject.locked : false
                         onToggled: function(v) { if (root.selectedObject) root.selectedObject.locked = v }
                     }
 
                     EditablePropertyRow {
                         label: "Priority"
-                        value: root.selectedObject ? root.selectedObject.priority : "0"
+                        value: root.selectedObject?.priority != null ? String(root.selectedObject.priority) : "0"
                         onEditingFinished: function(v) { if (root.selectedObject) root.selectedObject.priority = parseInt(v) || 0 }
                     }
 
                     BoolPropertyRow {
                         label: "Looping"
-                        checked: root.selectedObject ? root.selectedObject.looping : false
+                        checked: root.selectedObject?.looping != null ? root.selectedObject.looping : false
                         onToggled: function(v) { if (root.selectedObject) root.selectedObject.looping = v }
                     }
 
                     EditablePropertyRow {
                         label: "Loop Count"
-                        value: root.selectedObject ? root.selectedObject.loopCount : "1"
+                        value: root.selectedObject?.loopCount != null ? String(root.selectedObject.loopCount) : "1"
                         onEditingFinished: function(v) { if (root.selectedObject) root.selectedObject.loopCount = Math.max(1, parseInt(v) || 1) }
                     }
                 }
 
                 // ==================== STRIP PROPERTIES ====================
                 ColumnLayout {
-                    visible: root.selectedObject && _isStrip(root.selectedObject)
+                    visible: root.selectedObject != null && _isStrip(root.selectedObject)
                     spacing: 6
 
                     Text {
@@ -366,19 +356,19 @@ Rectangle {
 
                     EditablePropertyRow {
                         label: "Name"
-                        value: root.selectedObject ? root.selectedObject.name : ""
+                        value: root.selectedObject?.name ?? ""
                         onEditingFinished: function(v) { if (root.selectedObject) root.selectedObject.name = v }
                     }
 
                     EditablePropertyRow {
                         label: "Start Frame"
-                        value: root.selectedObject ? root.selectedObject.startFrame : "0"
+                        value: root.selectedObject?.startFrame != null ? String(root.selectedObject.startFrame) : "0"
                         onEditingFinished: function(v) { if (root.selectedObject) root.selectedObject.startFrame = parseInt(v) || 0 }
                     }
 
                     EditablePropertyRow {
                         label: "Duration"
-                        value: root.selectedObject ? root.selectedObject.duration : "90"
+                        value: root.selectedObject?.duration != null ? String(root.selectedObject.duration) : "90"
                         onEditingFinished: function(v) { if (root.selectedObject) root.selectedObject.duration = parseInt(v) || 1 }
                     }
 
@@ -388,15 +378,15 @@ Rectangle {
                         color: Theme.mutedForeground
                         font.pixelSize: 10
                         font.bold: true
-                        visible: root.selectedObject && root.selectedObject.element
+                        visible: root.selectedObject != null && root.selectedObject.element != null
                     }
 
                     EditablePropertyRow {
                         propName: "opacity"
                         label: "Opacity"
-                        value: root.selectedObject && root.selectedObject.element ? (root.selectedObject.element.opacity * 100).toFixed(0) : "100"
+                        value: root.selectedObject != null && root.selectedObject.element != null ? (root.selectedObject.element.opacity * 100).toFixed(0) : "100"
                         suffix: "%"
-                        visible: root.selectedObject && root.selectedObject.element
+                        visible: root.selectedObject != null && root.selectedObject.element != null
                         onEditingFinished: function(v) {
                             var val = Math.max(0, Math.min(1, parseFloat(v) / 100 || 0));
                             root.updateProperty("opacity", val);
@@ -406,48 +396,48 @@ Rectangle {
                     EditablePropertyRow {
                         propName: "x"
                         label: "Position X"
-                        value: root.selectedObject && root.selectedObject.element ? root.selectedObject.element.x.toFixed(1) : "0"
-                        visible: root.selectedObject && root.selectedObject.element
+                        value: root.selectedObject != null && root.selectedObject.element != null ? root.selectedObject.element.x.toFixed(1) : "0"
+                        visible: root.selectedObject != null && root.selectedObject.element != null
                         onEditingFinished: function(v) { root.updateProperty("x", parseFloat(v) || 0) }
                     }
 
                     EditablePropertyRow {
                         propName: "y"
                         label: "Position Y"
-                        value: root.selectedObject && root.selectedObject.element ? root.selectedObject.element.y.toFixed(1) : "0"
-                        visible: root.selectedObject && root.selectedObject.element
+                        value: root.selectedObject != null && root.selectedObject.element != null ? root.selectedObject.element.y.toFixed(1) : "0"
+                        visible: root.selectedObject != null && root.selectedObject.element != null
                         onEditingFinished: function(v) { root.updateProperty("y", parseFloat(v) || 0) }
                     }
 
                     EditablePropertyRow {
                         propName: "rotation"
                         label: "Rotation"
-                        value: root.selectedObject && root.selectedObject.element ? root.selectedObject.element.rotation.toFixed(1) : "0"
+                        value: root.selectedObject != null && root.selectedObject.element != null ? root.selectedObject.element.rotation.toFixed(1) : "0"
                         suffix: "°"
-                        visible: root.selectedObject && root.selectedObject.element
+                        visible: root.selectedObject != null && root.selectedObject.element != null
                         onEditingFinished: function(v) { root.updateProperty("rotation", parseFloat(v) || 0) }
                     }
 
                     EditablePropertyRow {
                         propName: "scaleX"
                         label: "Scale X"
-                        value: root.selectedObject && root.selectedObject.element ? root.selectedObject.element.scaleX.toFixed(2) : "1"
-                        visible: root.selectedObject && root.selectedObject.element
+                        value: root.selectedObject != null && root.selectedObject.element != null ? root.selectedObject.element.scaleX.toFixed(2) : "1"
+                        visible: root.selectedObject != null && root.selectedObject.element != null
                         onEditingFinished: function(v) { root.updateProperty("scaleX", parseFloat(v) || 0) }
                     }
 
                     EditablePropertyRow {
                         propName: "scaleY"
                         label: "Scale Y"
-                        value: root.selectedObject && root.selectedObject.element ? root.selectedObject.element.scaleY.toFixed(2) : "1"
-                        visible: root.selectedObject && root.selectedObject.element
+                        value: root.selectedObject != null && root.selectedObject.element != null ? root.selectedObject.element.scaleY.toFixed(2) : "1"
+                        visible: root.selectedObject != null && root.selectedObject.element != null
                         onEditingFinished: function(v) { root.updateProperty("scaleY", parseFloat(v) || 0) }
                     }
                 }
 
                 // ==================== LEGACY: RAW VISUAL ELEMENT PROPERTIES ====================
                 ColumnLayout {
-                    visible: root.selectedObject && _isRawElement(root.selectedObject)
+                    visible: root.selectedObject != null && _isRawElement(root.selectedObject)
                     spacing: 6
 
                     Text {
@@ -477,21 +467,21 @@ Rectangle {
                     EditablePropertyRow {
                         propName: "x"
                         label: "Position X"
-                        value: root.selectedObject?.x.toFixed(1) ?? "0"
+                        value: root.selectedObject?.x?.toFixed(1) ?? "0"
                         onEditingFinished: function(v) { root.updateProperty("x", parseFloat(v) || 0) }
                     }
 
                     EditablePropertyRow {
                         propName: "y"
                         label: "Position Y"
-                        value: root.selectedObject?.y.toFixed(1) ?? "0"
+                        value: root.selectedObject?.y?.toFixed(1) ?? "0"
                         onEditingFinished: function(v) { root.updateProperty("y", parseFloat(v) || 0) }
                     }
 
                     EditablePropertyRow {
                         propName: "rotation"
                         label: "Rotation"
-                        value: root.selectedObject?.rotation.toFixed(1) ?? "0"
+                        value: root.selectedObject?.rotation?.toFixed(1) ?? "0"
                         suffix: "°"
                         onEditingFinished: function(v) { root.updateProperty("rotation", parseFloat(v) || 0) }
                     }
@@ -499,14 +489,14 @@ Rectangle {
                     EditablePropertyRow {
                         propName: "scaleX"
                         label: "Scale X"
-                        value: root.selectedObject?.scaleX.toFixed(2) ?? "1"
+                        value: root.selectedObject?.scaleX?.toFixed(2) ?? "1"
                         onEditingFinished: function(v) { root.updateProperty("scaleX", parseFloat(v) || 0) }
                     }
 
                     EditablePropertyRow {
                         propName: "scaleY"
                         label: "Scale Y"
-                        value: root.selectedObject?.scaleY.toFixed(2) ?? "1"
+                        value: root.selectedObject?.scaleY?.toFixed(2) ?? "1"
                         onEditingFinished: function(v) { root.updateProperty("scaleY", parseFloat(v) || 0) }
                     }
                 }
@@ -615,7 +605,7 @@ Rectangle {
             height: 8
             radius: 1
             rotation: 45
-            visible: rowRoot.propName !== "" && root.selectedObject && root.selectedObject.element
+            visible: rowRoot.propName !== "" && root.selectedObject != null && root.selectedObject.element != null
             color: {
                 if (!root.timelineModel || !root.selectedObject || !root.selectedObject.element || rowRoot.propName === "") return Theme.muted;
                 var _ = root.timelineModel.keyframesStamp;

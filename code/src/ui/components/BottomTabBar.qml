@@ -83,7 +83,7 @@ Rectangle {
         spacing: 0
 
         Repeater {
-            model: ["Timeline", "Node Editor", "Keyframes"]
+            model: ["Timeline", "Node Editor", "Keyframes", "Audio Editor", "Color Grading"]
 
             delegate: Rectangle {
                 Layout.fillHeight: true

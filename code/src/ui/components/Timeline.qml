@@ -220,7 +220,8 @@ Rectangle {
                     text: "Add Layer"
                     onTriggered: {
                         var comp = root.timelineModel ? root.timelineModel.composition : null;
-                        if (!comp) return;
+                        if (!comp)
+                            return;
                         var tl = Qt.createQmlObject('import mokm_effector; TimelineLayer {}', comp, "dynamicLayer");
                         tl.name = "Layer " + (comp.layerCount() + 1);
                         tl.addTrack();
@@ -246,13 +247,13 @@ Rectangle {
                         id: layerColumn
                         width: parent.width
                         spacing: 1
+                        property var layerModel: modelData
 
                         // ==================== LAYER HEADER ====================
                         Rectangle {
                             width: parent.width
                             height: root.rowHeight
                             color: root.selectedObject === modelData ? Qt.alpha(Theme.accent, 0.25) : Theme.secondaryHover
-                            property var _layerModel: modelData
 
                             RowLayout {
                                 anchors.fill: parent
@@ -279,206 +280,244 @@ Rectangle {
                             MouseArea {
                                 anchors.fill: parent
                                 acceptedButtons: Qt.LeftButton
-                                onClicked: {
-                                    console.log("Timeline.layerClick: _layerModel =", _layerModel, typeof _layerModel);
-                                    root.objectSelected(_layerModel);
-                                }
-                            }
-
-                            Menu {
-                                id: layerMenu
-                                MenuItem {
-                                    text: "Rename Layer"
-                                    onTriggered: renameItem(_layerModel)
-                                }
-                                MenuItem {
-                                    text: "Add Track"
-                                    onTriggered: {
-                                        _layerModel.addTrack();
-                                        if (_layerModel.composition)
-                                            _layerModel.composition.rebuildFlatLayers();
-                                    }
-                                }
-                                MenuSeparator {}
-                                MenuItem {
-                                    text: "Delete Layer"
-                                    onTriggered: _layerModel.deleteLayer()
-                                }
+                                onClicked: root.objectSelected(modelData)
                             }
                         }
 
-                        // ==================== TRACKS ====================
-                        Repeater {
-                            model: modelData ? modelData.tracks : 0
-                            delegate: Rectangle {
-                                id: trackRow
-                                width: parent.width
-                                height: 38
-                                color: root.selectedObject === modelData ? Qt.alpha(Theme.accent, 0.15) : (index % 2 === 0 ? Theme.secondary : Qt.alpha(Theme.secondaryHover, 0.3))
+                        Menu {
+                            id: layerMenu
+                            MenuItem {
+                                text: "Rename Layer"
+                                onTriggered: renameItem(layerColumn.layerModel)
+                            }
+                            MenuItem {
+                                text: "Add Track"
+                                onTriggered: {
+                                    var m = layerColumn.layerModel;
+                                    m.addTrack();
+                                    if (m.composition)
+                                        m.composition.rebuildFlatLayers();
+                                }
+                            }
+                            MenuSeparator {}
+                            MenuItem {
+                                text: "Delete Layer"
+                                onTriggered: layerColumn.layerModel.deleteLayer()
+                            }
+                        }
 
-                                property var trackObj: modelData
-                                property var layerObj: layerColumn.modelData
+                    // ==================== TRACKS ====================
+                    Repeater {
+                        model: modelData ? modelData.tracks : 0
+                        delegate: Rectangle {
+                            id: trackRow
+                            width: parent.width
+                            height: 38
+                            color: root.selectedObject === modelData ? Qt.alpha(Theme.accent, 0.15) : (index % 2 === 0 ? Theme.secondary : Qt.alpha(Theme.secondaryHover, 0.3))
 
-                                // Track Name Column
-                                Rectangle {
-                                    width: root.layerNameWidth
-                                    height: parent.height
-                                    color: "transparent"
-                                    border.color: Theme.muted
+                            property var trackObj: null
+                            property var layerObj: layerColumn.modelData
+                            Component.onCompleted: trackObj = modelData
 
-                                    RowLayout {
-                                        anchors.fill: parent
-                                        anchors.leftMargin: 16
-                                        Text {
-                                            text: trackObj.name
-                                            color: Theme.foreground
-                                            font.pixelSize: 11
-                                        }
+                            // Track Name Column
+                            Rectangle {
+                                width: root.layerNameWidth
+                                height: parent.height
+                                color: "transparent"
+                                border.color: Theme.muted
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 16
+                                    Text {
+                                        text: modelData ? modelData.name : ""
+                                        color: Theme.foreground
+                                        font.pixelSize: 11
                                     }
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    acceptedButtons: Qt.LeftButton
+                                    onClicked: root.objectSelected(trackObj)
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    acceptedButtons: Qt.RightButton
+                                    onClicked: trackMenu.popup()
+                                }
+
+                                Menu {
+                                    id: trackMenu
+                                    MenuItem {
+                                        text: "Rename Track"
+                                        onTriggered: renameItem(trackObj)
+                                    }
+                                    MenuItem {
+                                        text: "Delete Track"
+                                        onTriggered: trackObj.deleteTrack()
+                                    }
+                                }
+                            }
+
+                            // ==================== CONTENT AREA (Strips + Drop Zone) ====================
+                            Item {
+                                id: contentArea
+                                anchors.left: parent.left
+                                anchors.leftMargin: root.layerNameWidth
+                                anchors.right: parent.right
+                                height: parent.height
+
+                                // Box select area (empty space)
+                                Rectangle {
+                                    anchors.fill: parent
+                                    color: "transparent"
+                                    visible: true
 
                                     MouseArea {
                                         anchors.fill: parent
                                         acceptedButtons: Qt.LeftButton
-                                        onClicked: root.objectSelected(trackObj)
-                                    }
-
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        acceptedButtons: Qt.RightButton
-                                        onClicked: trackMenu.popup()
-                                    }
-
-                                    Menu {
-                                        id: trackMenu
-                                        MenuItem {
-                                            text: "Rename Track"
-                                            onTriggered: renameItem(trackObj)
-                                        }
-                                        MenuItem {
-                                            text: "Delete Track"
-                                            onTriggered: trackObj.deleteTrack()
+                                        onClicked: {
+                                            root.selectedObject = null;
+                                            _selectedLayers = [];
+                                            root.objectSelected(null);
                                         }
                                     }
                                 }
 
-                                // ==================== CONTENT AREA (Strips + Drop Zone) ====================
-                                Item {
-                                    id: contentArea
-                                    anchors.left: parent.left
-                                    anchors.leftMargin: root.layerNameWidth
-                                    anchors.right: parent.right
-                                    height: parent.height
+                                // Drop Zone
+                                DropArea {
+                                    anchors.fill: parent
+                                    keys: ["strip"]
 
-                                    // Box select area (empty space)
-                                    Rectangle {
-                                        anchors.fill: parent
-                                        color: "transparent"
-                                        visible: true
-
-                                        MouseArea {
-                                            anchors.fill: parent
-                                            acceptedButtons: Qt.LeftButton
-                                            onClicked: {
-                                                root.selectedObject = null;
-                                                _selectedLayers = [];
-                                                root.objectSelected(null);
-                                            }
+                                    onDropped: function (drag) {
+                                        if (drag.source.stripObj) {
+                                            drag.source.stripObj.moveToTrack(trackObj);
                                         }
                                     }
+                                }
 
-                                    // Drop Zone
-                                    DropArea {
-                                        anchors.fill: parent
-                                        keys: ["strip"]
+                                // ==================== STRIPS ====================
+                                Repeater {
+                                    model: trackObj ? trackObj.strips : 0
+                                    delegate: Rectangle {
+                                        id: stripRect
+                                        x: modelData.startFrame * root.pixelPerFrame
+                                        y: 5
+                                        width: Math.max(50, modelData.duration * root.pixelPerFrame)
+                                        height: 28
+                                        radius: 5
+                                        color: Qt.alpha(root.stripColors[index % root.stripColors.length], 0.7)
+                                        border.width: root.selectedObject === modelData ? 2.5 : 1.5
+                                        border.color: root.selectedObject === modelData ? Theme.accent : Qt.lighter(color, 1.4)
 
-                                        onDropped: function (drag) {
-                                            if (drag.source.stripObj) {
-                                                drag.source.stripObj.moveToTrack(trackObj);
-                                            }
-                                        }
-                                    }
+                                        property var stripObj: modelData
+                                        property var tlRoot: root
 
-                                    // ==================== STRIPS ====================
-                                    Repeater {
-                                        model: trackObj ? trackObj.strips : 0
-                                        delegate: Rectangle {
-                                            id: stripRect
-                                            x: modelData.startFrame * root.pixelPerFrame
-                                            y: 5
-                                            width: Math.max(50, modelData.duration * root.pixelPerFrame)
-                                            height: 28
+                                        // Visual Edges
+                                        Rectangle {
+                                            anchors.left: parent.left
+                                            width: 6
+                                            height: parent.height
+                                            color: "#ffffff"
+                                            opacity: 0.45
                                             radius: 5
-                                            color: Qt.alpha(root.stripColors[index % root.stripColors.length], 0.7)
-                                            border.width: root.selectedObject === modelData ? 2.5 : 1.5
-                                            border.color: root.selectedObject === modelData ? Theme.accent : Qt.lighter(color, 1.4)
+                                        }
+                                        Rectangle {
+                                            anchors.right: parent.right
+                                            width: 6
+                                            height: parent.height
+                                            color: "#ffffff"
+                                            opacity: 0.3
+                                            radius: 5
+                                        }
 
-                                            property var stripObj: modelData
-                                            property var tlRoot: root
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: stripObj.name
+                                            color: "white"
+                                            font.pixelSize: 11
+                                            elide: Text.ElideRight
+                                        }
 
-                                            // Visual Edges
-                                            Rectangle {
-                                                anchors.left: parent.left
-                                                width: 6
-                                                height: parent.height
-                                                color: "#ffffff"
-                                                opacity: 0.45
-                                                radius: 5
+                                        // ── Move Drag ──
+                                        MouseArea {
+                                            id: stripDragArea
+                                            anchors.fill: parent
+                                            anchors.leftMargin: 8
+                                            anchors.rightMargin: 8
+                                            cursorShape: pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor
+                                            drag.target: stripRect
+                                            drag.axis: Drag.XAxis
+                                            drag.minimumX: 0
+
+                                            onPressed: function (mouse) {
+                                                stripRect.Drag.active = true;
+                                                stripRect.Drag.keys = ["strip"];
+                                                root.select(stripObj);
                                             }
-                                            Rectangle {
-                                                anchors.right: parent.right
-                                                width: 6
-                                                height: parent.height
-                                                color: "#ffffff"
-                                                opacity: 0.3
-                                                radius: 5
+
+                                            onReleased: function (mouse) {
+                                                stripRect.Drag.active = false;
+                                                let newStart = Math.max(0, stripRect.x / root.pixelPerFrame);
+                                                stripObj.startFrame = snapFrame(newStart);
+                                                stripRect.x = stripObj.startFrame * root.pixelPerFrame;
+                                            }
+                                        }
+
+                                        // ── Right Resize Handle ──
+                                        MouseArea {
+                                            anchors.right: parent.right
+                                            anchors.top: parent.top
+                                            anchors.bottom: parent.bottom
+                                            width: 10
+                                            cursorShape: Qt.SizeHorCursor
+
+                                            property real startX: 0
+                                            property int startDuration: 0
+
+                                            onPressed: function (mouse) {
+                                                startX = mouse.x;
+                                                startDuration = stripObj.duration;
+                                                root.select(stripObj);
                                             }
 
-                                            Text {
-                                                anchors.centerIn: parent
-                                                text: stripObj.name
-                                                color: "white"
-                                                font.pixelSize: 11
-                                                elide: Text.ElideRight
+                                            onPositionChanged: function (mouse) {
+                                                if (!(mouse.buttons & Qt.LeftButton))
+                                                    return;
+                                                var dx = mouse.x - startX;
+                                                var newDuration = Math.max(5, Math.round(startDuration + dx / root.pixelPerFrame));
+                                                stripObj.duration = newDuration;
+                                                stripRect.width = Math.max(50, newDuration * root.pixelPerFrame);
                                             }
 
-                                            // ── Move Drag ──
+                                            onReleased: function (mouse) {
+                                                stripObj.duration = Math.max(5, stripObj.duration);
+                                            }
+                                        }
+
+                                        // ── Left Trim Handle ──
+                                        Rectangle {
+                                            anchors.left: parent.left
+                                            anchors.top: parent.top
+                                            anchors.bottom: parent.bottom
+                                            width: 8
+                                            color: root.selectedObject === stripObj ? Theme.accent : "transparent"
+                                            opacity: root.selectedObject === stripObj ? 0.6 : 0.0
+
                                             MouseArea {
-                                                id: stripDragArea
                                                 anchors.fill: parent
-                                                anchors.leftMargin: 8
-                                                anchors.rightMargin: 8
-                                                cursorShape: pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor
-                                                drag.target: stripRect
-                                                drag.axis: Drag.XAxis
-                                                drag.minimumX: 0
-
-                                                onPressed: function (mouse) {
-                                                    stripRect.Drag.active = true;
-                                                    stripRect.Drag.keys = ["strip"];
-                                                    root.select(stripObj);
-                                                }
-
-                                                onReleased: function (mouse) {
-                                                    stripRect.Drag.active = false;
-                                                    let newStart = Math.max(0, stripRect.x / root.pixelPerFrame);
-                                                    stripObj.startFrame = snapFrame(newStart);
-                                                    stripRect.x = stripObj.startFrame * root.pixelPerFrame;
-                                                }
-                                            }
-
-                                            // ── Right Resize Handle ──
-                                            MouseArea {
-                                                anchors.right: parent.right
-                                                anchors.top: parent.top
-                                                anchors.bottom: parent.bottom
-                                                width: 10
+                                                anchors.leftMargin: -4
                                                 cursorShape: Qt.SizeHorCursor
 
-                                                property real startX: 0
+                                                property int startX: 0
+                                                property int startFrame: 0
                                                 property int startDuration: 0
 
                                                 onPressed: function (mouse) {
                                                     startX = mouse.x;
+                                                    startFrame = stripObj.startFrame;
                                                     startDuration = stripObj.duration;
                                                     root.select(stripObj);
                                                 }
@@ -487,122 +526,83 @@ Rectangle {
                                                     if (!(mouse.buttons & Qt.LeftButton))
                                                         return;
                                                     var dx = mouse.x - startX;
-                                                    var newDuration = Math.max(5, Math.round(startDuration + dx / root.pixelPerFrame));
+                                                    var frameDelta = Math.round(dx / root.pixelPerFrame);
+
+                                                    var newStart = Math.max(0, startFrame + frameDelta);
+                                                    var newDuration = Math.max(5, startDuration - frameDelta);
+
+                                                    if (newDuration < 5) {
+                                                        newDuration = 5;
+                                                        newStart = startFrame + startDuration - 5;
+                                                    }
+
+                                                    stripObj.startFrame = newStart;
                                                     stripObj.duration = newDuration;
-                                                    stripRect.width = Math.max(50, newDuration * root.pixelPerFrame);
-                                                }
 
-                                                onReleased: function (mouse) {
-                                                    stripObj.duration = Math.max(5, stripObj.duration);
+                                                    stripRect.x = newStart * root.pixelPerFrame;
+                                                    stripRect.width = newDuration * root.pixelPerFrame;
                                                 }
                                             }
-
-                                            // ── Left Trim Handle ──
-                                            Rectangle {
-                                                anchors.left: parent.left
-                                                anchors.top: parent.top
-                                                anchors.bottom: parent.bottom
-                                                width: 8
-                                                color: root.selectedObject === stripObj ? Theme.accent : "transparent"
-                                                opacity: root.selectedObject === stripObj ? 0.6 : 0.0
-
-                                                MouseArea {
-                                                    anchors.fill: parent
-                                                    anchors.leftMargin: -4
-                                                    cursorShape: Qt.SizeHorCursor
-
-                                                    property int startX: 0
-                                                    property int startFrame: 0
-                                                    property int startDuration: 0
-
-                                                    onPressed: function (mouse) {
-                                                        startX = mouse.x;
-                                                        startFrame = stripObj.startFrame;
-                                                        startDuration = stripObj.duration;
-                                                        root.select(stripObj);
-                                                    }
-
-                                                    onPositionChanged: function (mouse) {
-                                                        if (!(mouse.buttons & Qt.LeftButton))
-                                                            return;
-                                                        var dx = mouse.x - startX;
-                                                        var frameDelta = Math.round(dx / root.pixelPerFrame);
-
-                                                        var newStart = Math.max(0, startFrame + frameDelta);
-                                                        var newDuration = Math.max(5, startDuration - frameDelta);
-
-                                                        if (newDuration < 5) {
-                                                            newDuration = 5;
-                                                            newStart = startFrame + startDuration - 5;
-                                                        }
-
-                                                        stripObj.startFrame = newStart;
-                                                        stripObj.duration = newDuration;
-
-                                                        stripRect.x = newStart * root.pixelPerFrame;
-                                                        stripRect.width = newDuration * root.pixelPerFrame;
-                                                    }
-                                                }
-                                            }
-
-                                            // Right Click
-                                            MouseArea {
-                                                anchors.fill: parent
-                                                acceptedButtons: Qt.RightButton
-                                                onClicked: function (mouse) {
-                                                    root.select(stripObj);
-                                                    stripMenu.popup();
-                                                }
-                                            }
-
-                                            Menu {
-                                                id: stripMenu
-                                                MenuItem {
-                                                    text: "Edit"
-                                                    onTriggered: {
-                                                        root.select(stripObj);
-                                                    }
-                                                }
-                                                MenuSeparator {}
-                                                MenuItem {
-                                                    text: "Cut"
-                                                    onTriggered: cutSelected()
-                                                }
-                                                MenuItem {
-                                                    text: "Copy"
-                                                    onTriggered: copySelected()
-                                                }
-                                                MenuItem {
-                                                    text: "Duplicate"
-                                                    onTriggered: duplicateSelected()
-                                                }
-                                                MenuItem {
-                                                    text: "Split at Playhead"
-                                                    onTriggered: splitAtPlayhead()
-                                                }
-                                                MenuSeparator {}
-                                                MenuItem {
-                                                    text: "Rename Strip"
-                                                    onTriggered: renameItem(stripObj)
-                                                }
-                                                MenuItem {
-                                                    text: "Delete Strip"
-                                                    onTriggered: {
-                                                        stripObj.deleteStrip();
-                                                        tlRoot.selectedObject = null;
-                                                        _selectedLayers = [];
-                                                    }
-                                                }
-                                            }
-
-                                            Drag.active: stripDragArea.drag.active
-                                            Drag.hotSpot.x: width / 2
-                                            Drag.hotSpot.y: height / 2
                                         }
+
+                                        // Right Click
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            acceptedButtons: Qt.RightButton
+                                            onClicked: function (mouse) {
+                                                root.select(stripObj);
+                                                stripMenu.popup();
+                                            }
+                                        }
+
+                                        Menu {
+                                            id: stripMenu
+                                            MenuItem {
+                                                text: "Edit"
+                                                onTriggered: {
+                                                    root.select(stripObj);
+                                                }
+                                            }
+                                            MenuSeparator {}
+                                            MenuItem {
+                                                text: "Cut"
+                                                onTriggered: cutSelected()
+                                            }
+                                            MenuItem {
+                                                text: "Copy"
+                                                onTriggered: copySelected()
+                                            }
+                                            MenuItem {
+                                                text: "Duplicate"
+                                                onTriggered: duplicateSelected()
+                                            }
+                                            MenuItem {
+                                                text: "Split at Playhead"
+                                                onTriggered: splitAtPlayhead()
+                                            }
+                                            MenuSeparator {}
+                                            MenuItem {
+                                                text: "Rename Strip"
+                                                onTriggered: renameItem(stripObj)
+                                            }
+                                            MenuItem {
+                                                text: "Delete Strip"
+                                                onTriggered: {
+                                                    stripObj.deleteStrip();
+                                                    tlRoot.selectedObject = null;
+                                                    _selectedLayers = [];
+                                                }
+                                            }
+                                        }
+
+                                        Drag.active: stripDragArea.drag.active
+                                        Drag.hotSpot.x: width / 2
+                                        Drag.hotSpot.y: height / 2
                                     }
                                 }
                             }
                         }
+                    }
                     }
                 }
             }

@@ -107,7 +107,7 @@ Window {
 
                 PropertiesPanel {
                     SplitView.preferredWidth: 240
-                    selectedObject: selectedObject
+                    selectedObject: mainWindow.selectedObject
                     timelineModel: globalTimelineModel
                 }
             }
@@ -154,6 +154,12 @@ Window {
                         case 2:
                             stackView.replace(keyframeEditorPage);
                             break;
+                        case 3:
+                            stackView.replace(audioPage);
+                            break;
+                        case 4:
+                            stackView.replace(colorGradingPage);
+                            break;
                         }
                     }
                 }
@@ -166,13 +172,32 @@ Window {
                         selectedObject: selectedObject
 
                         onObjectSelected: function (obj) {
-                            console.log("Main.onObjectSelected: obj =", obj, obj ? obj.name : "null");
                             mainWindow.selectedObject = obj;
                         }
 
                         onElementSelected: function (element) {
                             viewport.setSelectedLayers([element]);
                         }
+                    }
+                }
+
+                Component {
+                    id: audioPage
+
+                    AudioEditor {
+                        // timelineModel: root.timelineModel
+                        // selectedClip: timeline.selectedObject   // or whatever your current clip is
+                        // pixelPerFrame: timeline.pixelPerFrame
+                    }
+                }
+
+                 Component {
+                    id: colorGradingPage
+
+                    ColorGradingEditor {
+                        // timelineModel: root.timelineModel
+                        // selectedClip: timeline.selectedObject   // or whatever your current clip is
+                        // pixelPerFrame: timeline.pixelPerFrame
                     }
                 }
 

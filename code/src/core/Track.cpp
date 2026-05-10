@@ -104,12 +104,10 @@ Strip* Track::createStripFromAsset(Layer *asset, const QString &stripName, int s
     // Determine node type from asset
     if (auto *shape = qobject_cast<ShapeLayer*>(asset)) {
         static const char* shapeNames[] = {
-            "Rectangle", "Ellipse", "Circle", "Triangle", "Polygon",
-            "Star", "Line", "Arc", "Grid", "Spiral",
-            "Arrow", "RoundedRect", "BezierShape", "Path", "Spline"
+            "Rectangle", "Ellipse", "Circle", "Triangle"
         };
         int st = shape->shapeType();
-        if (st >= 0 && st < 15)
+        if (st >= 0 && st < 4)
             nodeType = QString::fromLatin1(shapeNames[st]);
     } else if (qobject_cast<TextLayer*>(asset)) {
         nodeType = "Text";

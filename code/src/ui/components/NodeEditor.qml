@@ -12,14 +12,22 @@ Rectangle {
     property var selectedStrip: null
 
     function _detectType(obj) {
-        if (!obj) return "none";
-        if (obj.nodeGraph !== undefined) return "nodeStrip";
-        if (obj.deleteStrip) return "strip";
-        if (obj.deleteTrack) return "track";
-        if (obj.deleteLayer) return "layer";
-        if (obj.tracks !== undefined) return "layer";
-        if (obj.strips !== undefined) return "track";
-        if (obj.element !== undefined) return "strip";
+        if (!obj)
+            return "none";
+        if (obj.nodeGraph !== undefined)
+            return "nodeStrip";
+        if (obj.deleteStrip)
+            return "strip";
+        if (obj.deleteTrack)
+            return "track";
+        if (obj.deleteLayer)
+            return "layer";
+        if (obj.tracks !== undefined)
+            return "layer";
+        if (obj.strips !== undefined)
+            return "track";
+        if (obj.element !== undefined)
+            return "strip";
         return "unknown";
     }
 
@@ -54,35 +62,50 @@ Rectangle {
                 visible: root.nodeGraph !== null
                 height: 28
                 flat: true
-                onClicked: { if (root.nodeGraph) root.nodeGraph.addNode("Rectangle"); }
+                onClicked: {
+                    if (root.nodeGraph)
+                        root.nodeGraph.addNode("Rectangle");
+                }
             }
             Button {
                 text: "Ellipse"
                 visible: root.nodeGraph !== null
                 height: 28
                 flat: true
-                onClicked: { if (root.nodeGraph) root.nodeGraph.addNode("Ellipse"); }
+                onClicked: {
+                    if (root.nodeGraph)
+                        root.nodeGraph.addNode("Ellipse");
+                }
             }
             Button {
                 text: "Circle"
                 visible: root.nodeGraph !== null
                 height: 28
                 flat: true
-                onClicked: { if (root.nodeGraph) root.nodeGraph.addNode("Circle"); }
+                onClicked: {
+                    if (root.nodeGraph)
+                        root.nodeGraph.addNode("Circle");
+                }
             }
             Button {
                 text: "Triangle"
                 visible: root.nodeGraph !== null
                 height: 28
                 flat: true
-                onClicked: { if (root.nodeGraph) root.nodeGraph.addNode("Triangle"); }
+                onClicked: {
+                    if (root.nodeGraph)
+                        root.nodeGraph.addNode("Triangle");
+                }
             }
             Button {
                 text: "Text"
                 visible: root.nodeGraph !== null
                 height: 28
                 flat: true
-                onClicked: { if (root.nodeGraph) root.nodeGraph.addNode("Text"); }
+                onClicked: {
+                    if (root.nodeGraph)
+                        root.nodeGraph.addNode("Text");
+                }
             }
             Button {
                 text: "Cook"
