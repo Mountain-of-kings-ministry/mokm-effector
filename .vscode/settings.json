@@ -1,3 +1,26 @@
 {
-  "cmake.sourceDirectory": "${workspaceFolder}/code"
+  "cmake.sourceDirectory": "${workspaceFolder}/code",
+  "files.exclude": {
+    "**/code/third_parties": true,
+    "**/code/vcpkg_installed": true,
+    "**/web": true,
+    "**/code/resources/icons/**": true,
+    "**/code/resources/status_icons/**": true,
+  },
+
+  "search.exclude": {
+    "**/code/third_parties": true,
+    "**/code/vcpkg_installed": true,
+    "**/web": true,
+    "**/code/resources/icons/**": true,
+    "**/code/resources/status_icons/**": true,
+  },
+
+  "files.watcherExclude": {
+    "**/code/third_parties/**": true,
+    "**/code/vcpkg_installed": true,
+    "**/web": true,
+    "**/code/resources/icons/**": true,
+    "**/code/resources/status_icons/**": true,
+  },
 }

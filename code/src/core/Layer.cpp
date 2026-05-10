@@ -107,6 +107,15 @@ void Layer::setBlurRadius(qreal r)
     }
 }
 
+void Layer::setBlendMode(int mode)
+{
+    mode = qBound(0, mode, 4);
+    if (m_blendMode != mode) {
+        m_blendMode = mode;
+        emit blendModeChanged();
+    }
+}
+
 Layer* Layer::clone(QObject *parent) const
 {
     auto *l = new Layer(m_type, parent);
@@ -122,6 +131,7 @@ Layer* Layer::clone(QObject *parent) const
     l->m_startFrame = m_startFrame;
     l->m_duration = m_duration;
     l->m_blurRadius = m_blurRadius;
+    l->m_blendMode = m_blendMode;
     return l;
 }
 
@@ -141,6 +151,7 @@ QJsonObject Layer::toJson() const
     obj["startFrame"] = m_startFrame;
     obj["duration"] = m_duration;
     obj["blurRadius"] = m_blurRadius;
+    obj["blendMode"] = m_blendMode;
     return obj;
 }
 
@@ -158,6 +169,7 @@ void Layer::fromJson(const QJsonObject &obj)
     setStartFrame(obj["startFrame"].toInt());
     setDuration(obj["duration"].toInt(90));
     setBlurRadius(obj["blurRadius"].toDouble());
+    setBlendMode(obj["blendMode"].toInt());
 }
 
 QString Layer::serialize() const

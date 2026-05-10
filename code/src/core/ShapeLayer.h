@@ -12,13 +12,19 @@ class ShapeLayer : public Layer
     Q_PROPERTY(qreal shapeHeight READ shapeHeight WRITE setShapeHeight NOTIFY shapeGeometryChanged)
     Q_PROPERTY(qreal radius READ radius WRITE setRadius NOTIFY shapeGeometryChanged)
     Q_PROPERTY(int sides READ sides WRITE setSides NOTIFY sidesChanged)
+    Q_PROPERTY(qreal startAngle READ startAngle WRITE setStartAngle NOTIFY shapeGeometryChanged)
+    Q_PROPERTY(qreal spanAngle READ spanAngle WRITE setSpanAngle NOTIFY shapeGeometryChanged)
+    Q_PROPERTY(int gridColumns READ gridColumns WRITE setGridColumns NOTIFY shapeGeometryChanged)
+    Q_PROPERTY(int gridRows READ gridRows WRITE setGridRows NOTIFY shapeGeometryChanged)
+    Q_PROPERTY(int turns READ turns WRITE setTurns NOTIFY shapeGeometryChanged)
     Q_PROPERTY(QColor color READ color WRITE setColor NOTIFY colorChanged)
     Q_PROPERTY(QColor strokeColor READ strokeColor WRITE setStrokeColor NOTIFY strokeChanged)
     Q_PROPERTY(qreal strokeWidth READ strokeWidth WRITE setStrokeWidth NOTIFY strokeChanged)
 public:
     enum ShapeType {
         Rectangle, Ellipse, Circle, Triangle,
-        Polygon, Star, Line, Arrow, RoundedRect
+        Polygon, Star, Line, Arrow, RoundedRect,
+        Arc, Grid, Spiral
     };
     Q_ENUM(ShapeType)
 
@@ -36,6 +42,17 @@ public:
     void setRadius(qreal r);
     int sides() const { return m_sides; }
     void setSides(int s);
+
+    qreal startAngle() const { return m_startAngle; }
+    void setStartAngle(qreal a);
+    qreal spanAngle() const { return m_spanAngle; }
+    void setSpanAngle(qreal a);
+    int gridColumns() const { return m_gridColumns; }
+    void setGridColumns(int c);
+    int gridRows() const { return m_gridRows; }
+    void setGridRows(int r);
+    int turns() const { return m_turns; }
+    void setTurns(int t);
 
     QColor color() const { return m_color; }
     void setColor(const QColor &color);
@@ -61,6 +78,11 @@ private:
     qreal m_shapeHeight = 200;
     qreal m_radius = 0;
     int m_sides = 6;
+    qreal m_startAngle = 0;
+    qreal m_spanAngle = 360;
+    int m_gridColumns = 5;
+    int m_gridRows = 5;
+    int m_turns = 5;
     QColor m_color = QColor("#eab308");
     QColor m_strokeColor = Qt::transparent;
     qreal m_strokeWidth = 0;

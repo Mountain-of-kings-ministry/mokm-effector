@@ -103,6 +103,116 @@ void ExportController::renderShapeLayer(QPainter &painter, ShapeLayer *layer)
         painter.drawPolygon(tri);
         break;
     }
+    case ShapeLayer::Polygon: {
+        painter.setBrush(layer->color());
+        painter.setPen(pen);
+        QPolygonF poly;
+        int sides = layer->sides();
+        qreal a = qMin(w, h) / 2.0;
+        for (int i = 0; i < sides; ++i) {
+            qreal angle = 2.0 * M_PI * i / sides - M_PI_2;
+            poly << QPointF(a * cos(angle), a * sin(angle));
+        }
+        painter.drawPolygon(poly);
+        break;
+    }
+    case ShapeLayer::Star: {
+        painter.setBrush(layer->color());
+        painter.setPen(pen);
+        QPolygonF star;
+        int points = layer->sides();
+        qreal outer = qMin(w, h) / 2.0;
+        qreal inner = outer * 0.4;
+        for (int i = 0; i < points * 2; ++i) {
+            qreal angle = M_PI * i / points - M_PI_2;
+            qreal r2 = (i % 2 == 0) ? outer : inner;
+            star << QPointF(r2 * cos(angle), r2 * sin(angle));
+        }
+        painter.drawPolygon(star);
+        break;
+    }
+    case ShapeLayer::Line: {
+        QPen linePen(layer->strokeColor() == Qt::transparent ? layer->color() : layer->strokeColor(),
+                     layer->strokeWidth() > 0 ? layer->strokeWidth() : 2);
+        painter.setPen(linePen);
+        painter.setBrush(Qt::NoBrush);
+        qreal len = qMin(w, h) * 0.8;
+        painter.drawLine(QPointF(-len / 2, 0), QPointF(len / 2, 0));
+        break;
+    }
+    case ShapeLayer::Arrow: {
+        QPen arrowPen(layer->strokeColor() == Qt::transparent ? layer->color() : layer->strokeColor(),
+                      layer->strokeWidth() > 0 ? layer->strokeWidth() : 2);
+        painter.setPen(arrowPen);
+        painter.setBrush(layer->color());
+        qreal len = qMin(w, h) * 0.7;
+        qreal head = qMin(w, h) * 0.25;
+        QPolygonF arrow;
+        arrow << QPointF(len / 2, 0)
+              << QPointF(len / 2 - head, -head * 0.4)
+              << QPointF(len / 2 - head, head * 0.4);
+        painter.drawLine(QPointF(-len / 2, 0), QPointF(len / 2, 0));
+        painter.drawPolygon(arrow);
+        break;
+    }
+    case ShapeLayer::RoundedRect: {
+        painter.setBrush(layer->color());
+        painter.setPen(pen);
+        painter.drawRoundedRect(rect, qMin(r > 0 ? r : 20.0, qMin(w, h) / 2.0),
+                                qMin(r > 0 ? r : 20.0, qMin(w, h) / 2.0));
+        break;
+    }
+    case ShapeLayer::Arc: {
+        QPen arcPen(layer->strokeColor() == Qt::transparent ? layer->color() : layer->strokeColor(),
+                    layer->strokeWidth() > 0 ? layer->strokeWidth() : 2);
+        painter.setPen(arcPen);
+        painter.setBrush(layer->color());
+        qreal sa = layer->startAngle() * 16;
+        qreal span = layer->spanAngle() * 16;
+        painter.drawPie(rect, static_cast<int>(sa), static_cast<int>(span));
+        break;
+    }
+    case ShapeLayer::Grid: {
+        QPen gridPen(layer->strokeColor() == Qt::transparent ? layer->color() : layer->strokeColor(),
+                     layer->strokeWidth() > 0 ? layer->strokeWidth() : 1);
+        painter.setPen(gridPen);
+        painter.setBrush(Qt::NoBrush);
+        int cols = layer->gridColumns();
+        int rows = layer->gridRows();
+        qreal cellSize = w;
+        qreal gap = h;
+        qreal totalW = cols * cellSize + (cols - 1) * gap;
+        qreal totalH = rows * cellSize + (rows - 1) * gap;
+        qreal ox = -totalW / 2.0;
+        qreal oy = -totalH / 2.0;
+        for (int x = 0; x < cols; ++x) {
+            for (int y = 0; y < rows; ++y) {
+                qreal cx = ox + x * (cellSize + gap);
+                qreal cy = oy + y * (cellSize + gap);
+                painter.drawRect(QRectF(cx, cy, cellSize, cellSize));
+            }
+        }
+        break;
+    }
+    case ShapeLayer::Spiral: {
+        QPen spiralPen(layer->strokeColor() == Qt::transparent ? layer->color() : layer->strokeColor(),
+                       layer->strokeWidth() > 0 ? layer->strokeWidth() : 1.5);
+        painter.setPen(spiralPen);
+        painter.setBrush(Qt::NoBrush);
+        int turns = layer->turns();
+        qreal maxRadius = w;
+        qreal spacing = h > 0 ? h : 20;
+        int segments = turns * 72;
+        QPolygonF spiral;
+        for (int i = 0; i <= segments; ++i) {
+            qreal t = (qreal)i / segments * turns * 2.0 * M_PI;
+            qreal radius = spacing * t / (2.0 * M_PI);
+            if (radius > maxRadius) break;
+            spiral << QPointF(radius * cos(t), radius * sin(t));
+        }
+        painter.drawPolyline(spiral);
+        break;
+    }
     }
 }
 

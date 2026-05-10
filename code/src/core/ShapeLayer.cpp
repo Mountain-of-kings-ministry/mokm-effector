@@ -46,6 +46,46 @@ void ShapeLayer::setSides(int s)
     }
 }
 
+void ShapeLayer::setStartAngle(qreal a)
+{
+    if (!qFuzzyCompare(m_startAngle, a)) {
+        m_startAngle = a;
+        emit shapeGeometryChanged();
+    }
+}
+
+void ShapeLayer::setSpanAngle(qreal a)
+{
+    if (!qFuzzyCompare(m_spanAngle, a)) {
+        m_spanAngle = a;
+        emit shapeGeometryChanged();
+    }
+}
+
+void ShapeLayer::setGridColumns(int c)
+{
+    if (m_gridColumns != c) {
+        m_gridColumns = qBound(1, c, 100);
+        emit shapeGeometryChanged();
+    }
+}
+
+void ShapeLayer::setGridRows(int r)
+{
+    if (m_gridRows != r) {
+        m_gridRows = qBound(1, r, 100);
+        emit shapeGeometryChanged();
+    }
+}
+
+void ShapeLayer::setTurns(int t)
+{
+    if (m_turns != t) {
+        m_turns = qBound(1, t, 100);
+        emit shapeGeometryChanged();
+    }
+}
+
 void ShapeLayer::setColor(const QColor &color)
 {
     if (m_color != color) {
@@ -89,6 +129,11 @@ Layer* ShapeLayer::clone(QObject *parent) const
     s->m_shapeHeight = m_shapeHeight;
     s->m_radius = m_radius;
     s->m_sides = m_sides;
+    s->m_startAngle = m_startAngle;
+    s->m_spanAngle = m_spanAngle;
+    s->m_gridColumns = m_gridColumns;
+    s->m_gridRows = m_gridRows;
+    s->m_turns = m_turns;
     s->m_color = m_color;
     s->m_strokeColor = m_strokeColor;
     s->m_strokeWidth = m_strokeWidth;
@@ -103,6 +148,11 @@ QJsonObject ShapeLayer::toJson() const
     obj["shapeHeight"] = m_shapeHeight;
     obj["radius"] = m_radius;
     obj["sides"] = m_sides;
+    obj["startAngle"] = m_startAngle;
+    obj["spanAngle"] = m_spanAngle;
+    obj["gridColumns"] = m_gridColumns;
+    obj["gridRows"] = m_gridRows;
+    obj["turns"] = m_turns;
     obj["color"] = m_color.name();
     obj["strokeColor"] = m_strokeColor.name();
     obj["strokeWidth"] = m_strokeWidth;
@@ -117,6 +167,11 @@ void ShapeLayer::fromJson(const QJsonObject &obj)
     setShapeHeight(obj["shapeHeight"].toDouble(200));
     setRadius(obj["radius"].toDouble());
     setSides(obj["sides"].toInt(6));
+    setStartAngle(obj["startAngle"].toDouble());
+    setSpanAngle(obj["spanAngle"].toDouble(360));
+    setGridColumns(obj["gridColumns"].toInt(5));
+    setGridRows(obj["gridRows"].toInt(5));
+    setTurns(obj["turns"].toInt(5));
     setColor(QColor(obj["color"].toString("#eab308")));
     setStrokeColor(QColor(obj["strokeColor"].toString("transparent")));
     setStrokeWidth(obj["strokeWidth"].toDouble());

@@ -102,6 +102,50 @@ Rectangle {
                         font.pixelSize: 10
                     }
 
+                    // ==================== SELECTED NODE PARAMETERS ====================
+                    ColumnLayout {
+                        id: nodeParamsSection
+                        visible: root.selectedObject != null && root.selectedObject.nodeGraph != null
+                                 && root.selectedObject.nodeGraph.selectedNodeId >= 0
+                        spacing: 4
+
+                        Text {
+                            text: qsTr("Selected Node Parameters")
+                            color: Theme.mutedForeground
+                            font.pixelSize: 10
+                            font.bold: true
+                            visible: nodeParamsSection.visible
+                        }
+
+                        Repeater {
+                            id: paramRepeater
+                            model: nodeParamsSection.visible ? root.selectedObject.nodeGraph.nodeParameterNames(
+                                root.selectedObject.nodeGraph.selectedNodeId) : []
+
+                            EditablePropertyRow {
+                                required property string modelData
+                                label: modelData
+                                value: {
+                                    if (!root.selectedObject || !root.selectedObject.nodeGraph) return "";
+                                    var val = root.selectedObject.nodeGraph.nodeParameter(
+                                        root.selectedObject.nodeGraph.selectedNodeId, modelData);
+                                    if (val === undefined || val === null) return "";
+                                    if (typeof val === "number") return val.toFixed(typeof val === "number" && Number.isInteger(val) ? 0 : 2);
+                                    return String(val);
+                                }
+                                onEditingFinished: function(v) {
+                                    if (root.selectedObject && root.selectedObject.nodeGraph) {
+                                        var nid = root.selectedObject.nodeGraph.selectedNodeId;
+                                        var old = root.selectedObject.nodeGraph.nodeParameter(nid, modelData);
+                                        var newVal = v;
+                                        if (typeof old === "number") newVal = parseFloat(v) || 0;
+                                        root.selectedObject.nodeGraph.setNodeParameter(nid, modelData, newVal);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     Button {
                         text: "Cook Node Graph"
                         Layout.fillWidth: true

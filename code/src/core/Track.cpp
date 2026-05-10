@@ -8,7 +8,7 @@
 #ifdef MOKM_ENABLE_NODES
 #include "../nodes/NodeStrip.h"
 #include "../nodes/NodeGraph.h"
-#include "../nodes/nodes/RectangleNode.h"
+#include "../nodes/nodes/generators/RectangleNode.h"
 #endif
 
 Track::Track(QObject *parent)
@@ -105,10 +105,11 @@ Strip* Track::createStripFromAsset(Layer *asset, const QString &stripName, int s
     if (auto *shape = qobject_cast<ShapeLayer*>(asset)) {
         static const char* shapeNames[] = {
             "Rectangle", "Ellipse", "Circle", "Triangle",
-            "Polygon", "Star", "Line", "Arrow", "RoundedRect"
+            "Polygon", "Star", "Line", "Arrow", "RoundedRect",
+            "Arc", "Grid", "Spiral"
         };
         int st = shape->shapeType();
-        if (st >= 0 && st < 9)
+        if (st >= 0 && st < 12)
             nodeType = QString::fromLatin1(shapeNames[st]);
     } else if (qobject_cast<TextLayer*>(asset)) {
         nodeType = "Text";

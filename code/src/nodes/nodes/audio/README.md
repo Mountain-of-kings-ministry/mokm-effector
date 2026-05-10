@@ -1,0 +1,1 @@
+# Audio Node Category\n\nMassive opportunity for audio reactivity.\n\nIntended nodes:\n- Audio Reactive\n- Audio Spectrum\n- Audio Waveform\n- Beat Detection\n- BPM\n- FFT\n- Envelope\n- Peak\n- MIDI Input

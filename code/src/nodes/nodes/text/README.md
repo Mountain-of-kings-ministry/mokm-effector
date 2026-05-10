@@ -1,0 +1,1 @@
+# Text Node Category\n\nTypography system.\n\nIntended nodes:\n- Text\n- Text Along Path\n- Text Animator\n- Text Range Selector\n- Text Repeater\n- Text Layout\n- Rich Text\n- Glyph Extract\n- Font Style\n- Kerning\n- Text Warp\n- Text Counter\n- Typewriter

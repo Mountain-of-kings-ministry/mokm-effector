@@ -1,0 +1,1 @@
+# Compositing Node Category\n\nNuke-style workflows.\n\nIntended nodes:\n- Merge\n- Alpha Over\n- Multiply\n- Screen\n- Overlay\n- Add\n- Mask\n- Channel Shuffle\n- Premult\n- Unpremult\n- Crop\n- Transform 2D

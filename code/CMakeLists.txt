@@ -2,9 +2,11 @@ cmake_minimum_required(VERSION 3.16)
 
 # ── vcpkg bootstrap ──────────────────────────────────────────
 if(DEFINED ENV{VCPKG_ROOT} AND NOT CMAKE_TOOLCHAIN_FILE)
-    set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+  set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
         CACHE STRING "")
 endif()
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # ── Project Options ──────────────────────────────────────────
 option(MOKM_ENABLE_NODES     "Node graph editor (QtNodes)"       ON)
@@ -13,13 +15,13 @@ option(MOKM_ENABLE_INTEROP   "OTIO + OpenFX interoperability"    OFF)
 option(MOKM_ENABLE_ALL       "Enable all optional components"    OFF)
 
 if(MOKM_ENABLE_ALL)
-    set(MOKM_ENABLE_NODES     ON CACHE BOOL "" FORCE)
-    set(MOKM_ENABLE_SCRIPTING ON CACHE BOOL "" FORCE)
-    set(MOKM_ENABLE_INTEROP   ON CACHE BOOL "" FORCE)
+  set(MOKM_ENABLE_NODES     ON CACHE BOOL "" FORCE)
+  set(MOKM_ENABLE_SCRIPTING ON CACHE BOOL "" FORCE)
+  set(MOKM_ENABLE_INTEROP   ON CACHE BOOL "" FORCE)
 endif()
 
 # ── vcpkg Manifest Features ──────────────────────────────────
-# NOTE: All optional features are now handled via local subdirectories 
+# NOTE: All optional features are now handled via local subdirectories
 # or temporarily disabled to ensure build success with standalone sources.
 set(VCPKG_MANIFEST_FEATURES "")
 
@@ -45,56 +47,61 @@ find_package(FFMPEG REQUIRED)
 
 # QtNodes (nodeeditor)
 if(MOKM_ENABLE_NODES)
-    set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-    set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
-    set(BUILD_DOCS OFF CACHE BOOL "" FORCE)
-    set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
-    add_subdirectory(third_parties/nodeeditor-master EXCLUDE_FROM_ALL)
-    message(STATUS "QtNodes included from local source (static)")
+  set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+  set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+  set(BUILD_DOCS OFF CACHE BOOL "" FORCE)
+  set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+  add_subdirectory(third_parties/nodeeditor-master EXCLUDE_FROM_ALL)
+  message(STATUS "QtNodes included from local source (static)")
 endif()
 
 # QuickJS
 if(MOKM_ENABLE_SCRIPTING)
-    set(QJS_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
-    set(QJS_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-    add_subdirectory(third_parties/quickjs-master EXCLUDE_FROM_ALL)
-    message(STATUS "QuickJS included from local source")
+  set(QJS_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
+  set(QJS_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+  add_subdirectory(third_parties/quickjs-master EXCLUDE_FROM_ALL)
+  message(STATUS "QuickJS included from local source")
 endif()
 
 # Interoperability (OTIO + OpenFX)
 if(MOKM_ENABLE_INTEROP)
-    # OpenTimelineIO configuration
-    set(OTIO_FIND_IMATH ON CACHE BOOL "" FORCE)
-    set(OTIO_FIND_RAPIDJSON ON CACHE BOOL "" FORCE)
-    set(OTIO_CXX_INSTALL OFF CACHE BOOL "" FORCE)
-    set(OTIO_PYTHON_INSTALL OFF CACHE BOOL "" FORCE)
-    set(OTIO_DEPENDENCIES_INSTALL OFF CACHE BOOL "" FORCE)
-    set(OTIO_INSTALL_PYTHON_MODULES OFF CACHE BOOL "" FORCE)
-    set(OTIO_INSTALL_COMMANDLINE_TOOLS OFF CACHE BOOL "" FORCE)
-    set(OTIO_SHARED_LIBS OFF CACHE BOOL "" FORCE) # Build static for easier linking
-    
-    add_subdirectory(third_parties/OpenTimelineIO-main EXCLUDE_FROM_ALL)
-    message(STATUS "OpenTimelineIO included from local source")
+  # OpenTimelineIO configuration
+  set(OTIO_FIND_IMATH ON CACHE BOOL "" FORCE)
+  set(OTIO_FIND_RAPIDJSON ON CACHE BOOL "" FORCE)
+  set(OTIO_CXX_INSTALL OFF CACHE BOOL "" FORCE)
+  set(OTIO_PYTHON_INSTALL OFF CACHE BOOL "" FORCE)
+  set(OTIO_DEPENDENCIES_INSTALL OFF CACHE BOOL "" FORCE)
+  set(OTIO_INSTALL_PYTHON_MODULES OFF CACHE BOOL "" FORCE)
+  set(OTIO_INSTALL_COMMANDLINE_TOOLS OFF CACHE BOOL "" FORCE)
+  set(OTIO_SHARED_LIBS OFF CACHE BOOL "" FORCE) # Build static for easier linking
 
-    # OpenFX dependencies and configuration
-    find_package(EXPAT REQUIRED)
-    if(NOT TARGET expat::expat)
-        add_library(expat::expat INTERFACE IMPORTED)
-        target_link_libraries(expat::expat INTERFACE EXPAT::EXPAT)
-    endif()
-    
-    find_package(OpenGL REQUIRED)
-    if(NOT TARGET opengl_system)
-        add_library(opengl_system INTERFACE IMPORTED)
-        target_link_libraries(opengl_system INTERFACE OpenGL::GL)
-    endif()
-    
-    find_package(spdlog REQUIRED)
-    find_package(cimg REQUIRED)
+  add_subdirectory(third_parties/OpenTimelineIO-main EXCLUDE_FROM_ALL)
+  message(STATUS "OpenTimelineIO included from local source")
 
-    set(BUILD_EXAMPLE_PLUGINS OFF CACHE BOOL "" FORCE)
-    add_subdirectory(third_parties/openfx-main EXCLUDE_FROM_ALL)
-    message(STATUS "OpenFX included from local source")
+  # OpenFX dependencies and configuration
+  find_package(expat CONFIG REQUIRED)
+
+  find_package(OpenGL REQUIRED)
+  if(NOT TARGET opengl_system)
+    add_library(opengl_system INTERFACE IMPORTED)
+    target_link_libraries(opengl_system INTERFACE OpenGL::GL)
+  endif()
+
+  find_package(spdlog CONFIG REQUIRED)
+  if(NOT TARGET spdlog)
+    add_library(spdlog INTERFACE IMPORTED)
+    target_link_libraries(spdlog INTERFACE spdlog::spdlog)
+  endif()
+
+  find_package(CImg CONFIG REQUIRED)
+  if(NOT TARGET cimg)
+    add_library(cimg INTERFACE IMPORTED)
+    target_link_libraries(cimg INTERFACE CImg::CImg)
+  endif()
+
+  set(BUILD_EXAMPLE_PLUGINS OFF CACHE BOOL "" FORCE)
+  add_subdirectory(third_parties/openfx-main EXCLUDE_FROM_ALL)
+  message(STATUS "OpenFX included from local source")
 endif()
 
 # ── Executable + QML Module ─────────────────────────────────
@@ -141,29 +148,70 @@ target_link_libraries(appmokm_effector
     PRIVATE ${FFMPEG_LIBRARIES}
 )
 
+# if(MOKM_ENABLE_NODES)
+#     file(GLOB_RECURSE NODE_SOURCES "src/nodes/*.cpp" "src/nodes/*.h")
+#     target_sources(appmokm_effector PRIVATE ${NODE_SOURCES})
+#     target_include_directories(appmokm_effector PRIVATE
+#         ${CMAKE_CURRENT_SOURCE_DIR}/src/nodes
+#         ${CMAKE_CURRENT_SOURCE_DIR}/src/nodes/nodes
+#     )
+#     target_link_libraries(appmokm_effector PRIVATE QtNodes::QtNodes)
+#     target_compile_definitions(appmokm_effector PRIVATE MOKM_ENABLE_NODES)
+# endif()
+
 if(MOKM_ENABLE_NODES)
-    file(GLOB_RECURSE NODE_SOURCES "src/nodes/*.cpp" "src/nodes/*.h")
-    target_sources(appmokm_effector PRIVATE ${NODE_SOURCES})
-    target_include_directories(appmokm_effector PRIVATE
+
+  file(GLOB_RECURSE NODE_SOURCES
+        CONFIGURE_DEPENDS
+        "src/nodes/*.cpp"
+        "src/nodes/*.h"
+    )
+
+  # Auto-detect all subdirectories inside src/nodes/nodes
+  file(GLOB NODE_SUBDIRS
+        CONFIGURE_DEPENDS
+        LIST_DIRECTORIES true
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/nodes/nodes/*"
+    )
+
+  set(NODE_INCLUDE_DIRS "")
+  foreach(dir ${NODE_SUBDIRS})
+    if(IS_DIRECTORY ${dir})
+      list(APPEND NODE_INCLUDE_DIRS ${dir})
+    endif()
+  endforeach()
+
+  target_sources(appmokm_effector PRIVATE ${NODE_SOURCES})
+
+  target_include_directories(appmokm_effector PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/nodes
         ${CMAKE_CURRENT_SOURCE_DIR}/src/nodes/nodes
+        ${NODE_INCLUDE_DIRS}
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_parties/nodeeditor-master/include/QtNodes/internal
     )
-    target_link_libraries(appmokm_effector PRIVATE QtNodes::QtNodes)
-    target_compile_definitions(appmokm_effector PRIVATE MOKM_ENABLE_NODES)
+
+  target_link_libraries(appmokm_effector PRIVATE
+        QtNodes::QtNodes
+    )
+
+  target_compile_definitions(appmokm_effector PRIVATE
+        MOKM_ENABLE_NODES
+    )
+
 endif()
 
 if(MOKM_ENABLE_SCRIPTING)
-    target_link_libraries(appmokm_effector PRIVATE qjs)
-    target_compile_definitions(appmokm_effector PRIVATE MOKM_ENABLE_SCRIPTING)
+  target_link_libraries(appmokm_effector PRIVATE qjs)
+  target_compile_definitions(appmokm_effector PRIVATE MOKM_ENABLE_SCRIPTING)
 endif()
 
 if(MOKM_ENABLE_INTEROP)
-    target_link_libraries(appmokm_effector PRIVATE opentimelineio opentime OfxHost OfxSupport)
-    target_compile_definitions(appmokm_effector PRIVATE MOKM_ENABLE_INTEROP)
+  target_link_libraries(appmokm_effector PRIVATE opentimelineio opentime OfxHost OfxSupport)
+  target_compile_definitions(appmokm_effector PRIVATE MOKM_ENABLE_INTEROP)
 endif()
 
 if(FFMPEG_INCLUDE_DIRS)
-    target_include_directories(appmokm_effector PRIVATE ${FFMPEG_INCLUDE_DIRS})
+  target_include_directories(appmokm_effector PRIVATE ${FFMPEG_INCLUDE_DIRS})
 endif()
 
 # ── Include Directories ─────────────────────────────────────

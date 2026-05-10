@@ -21,6 +21,7 @@ class Layer : public QObject
     Q_PROPERTY(int startFrame READ startFrame WRITE setStartFrame NOTIFY startFrameChanged)
     Q_PROPERTY(int duration READ duration WRITE setDuration NOTIFY durationChanged)
     Q_PROPERTY(qreal blurRadius READ blurRadius WRITE setBlurRadius NOTIFY blurChanged)
+    Q_PROPERTY(int blendMode READ blendMode WRITE setBlendMode NOTIFY blendModeChanged)
 public:
     enum Type { ShapeLayer, TextLayer, NullLayer };
     Q_ENUM(Type)
@@ -61,6 +62,9 @@ public:
     qreal blurRadius() const { return m_blurRadius; }
     void setBlurRadius(qreal r);
 
+    int blendMode() const { return m_blendMode; }
+    void setBlendMode(int mode);
+
     Q_INVOKABLE virtual Layer* clone(QObject *parent = nullptr) const;
     virtual QJsonObject toJson() const;
     virtual void fromJson(const QJsonObject &obj);
@@ -76,6 +80,7 @@ signals:
     void startFrameChanged();
     void durationChanged();
     void blurChanged();
+    void blendModeChanged();
 
 private:
     Type m_type;
@@ -91,6 +96,7 @@ private:
     int m_startFrame = 0;
     int m_duration = 90;
     qreal m_blurRadius = 0;
+    int m_blendMode = 0; // 0=Normal,1=Add,2=Multiply,3=Screen,4=Overlay
 };
 
 #endif

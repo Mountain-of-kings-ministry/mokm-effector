@@ -148,6 +148,15 @@ void NodeGraphView::fitContent()
 
 void NodeGraphView::mousePressEvent(QMouseEvent *event)
 {
+    if (event->button() == Qt::RightButton) {
+        if (m_view) {
+            QPointF scenePos = m_view->mapToScene(event->position().toPoint());
+            QPointF screenPos = event->globalPosition();
+            emit canvasRightClicked(scenePos.x(), scenePos.y(), screenPos.x(), screenPos.y());
+        }
+        return;
+    }
+
     if (m_interactive && m_view) {
         QMouseEvent viewEvent(event->type(), event->position(), event->globalPosition(),
                               event->button(), event->buttons(), event->modifiers());
