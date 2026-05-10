@@ -1,4 +1,4 @@
-#include <QGuiApplication>
+#include <QApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QQuickWindow>
@@ -14,10 +14,20 @@
 #include "src/timeline/TimelineModel.h"
 #include "src/core/ExportController.h"
 #include "src/core/Track.h"
+#include "src/core/Strip.h"
+#include "src/core/TimelineLayer.h"
+
+#ifdef MOKM_ENABLE_NODES
+#include "src/nodes/NodeGraph.h"
+#include "src/nodes/NodeStrip.h"
+#include "src/nodes/NodeGraphView.h"
+#endif
 
 int main(int argc, char *argv[])
 {
-    QGuiApplication app(argc, argv);
+
+
+    QApplication app(argc, argv);
     app.setApplicationName("MOKM Effector");
     app.setOrganizationName("MOKM");
 
@@ -35,6 +45,14 @@ int main(int argc, char *argv[])
     qmlRegisterType<TimelineModel>("mokm_effector", 1, 0, "TimelineModel");
     qmlRegisterType<ExportController>("mokm_effector", 1, 0, "ExportController");
     qmlRegisterType<Track>("mokm_effector", 1, 0, "Track");
+    qmlRegisterType<Strip>("mokm_effector", 1, 0, "Strip");
+    qmlRegisterType<TimelineLayer>("mokm_effector", 1, 0, "TimelineLayer");
+
+#ifdef MOKM_ENABLE_NODES
+    qmlRegisterType<NodeGraph>("mokm_effector", 1, 0, "NodeGraph");
+    qmlRegisterType<NodeStrip>("mokm_effector", 1, 0, "NodeStrip");
+    qmlRegisterType<NodeGraphView>("mokm_effector", 1, 0, "NodeGraphView");
+#endif
 
     QQmlApplicationEngine engine;
     QObject::connect(

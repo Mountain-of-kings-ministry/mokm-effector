@@ -8,243 +8,29 @@ Rectangle {
     color: Theme.background
     clip: true
 
-    // Background grid
-    Canvas {
-        anchors.fill: parent
+    property var nodeGraph: null
+    property var selectedStrip: null
 
-        onPaint: {
-            const ctx = getContext("2d");
-            ctx.clearRect(0, 0, width, height);
-
-            ctx.strokeStyle = Theme.border;
-            ctx.lineWidth = 1;
-
-            const gridSize = 24;
-
-            for (let x = 0; x < width; x += gridSize) {
-                ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, height);
-                ctx.stroke();
-            }
-
-            for (let y = 0; y < height; y += gridSize) {
-                ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(width, y);
-                ctx.stroke();
-            }
-        }
+    function _detectType(obj) {
+        if (!obj) return "none";
+        if (obj.nodeGraph !== undefined) return "nodeStrip";
+        if (obj.deleteStrip) return "strip";
+        if (obj.deleteTrack) return "track";
+        if (obj.deleteLayer) return "layer";
+        if (obj.tracks !== undefined) return "layer";
+        if (obj.strips !== undefined) return "track";
+        if (obj.element !== undefined) return "strip";
+        return "unknown";
     }
 
-    // Connection lines
-    Canvas {
-        anchors.fill: parent
-
-        onPaint: {
-            const ctx = getContext("2d");
-            ctx.clearRect(0, 0, width, height);
-
-            ctx.strokeStyle = Theme.accent;
-            ctx.lineWidth = 3;
-
-            drawConnection(260, 120, 420, 180);
-            drawConnection(260, 120, 420, 320);
-
-            function drawConnection(x1, y1, x2, y2) {
-                ctx.beginPath();
-                ctx.moveTo(x1, y1);
-
-                const cp1x = x1 + 80;
-                const cp1y = y1;
-
-                const cp2x = x2 - 80;
-                const cp2y = y2;
-
-                ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x2, y2);
-
-                ctx.stroke();
-            }
-        }
-    }
-
-    // Node 1
-    Rectangle {
-        x: 80
-        y: 70
-        width: 180
-        height: 100
-        radius: 8
-
-        color: Theme.secondary
-        border.color: Theme.border
-        border.width: 1
-
-        Column {
-            anchors.fill: parent
-            spacing: 0
-
-            Rectangle {
-                width: parent.width
-                height: 32
-                radius: 8
-                color: Theme.primary
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "Input Node"
-                    color: Theme.background
-                    font.bold: true
-                }
-            }
-
-            Column {
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.margins: 12
-                spacing: 10
-
-                Repeater {
-                    model: ["Image", "Mask"]
-
-                    delegate: Row {
-                        spacing: 8
-
-                        Rectangle {
-                            width: 10
-                            height: 10
-                            radius: 5
-                            color: Theme.accent
-                        }
-
-                        Text {
-                            text: modelData
-                            color: Theme.foreground
-                            font.pixelSize: 12
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // Node 2
-    Rectangle {
-        x: 420
-        y: 140
-        width: 180
-        height: 110
-        radius: 8
-
-        color: Theme.secondary
-        border.color: Theme.border
-        border.width: 1
-
-        Column {
-            anchors.fill: parent
-            spacing: 0
-
-            Rectangle {
-                width: parent.width
-                height: 32
-                radius: 8
-                color: Theme.accent
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "Blur Effect"
-                    color: Theme.foreground
-                    font.bold: true
-                }
-            }
-
-            Column {
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.margins: 12
-                spacing: 10
-
-                Repeater {
-                    model: ["Radius", "Strength"]
-
-                    delegate: Row {
-                        spacing: 8
-
-                        Rectangle {
-                            width: 10
-                            height: 10
-                            radius: 5
-                            color: Theme.primary
-                        }
-
-                        Text {
-                            text: modelData
-                            color: Theme.foreground
-                            font.pixelSize: 12
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // Node 3
-    Rectangle {
-        x: 420
-        y: 290
-        width: 180
-        height: 110
-        radius: 8
-
-        color: Theme.secondary
-        border.color: Theme.border
-        border.width: 1
-
-        Column {
-            anchors.fill: parent
-            spacing: 0
-
-            Rectangle {
-                width: parent.width
-                height: 32
-                radius: 8
-                color: Theme.success
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "Color Adjust"
-                    color: Theme.background
-                    font.bold: true
-                }
-            }
-
-            Column {
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.margins: 12
-                spacing: 10
-
-                Repeater {
-                    model: ["Exposure", "Contrast"]
-
-                    delegate: Row {
-                        spacing: 8
-
-                        Rectangle {
-                            width: 10
-                            height: 10
-                            radius: 5
-                            color: Theme.warning
-                        }
-
-                        Text {
-                            text: modelData
-                            color: Theme.foreground
-                            font.pixelSize: 12
-                        }
-                    }
-                }
-            }
+    onSelectedStripChanged: {
+        var t = _detectType(selectedStrip);
+        if (t === "nodeStrip" && selectedStrip.nodeGraph) {
+            root.nodeGraph = selectedStrip.nodeGraph;
+        } else if (t === "strip" && selectedStrip.element) {
+            root.nodeGraph = null;
+        } else {
+            root.nodeGraph = null;
         }
     }
 
@@ -253,7 +39,7 @@ Rectangle {
         anchors.top: parent.top
         width: parent.width
         height: 42
-
+        z: 10
         color: Theme.secondary
         border.color: Theme.border
 
@@ -263,23 +49,114 @@ Rectangle {
             anchors.leftMargin: 12
             spacing: 12
 
-            Repeater {
-                model: ["Select", "Move", "Connect", "Delete"]
+            Button {
+                text: "Rectangle"
+                visible: root.nodeGraph !== null
+                height: 28
+                flat: true
+                onClicked: { if (root.nodeGraph) root.nodeGraph.addNode("Rectangle"); }
+            }
+            Button {
+                text: "Ellipse"
+                visible: root.nodeGraph !== null
+                height: 28
+                flat: true
+                onClicked: { if (root.nodeGraph) root.nodeGraph.addNode("Ellipse"); }
+            }
+            Button {
+                text: "Circle"
+                visible: root.nodeGraph !== null
+                height: 28
+                flat: true
+                onClicked: { if (root.nodeGraph) root.nodeGraph.addNode("Circle"); }
+            }
+            Button {
+                text: "Triangle"
+                visible: root.nodeGraph !== null
+                height: 28
+                flat: true
+                onClicked: { if (root.nodeGraph) root.nodeGraph.addNode("Triangle"); }
+            }
+            Button {
+                text: "Text"
+                visible: root.nodeGraph !== null
+                height: 28
+                flat: true
+                onClicked: { if (root.nodeGraph) root.nodeGraph.addNode("Text"); }
+            }
+            Button {
+                text: "Cook"
+                visible: root.nodeGraph !== null
+                height: 28
+                flat: true
+                onClicked: {
+                    if (root.selectedStrip && root.selectedStrip.cook)
+                        root.selectedStrip.cook();
+                }
+            }
+        }
 
-                delegate: Rectangle {
-                    width: 70
-                    height: 28
-                    radius: 6
+        Text {
+            anchors.right: parent.right
+            anchors.rightMargin: 12
+            anchors.verticalCenter: parent.verticalCenter
+            text: root.nodeGraph ? ("Nodes: " + root.nodeGraph.nodeCount) : "No Graph Selected"
+            color: Theme.mutedForeground
+            font.pixelSize: 10
+        }
+    }
 
-                    color: Theme.muted
+    // Content area
+    Item {
+        anchors.top: parent.top
+        anchors.topMargin: 42
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
 
-                    Text {
-                        anchors.centerIn: parent
-                        text: modelData
-                        color: Theme.foreground
-                        font.pixelSize: 11
+        // NodeGraphView — active when a nodeGraph is set
+        NodeGraphView {
+            id: graphView
+            anchors.fill: parent
+            nodeGraph: root.nodeGraph
+            visible: root.nodeGraph !== null
+            interactive: true
+        }
+
+        // Placeholder — shown when no nodeGraph is selected
+        Rectangle {
+            anchors.fill: parent
+            visible: root.nodeGraph === null
+            color: Theme.background
+
+            Canvas {
+                anchors.fill: parent
+                onPaint: {
+                    var ctx = getContext("2d");
+                    ctx.clearRect(0, 0, width, height);
+                    ctx.strokeStyle = Theme.border;
+                    ctx.lineWidth = 1;
+                    var gs = 24;
+                    for (var x = 0; x < width; x += gs) {
+                        ctx.beginPath();
+                        ctx.moveTo(x, 0);
+                        ctx.lineTo(x, height);
+                        ctx.stroke();
+                    }
+                    for (var y = 0; y < height; y += gs) {
+                        ctx.beginPath();
+                        ctx.moveTo(0, y);
+                        ctx.lineTo(width, y);
+                        ctx.stroke();
                     }
                 }
+            }
+
+            Text {
+                anchors.centerIn: parent
+                text: qsTr("Select a NodeStrip to edit its node graph")
+                color: Theme.mutedForeground
+                font.pixelSize: 13
             }
         }
     }

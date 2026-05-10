@@ -1,6 +1,8 @@
 #include "Composition.h"
-#include "Layer.h"
+#include "TimelineLayer.h"
 #include "Track.h"
+#include "Strip.h"
+#include "Layer.h"
 
 Composition::Composition(QObject *parent)
     : QObject(parent)
@@ -9,9 +11,9 @@ Composition::Composition(QObject *parent)
 
 Composition::~Composition()
 {
-    qDeleteAll(m_tracks);
-    m_tracks.clear();
-    m_layers.clear();
+    qDeleteAll(m_timelineLayers);
+    m_timelineLayers.clear();
+    m_flatLayers.clear();
 }
 
 void Composition::setName(const QString &name)
@@ -56,142 +58,112 @@ void Composition::setFrameRate(qreal fps)
     }
 }
 
-QQmlListProperty<Layer> Composition::layers()
+// ── TimelineLayer management ──
+
+QQmlListProperty<TimelineLayer> Composition::layers()
 {
-    return QQmlListProperty<Layer>(this, &m_layers);
+    return QQmlListProperty<TimelineLayer>(this, &m_timelineLayers);
 }
 
-Layer* Composition::layerAt(int index) const
+TimelineLayer* Composition::layerAt(int index) const
 {
-    if (index >= 0 && index < m_layers.size())
-        return m_layers[index];
+    if (index >= 0 && index < m_timelineLayers.size())
+        return m_timelineLayers[index];
     return nullptr;
 }
 
-int Composition::layerIndex(Layer *layer) const
+void Composition::addLayer(TimelineLayer *layer)
 {
-    return m_layers.indexOf(layer);
-}
-
-void Composition::addLayer(Layer *layer)
-{
-    if (!layer || m_layers.contains(layer))
+    if (!layer || m_timelineLayers.contains(layer))
         return;
-    ensureDefaultTrack()->addClip(layer);
+    layer->setParent(this);
+    layer->setComposition(this);
+    m_timelineLayers.append(layer);
+    connect(layer, &TimelineLayer::tracksChanged, this, [this, layer]() {
+        for (int ti = 0; ti < layer->trackCount(); ++ti) {
+            auto *track = layer->trackAt(ti);
+            disconnect(track, &Track::stripsChanged, this, &Composition::rebuildFlatLayers);
+            connect(track, &Track::stripsChanged, this, &Composition::rebuildFlatLayers);
+        }
+        rebuildFlatLayers();
+    });
+    for (int ti = 0; ti < layer->trackCount(); ++ti)
+        connect(layer->trackAt(ti), &Track::stripsChanged, this, &Composition::rebuildFlatLayers);
+    rebuildFlatLayers();
+    emit layersChanged();
 }
 
-void Composition::removeLayer(Layer *layer)
+void Composition::removeLayer(TimelineLayer *layer)
 {
-    for (auto *track : m_tracks) {
-        if (track->clipList().contains(layer)) {
-            track->removeClip(layer);
-            return;
-        }
+    if (!layer)
+        return;
+    if (m_timelineLayers.removeOne(layer)) {
+        rebuildFlatLayers();
+        emit layersChanged();
+        layer->deleteLater();
     }
+}
+
+int Composition::layerIndex(TimelineLayer *layer) const
+{
+    return m_timelineLayers.indexOf(layer);
 }
 
 void Composition::moveLayer(int fromIndex, int toIndex)
 {
-    if (fromIndex < 0 || fromIndex >= m_layers.size())
+    if (fromIndex < 0 || fromIndex >= m_timelineLayers.size())
         return;
-    if (toIndex < 0 || toIndex >= m_layers.size())
+    if (toIndex < 0 || toIndex >= m_timelineLayers.size())
         return;
     if (fromIndex == toIndex)
         return;
-
-    Layer *layer = m_layers[fromIndex];
-    for (auto *track : m_tracks) {
-        int idx = track->indexOf(layer);
-        if (idx >= 0) {
-            track->moveClip(idx, toIndex);
-            return;
-        }
-    }
+    m_timelineLayers.move(fromIndex, toIndex);
+    emit layersChanged();
 }
 
 void Composition::clearLayers()
 {
-    Track *defaultTrack = ensureDefaultTrack();
-    QVector<Layer*> allClips = m_layers;
-    for (auto *layer : allClips)
-        defaultTrack->removeClip(layer);
-}
-
-// ── Track management ──
-
-QQmlListProperty<Track> Composition::tracks()
-{
-    return QQmlListProperty<Track>(this, &m_tracks);
-}
-
-Track* Composition::trackAt(int index) const
-{
-    if (index >= 0 && index < m_tracks.size())
-        return m_tracks[index];
-    return nullptr;
-}
-
-Track* Composition::addTrack(const QString &name)
-{
-    auto *track = new Track(this);
-    if (!name.isEmpty())
-        track->setName(name);
-    else
-        track->setName(QString("Track %1").arg(m_tracks.size() + 1));
-    m_tracks.append(track);
-    connectTrack(track);
-    emit tracksChanged();
-    return track;
-}
-
-void Composition::removeTrack(Track *track)
-{
-    if (!track || m_tracks.size() <= 1)
+    if (m_timelineLayers.isEmpty())
         return;
-    if (m_tracks.removeOne(track)) {
-        rebuildLayers();
-        emit tracksChanged();
-        track->deleteLater();
-    }
-}
-
-int Composition::trackIndex(Track *track) const
-{
-    return m_tracks.indexOf(track);
-}
-
-void Composition::moveTrack(int fromIndex, int toIndex)
-{
-    if (fromIndex < 0 || fromIndex >= m_tracks.size())
-        return;
-    if (toIndex < 0 || toIndex >= m_tracks.size())
-        return;
-    if (fromIndex == toIndex)
-        return;
-    m_tracks.move(fromIndex, toIndex);
-    rebuildLayers();
-    emit tracksChanged();
-}
-
-void Composition::rebuildLayers()
-{
-    m_layers.clear();
-    for (auto *track : m_tracks) {
-        for (auto *clip : track->clipList()) {
-            m_layers.append(clip);
-        }
-    }
+    qDeleteAll(m_timelineLayers);
+    m_timelineLayers.clear();
+    rebuildFlatLayers();
     emit layersChanged();
 }
 
-Track* Composition::ensureDefaultTrack()
+TimelineLayer* Composition::ensureDefaultLayer()
 {
-    if (m_tracks.isEmpty())
-        return addTrack("Track 1");
-    return m_tracks.first();
+    if (m_timelineLayers.isEmpty()) {
+        auto *layer = new TimelineLayer(this);
+        layer->setName("Layer 1");
+        // Ensure at least one track before addLayer so the connection loop catches it
+        layer->addTrack("Track 1");
+        addLayer(layer);
+    }
+    return m_timelineLayers.first();
 }
 
-void Composition::connectTrack(Track *track)
+// ── Flat visual layer list ──
+
+Layer* Composition::flatLayerAt(int index) const
 {
-    connect(track, &Track::clipsChanged, this, &Composition::rebuildLayers);
+    if (index >= 0 && index < m_flatLayers.size())
+        return m_flatLayers[index];
+    return nullptr;
+}
+
+void Composition::rebuildFlatLayers()
+{
+    m_flatLayers.clear();
+    for (auto *tl : m_timelineLayers) {
+        for (int ti = 0; ti < tl->trackCount(); ++ti) {
+            auto *track = tl->trackAt(ti);
+            for (int si = 0; si < track->stripCount(); ++si) {
+                auto *strip = track->stripAt(si);
+                if (strip && strip->element())
+                    m_flatLayers.append(strip->element());
+            }
+        }
+    }
+    emit layersChanged();
 }

@@ -85,7 +85,7 @@ Window {
                     onCreateTriangleLayer: createShapeLayer(ShapeLayer.Triangle)
                     onCreateTextLayer: createTextLayer()
                     onLayerSelected: function (layer) {
-                        selectedLayer = layer;
+                        selectedObject = layer;
                     }
                 }
 
@@ -100,14 +100,14 @@ Window {
                         composition: project.activeComposition
                         currentFrame: globalTimelineModel.currentFrame
                         onLayerSelected: function (layer) {
-                            selectedLayer = layer;
+                            selectedObject = layer;
                         }
                     }
                 }
 
                 PropertiesPanel {
                     SplitView.preferredWidth: 240
-                    currentLayer: selectedLayer
+                    selectedObject: selectedObject
                     timelineModel: globalTimelineModel
                 }
             }
@@ -121,7 +121,7 @@ Window {
                     Layout.fillWidth: true
 
                     timelineModel: globalTimelineModel
-                    selectedLayer: selectedLayer
+                    selectedObject: selectedObject
                 }
 
                 Rectangle {
@@ -163,15 +163,14 @@ Window {
 
                     Timeline {
                         timelineModel: globalTimelineModel
-                        selectedLayer: selectedLayer
-                        project: project
+                        selectedObject: selectedObject
 
-                        onLayerSelected: function (layer) {
-                            selectedLayer = layer;
+                        onObjectSelected: function (obj) {
+                            selectedObject = obj;
                         }
 
-                        onSelectionChanged: function (layers) {
-                            viewport.setSelectedLayers(layers);
+                        onElementSelected: function (element) {
+                            viewport.setSelectedLayers([element]);
                         }
                     }
                 }
@@ -179,7 +178,9 @@ Window {
                 Component {
                     id: nodeEditorPage
 
-                    NodeEditor {}
+                    NodeEditor {
+                        selectedStrip: selectedObject
+                    }
                 }
 
                 Component {
@@ -193,7 +194,7 @@ Window {
 
     property Component shapeLayerComponent: ShapeLayer {}
     property Component textLayerComponent: TextLayer {}
-    property Layer selectedLayer: null
+    property var selectedObject: null
 
     ExportController {
         id: exportController
@@ -251,7 +252,7 @@ Window {
             if (openDialog.selectedFile) {
                 project.loadFromFile(openDialog.selectedFile);
                 globalTimelineModel.composition = project.activeComposition;
-                selectedLayer = null;
+                selectedObject = null;
                 if (stackView.currentItem && stackView.currentItem.clearSelection)
                     stackView.currentItem.clearSelection();
             }
@@ -283,39 +284,42 @@ Window {
             color: Theme.primary
         });
         project.addAsset(layer);
-        selectedLayer = layer;
+        selectedObject = layer;
         project.captureSnapshot();
     }
 
     function deleteSelectedLayer() {
-        if (!project)
+        if (!project || !project.activeComposition)
             return;
-        var tl = stackView.currentItem;
-        var layers = (tl && tl.selectedLayers) ? tl.selectedLayers : [];
-        if (layers.length === 0) {
-            if (selectedLayer)
-                layers = [selectedLayer];
-            else
-                return;
-        }
         var comp = project.activeComposition;
-        if (!comp)
+        if (!selectedObject)
             return;
-        for (var li = 0; li < layers.length; li++) {
-            var layer = layers[li];
-            if (!layer)
-                continue;
-            for (var ti = 0; ti < comp.trackCount; ti++) {
-                var track = comp.trackAt(ti);
-                if (track.indexOf(layer) >= 0) {
-                    track.removeClip(layer);
-                    break;
+        // Handle different object types
+        if (selectedObject.deleteStrip) {
+            selectedObject.deleteStrip();
+        } else if (selectedObject.deleteTrack) {
+            selectedObject.deleteTrack();
+        } else if (selectedObject.deleteLayer) {
+            selectedObject.deleteLayer();
+        } else {
+            // Try to find and remove strip element across all layers/tracks/strips
+            for (var li = 0; li < comp.layerCount(); li++) {
+                var tl = comp.layerAt(li);
+                for (var ti = 0; ti < tl.trackCount; ti++) {
+                    var track = tl.trackAt(ti);
+                    for (var si = 0; si < track.stripCount(); si++) {
+                        var strip = track.stripAt(si);
+                        if (strip.element === selectedObject) {
+                            track.removeStrip(strip);
+                            project.captureSnapshot();
+                            selectedObject = null;
+                            return;
+                        }
+                    }
                 }
             }
         }
-        selectedLayer = null;
-        if (tl && tl.clearSelection)
-            tl.clearSelection();
+        selectedObject = null;
         project.captureSnapshot();
     }
 
@@ -329,7 +333,7 @@ Window {
             fontSize: 48
         });
         project.addAsset(layer);
-        selectedLayer = layer;
+        selectedObject = layer;
         project.captureSnapshot();
     }
 
@@ -337,14 +341,13 @@ Window {
         // Clear and recreate
         var comp = project.activeComposition;
         if (comp) {
-            while (comp.trackCount > 0)
-                comp.removeTrack(comp.trackAt(0));
+            comp.clearLayers();
         }
         while (project.assetCount > 0)
             project.removeAsset(project.assetAt(0));
         project.setName("Untitled");
         globalTimelineModel.composition = comp;
-        selectedLayer = null;
+        selectedObject = null;
         if (stackView.currentItem && stackView.currentItem.clearSelection)
             stackView.currentItem.clearSelection();
         // Reset undo/redo
@@ -473,10 +476,8 @@ Window {
     }
 
     Component.onCompleted: {
-        console.log("MAIN_DEBUG: Component.onCompleted, globalTimelineModel=" + (globalTimelineModel !== null));
         var comp = project.activeComposition;
         if (comp && project) {
-            console.log("MAIN_DEBUG: creating demo rectangle, comp.trackCount=" + comp.trackCount);
             var rect = shapeLayerComponent.createObject(project, {
                 name: "Rectangle 1",
                 shapeType: ShapeLayer.Rectangle,
@@ -485,11 +486,10 @@ Window {
                 color: Theme.primary
             });
             project.addAsset(rect);
-            var track = comp.trackCount > 0 ? comp.trackAt(0) : comp.addTrack("Track 1");
-            var clip = rect.clone(track);
-            clip.startFrame = 0;
-            clip.duration = 90;
-            track.addClip(clip);
+            var tl = comp.ensureDefaultLayer();
+            var track = tl.trackAt(0);
+            var strip = track.createStripFromAsset(rect, "Rect Strip", 0, 90);
+            comp.rebuildFlatLayers();
             globalTimelineModel.composition = comp;
         }
     }

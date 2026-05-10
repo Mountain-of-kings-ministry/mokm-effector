@@ -1,53 +1,107 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(mokm_effector VERSION 0.1 LANGUAGES CXX)
-
 # ── vcpkg bootstrap ──────────────────────────────────────────
 if(DEFINED ENV{VCPKG_ROOT} AND NOT CMAKE_TOOLCHAIN_FILE)
     set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
         CACHE STRING "")
 endif()
 
-# ── project options ──────────────────────────────────────────
-option(MOKM_ENABLE_NODES     "Node graph editor (QtNodes)"       OFF)
+# ── Project Options ──────────────────────────────────────────
+option(MOKM_ENABLE_NODES     "Node graph editor (QtNodes)"       ON)
 option(MOKM_ENABLE_SCRIPTING "QuickJS scripting engine"          OFF)
 option(MOKM_ENABLE_INTEROP   "OTIO + OpenFX interoperability"    OFF)
 option(MOKM_ENABLE_ALL       "Enable all optional components"    OFF)
 
 if(MOKM_ENABLE_ALL)
-    set(MOKM_ENABLE_NODES     ON)
-    set(MOKM_ENABLE_SCRIPTING ON)
-    set(MOKM_ENABLE_INTEROP   ON)
+    set(MOKM_ENABLE_NODES     ON CACHE BOOL "" FORCE)
+    set(MOKM_ENABLE_SCRIPTING ON CACHE BOOL "" FORCE)
+    set(MOKM_ENABLE_INTEROP   ON CACHE BOOL "" FORCE)
 endif()
 
-# ── standard setup ────────────────────────────────────────────
+# ── vcpkg Manifest Features ──────────────────────────────────
+# NOTE: All optional features are now handled via local subdirectories 
+# or temporarily disabled to ensure build success with standalone sources.
+set(VCPKG_MANIFEST_FEATURES "")
+
+project(mokm_effector VERSION 0.1 LANGUAGES CXX)
+
+# ── Standard Setup ───────────────────────────────────────────
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOMOC ON)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-find_package(Qt6 REQUIRED COMPONENTS Quick)
+find_package(Qt6 REQUIRED COMPONENTS Quick Widgets OpenGL)
 
 qt_standard_project_setup(REQUIRES 6.10)
 
-# ── vcpkg dependencies ────────────────────────────────────────
+# ── vcpkg Dependencies ───────────────────────────────────────
 find_package(ThorVG REQUIRED)
 find_package(FFMPEG REQUIRED)
 
+# ── Local Third Party Libraries ──────────────────────────────
+
+# QtNodes (nodeeditor)
 if(MOKM_ENABLE_NODES)
-    find_package(QtNodes REQUIRED)
-endif()
-if(MOKM_ENABLE_SCRIPTING)
-    find_package(quickjs-ng REQUIRED)
-endif()
-if(MOKM_ENABLE_INTEROP)
-    find_package(OpenTimelineIO REQUIRED)
-    find_package(OpenFX REQUIRED)
+    set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+    set(BUILD_DOCS OFF CACHE BOOL "" FORCE)
+    set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+    add_subdirectory(third_parties/nodeeditor-master EXCLUDE_FROM_ALL)
+    message(STATUS "QtNodes included from local source (static)")
 endif()
 
+# QuickJS
+if(MOKM_ENABLE_SCRIPTING)
+    set(QJS_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
+    set(QJS_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    add_subdirectory(third_parties/quickjs-master EXCLUDE_FROM_ALL)
+    message(STATUS "QuickJS included from local source")
+endif()
+
+# Interoperability (OTIO + OpenFX)
+if(MOKM_ENABLE_INTEROP)
+    # OpenTimelineIO configuration
+    set(OTIO_FIND_IMATH ON CACHE BOOL "" FORCE)
+    set(OTIO_FIND_RAPIDJSON ON CACHE BOOL "" FORCE)
+    set(OTIO_CXX_INSTALL OFF CACHE BOOL "" FORCE)
+    set(OTIO_PYTHON_INSTALL OFF CACHE BOOL "" FORCE)
+    set(OTIO_DEPENDENCIES_INSTALL OFF CACHE BOOL "" FORCE)
+    set(OTIO_INSTALL_PYTHON_MODULES OFF CACHE BOOL "" FORCE)
+    set(OTIO_INSTALL_COMMANDLINE_TOOLS OFF CACHE BOOL "" FORCE)
+    set(OTIO_SHARED_LIBS OFF CACHE BOOL "" FORCE) # Build static for easier linking
+    
+    add_subdirectory(third_parties/OpenTimelineIO-main EXCLUDE_FROM_ALL)
+    message(STATUS "OpenTimelineIO included from local source")
+
+    # OpenFX dependencies and configuration
+    find_package(EXPAT REQUIRED)
+    if(NOT TARGET expat::expat)
+        add_library(expat::expat INTERFACE IMPORTED)
+        target_link_libraries(expat::expat INTERFACE EXPAT::EXPAT)
+    endif()
+    
+    find_package(OpenGL REQUIRED)
+    if(NOT TARGET opengl_system)
+        add_library(opengl_system INTERFACE IMPORTED)
+        target_link_libraries(opengl_system INTERFACE OpenGL::GL)
+    endif()
+    
+    find_package(spdlog REQUIRED)
+    find_package(cimg REQUIRED)
+
+    set(BUILD_EXAMPLE_PLUGINS OFF CACHE BOOL "" FORCE)
+    add_subdirectory(third_parties/openfx-main EXCLUDE_FROM_ALL)
+    message(STATUS "OpenFX included from local source")
+endif()
+
+# ── Executable + QML Module ─────────────────────────────────
 qt_add_executable(appmokm_effector
     main.cpp
     resources/resources.qrc
+    resources/qtnodes_resources.qrc
 )
 
 add_subdirectory(src)
@@ -55,14 +109,6 @@ add_subdirectory(src)
 set_source_files_properties(src/ui/Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
 file(GLOB_RECURSE CORE_SOURCES "src/core/*.cpp" "src/core/*.h")
-
-file(GLOB CORE_SUBDIRS "src/core/*")
-foreach(dir ${CORE_SUBDIRS})
-    if(IS_DIRECTORY ${dir})
-        list(APPEND CORE_INCLUDE_DIRS ${dir})
-    endif()
-endforeach()
-list(APPEND CORE_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/src/core")
 
 qt_add_qml_module(appmokm_effector
     URI mokm_effector
@@ -82,40 +128,53 @@ qt_add_qml_module(appmokm_effector
         src/ui/components/NodeEditor.qml
         src/ui/components/PreferencesDialog.qml
     SOURCES ${CORE_SOURCES}
-    RESOURCES resources/resources.qrc
 )
 
-set_target_properties(appmokm_effector PROPERTIES
-    MACOSX_BUNDLE_GUI_IDENTIFIER com.example.appmokm_effector
-    MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
-    MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
-    MACOSX_BUNDLE TRUE
-    WIN32_EXECUTABLE TRUE
-)
-
+# ── Linking ─────────────────────────────────────────────────
 target_link_libraries(appmokm_effector
     PRIVATE Qt6::Quick
+    PRIVATE Qt6::Widgets
+    PRIVATE Qt6::OpenGL
     PRIVATE ThorVG::ThorVG
     PRIVATE ${FFMPEG_LIBRARIES}
 )
 
 if(MOKM_ENABLE_NODES)
+    file(GLOB_RECURSE NODE_SOURCES "src/nodes/*.cpp" "src/nodes/*.h")
+    target_sources(appmokm_effector PRIVATE ${NODE_SOURCES})
+    target_include_directories(appmokm_effector PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/nodes
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/nodes/nodes
+    )
     target_link_libraries(appmokm_effector PRIVATE QtNodes::QtNodes)
+    target_compile_definitions(appmokm_effector PRIVATE MOKM_ENABLE_NODES)
 endif()
+
 if(MOKM_ENABLE_SCRIPTING)
-    target_link_libraries(appmokm_effector PRIVATE quickjs-ng::quickjs-ng)
+    target_link_libraries(appmokm_effector PRIVATE qjs)
+    target_compile_definitions(appmokm_effector PRIVATE MOKM_ENABLE_SCRIPTING)
 endif()
+
 if(MOKM_ENABLE_INTEROP)
-    target_link_libraries(appmokm_effector PRIVATE OpenTimelineIO::OpenTimelineIO OpenFX::OpenFX)
+    target_link_libraries(appmokm_effector PRIVATE opentimelineio opentime OfxHost OfxSupport)
+    target_compile_definitions(appmokm_effector PRIVATE MOKM_ENABLE_INTEROP)
 endif()
 
 if(FFMPEG_INCLUDE_DIRS)
     target_include_directories(appmokm_effector PRIVATE ${FFMPEG_INCLUDE_DIRS})
 endif()
 
-if(CORE_INCLUDE_DIRS)
-    target_include_directories(appmokm_effector PRIVATE ${CORE_INCLUDE_DIRS})
-endif()
+# ── Include Directories ─────────────────────────────────────
+target_include_directories(appmokm_effector PRIVATE src/core)
+
+# ── Install ─────────────────────────────────────────────────
+set_target_properties(appmokm_effector PROPERTIES
+    MACOSX_BUNDLE_GUI_IDENTIFIER com.mokm.mokmefx
+    MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
+    MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
+    MACOSX_BUNDLE TRUE
+    WIN32_EXECUTABLE TRUE
+)
 
 install(TARGETS appmokm_effector
     BUNDLE DESTINATION .

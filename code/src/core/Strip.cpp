@@ -1,0 +1,105 @@
+#include "Strip.h"
+#include "Layer.h"
+#include "Track.h"
+#include "TimelineLayer.h"
+#include <QJsonObject>
+
+Strip::Strip(QObject *parent)
+    : QObject(parent)
+{
+}
+
+Strip::~Strip()
+{
+}
+
+void Strip::setName(const QString &name)
+{
+    if (m_name != name) {
+        m_name = name;
+        emit nameChanged();
+    }
+}
+
+void Strip::setStartFrame(int frame)
+{
+    frame = qMax(0, frame);
+    if (m_startFrame != frame) {
+        m_startFrame = frame;
+        if (m_element)
+            m_element->setStartFrame(frame);
+        emit startFrameChanged();
+    }
+}
+
+void Strip::setDuration(int frames)
+{
+    frames = qMax(1, frames);
+    if (m_duration != frames) {
+        m_duration = frames;
+        if (m_element)
+            m_element->setDuration(frames);
+        emit durationChanged();
+    }
+}
+
+void Strip::setElement(Layer *layer)
+{
+    if (m_element != layer) {
+        m_element = layer;
+        if (layer)
+            layer->setParent(this);
+        emit elementChanged();
+    }
+}
+
+void Strip::setTrack(Track *track)
+{
+    m_track = track;
+}
+
+void Strip::moveToTrack(Track *newTrack)
+{
+    if (!newTrack || !m_track || newTrack == m_track)
+        return;
+    // Prevent moving across different TimelineLayers
+    if (m_track->layer() != newTrack->layer())
+        return;
+    m_track->removeStrip(this);
+    newTrack->addStrip(this);
+}
+
+void Strip::deleteStrip()
+{
+    if (m_track)
+        m_track->removeStrip(this);
+}
+
+Strip* Strip::clone(QObject *parent) const
+{
+    auto *s = new Strip(parent);
+    s->m_name = m_name;
+    s->m_startFrame = m_startFrame;
+    s->m_duration = m_duration;
+    if (m_element)
+        s->m_element = m_element->clone(s);
+    return s;
+}
+
+QJsonObject Strip::toJson() const
+{
+    QJsonObject obj;
+    obj["name"] = m_name;
+    obj["startFrame"] = m_startFrame;
+    obj["duration"] = m_duration;
+    if (m_element)
+        obj["element"] = m_element->toJson();
+    return obj;
+}
+
+void Strip::fromJson(const QJsonObject &obj)
+{
+    setName(obj["name"].toString());
+    setStartFrame(obj["startFrame"].toInt());
+    setDuration(obj["duration"].toInt(90));
+}

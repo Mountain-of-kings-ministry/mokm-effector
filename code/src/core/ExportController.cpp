@@ -38,8 +38,8 @@ QImage ExportController::renderFrame(Composition *comp, int frame)
     }
     painter.fillRect(0, 0, w, h, QColor(18, 18, 18));
 
-    for (int i = 0; i < comp->layerCount(); ++i) {
-        auto *layer = comp->layerAt(i);
+    for (int i = 0; i < comp->flatLayerCount(); ++i) {
+        auto *layer = comp->flatLayerAt(i);
         if (!layer || !layer->enabled() || !layer->visible())
             continue;
         if (frame < layer->startFrame() || frame >= layer->startFrame() + layer->duration())

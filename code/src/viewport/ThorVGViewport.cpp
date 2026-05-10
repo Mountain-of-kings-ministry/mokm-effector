@@ -54,8 +54,8 @@ void ThorVGViewport::reconnectLayerSignals()
     if (!m_composition)
         return;
 
-    for (int i = 0; i < m_composition->layerCount(); ++i) {
-        auto *layer = m_composition->layerAt(i);
+    for (int i = 0; i < m_composition->flatLayerCount(); ++i) {
+        auto *layer = m_composition->flatLayerAt(i);
         if (!layer) continue;
         connect(layer, &Layer::transformChanged, this, [this]{ update(); });
         connect(layer, &Layer::opacityChanged, this, [this]{ update(); });
@@ -124,8 +124,8 @@ void ThorVGViewport::paint(QPainter *painter)
     painter->fillRect(0, 0, (int)compW, (int)compH, QColor(18, 18, 18));
 
     // Render layers bottom-to-top with selection outlines
-    for (int i = 0; i < m_composition->layerCount(); ++i) {
-        auto *layer = m_composition->layerAt(i);
+    for (int i = 0; i < m_composition->flatLayerCount(); ++i) {
+        auto *layer = m_composition->flatLayerAt(i);
         if (!layer || !layer->enabled() || !layer->visible())
             continue;
         if (m_currentFrame < layer->startFrame() || m_currentFrame >= layer->startFrame() + layer->duration())
@@ -299,8 +299,8 @@ Layer *ThorVGViewport::hitTest(qreal compX, qreal compY) const
     qreal compW = m_composition->width();
     qreal compH = m_composition->height();
 
-    for (int i = m_composition->layerCount() - 1; i >= 0; --i) {
-        auto *layer = m_composition->layerAt(i);
+    for (int i = m_composition->flatLayerCount() - 1; i >= 0; --i) {
+        auto *layer = m_composition->flatLayerAt(i);
         if (!layer || !layer->enabled() || !layer->visible())
             continue;
         if (m_currentFrame < layer->startFrame() ||
@@ -419,8 +419,8 @@ void ThorVGViewport::mouseReleaseEvent(QMouseEvent *event)
         } else {
             // Select all layers intersecting the box
             QRectF boxRect = QRectF(m_boxStart, m_boxCurrent).normalized();
-            for (int i = 0; i < m_composition->layerCount(); ++i) {
-                auto *layer = m_composition->layerAt(i);
+            for (int i = 0; i < m_composition->flatLayerCount(); ++i) {
+                auto *layer = m_composition->flatLayerAt(i);
                 if (!layer || !layer->enabled() || !layer->visible())
                     continue;
                 if (m_currentFrame < layer->startFrame() ||

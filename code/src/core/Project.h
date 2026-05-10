@@ -12,6 +12,8 @@
 class Composition;
 class Track;
 class Layer;
+class Strip;
+class TimelineLayer;
 
 class Project : public QObject
 {

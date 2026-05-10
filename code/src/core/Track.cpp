@@ -1,5 +1,15 @@
 #include "Track.h"
+#include "Strip.h"
 #include "Layer.h"
+#include "ShapeLayer.h"
+#include "TextLayer.h"
+#include "TimelineLayer.h"
+
+#ifdef MOKM_ENABLE_NODES
+#include "../nodes/NodeStrip.h"
+#include "../nodes/NodeGraph.h"
+#include "../nodes/nodes/RectangleNode.h"
+#endif
 
 Track::Track(QObject *parent)
     : QObject(parent)
@@ -19,64 +29,207 @@ void Track::setName(const QString &name)
     }
 }
 
-void Track::setLocked(bool locked)
+QQmlListProperty<Strip> Track::strips()
 {
-    if (m_locked != locked) {
-        m_locked = locked;
+    return QQmlListProperty<Strip>(this, &m_strips);
+}
+
+Strip* Track::stripAt(int index) const
+{
+    if (index >= 0 && index < m_strips.size())
+        return m_strips[index];
+    return nullptr;
+}
+
+void Track::addStrip(Strip *strip)
+{
+    if (!strip || m_strips.contains(strip))
+        return;
+    strip->setParent(this);
+    strip->setTrack(this);
+    m_strips.append(strip);
+    emit stripsChanged();
+}
+
+void Track::removeStrip(Strip *strip)
+{
+    if (m_strips.removeOne(strip)) {
+        strip->setTrack(nullptr);
+        emit stripsChanged();
+    }
+}
+
+Strip* Track::removeStripAt(int index)
+{
+    if (index < 0 || index >= m_strips.size())
+        return nullptr;
+    auto *strip = m_strips.takeAt(index);
+    strip->setTrack(nullptr);
+    emit stripsChanged();
+    return strip;
+}
+
+void Track::moveStrip(int fromIndex, int toIndex)
+{
+    if (fromIndex < 0 || fromIndex >= m_strips.size())
+        return;
+    if (toIndex < 0 || toIndex >= m_strips.size())
+        return;
+    if (fromIndex == toIndex)
+        return;
+    m_strips.move(fromIndex, toIndex);
+    emit stripsChanged();
+}
+
+int Track::indexOf(Strip *strip) const
+{
+    return m_strips.indexOf(strip);
+}
+
+Strip* Track::createStripFromAsset(Layer *asset, const QString &stripName, int startFrame, int duration)
+{
+    if (!asset)
+        return nullptr;
+
+#ifdef MOKM_ENABLE_NODES
+    auto *strip = new NodeStrip(this);
+    strip->setName(stripName.isEmpty() ? asset->name() : stripName);
+    strip->setStartFrame(startFrame);
+    strip->setDuration(duration);
+
+    // Create a NodeGraph with a generator node matching the asset type
+    auto *graph = new NodeGraph(strip);
+    QString nodeType = "Rectangle"; // Default fallback
+
+    // Determine node type from asset
+    if (auto *shape = qobject_cast<ShapeLayer*>(asset)) {
+        static const char* shapeNames[] = {
+            "Rectangle", "Ellipse", "Circle", "Triangle", "Polygon",
+            "Star", "Line", "Arc", "Grid", "Spiral",
+            "Arrow", "RoundedRect", "BezierShape", "Path", "Spline"
+        };
+        int st = shape->shapeType();
+        if (st >= 0 && st < 15)
+            nodeType = QString::fromLatin1(shapeNames[st]);
+    } else if (qobject_cast<TextLayer*>(asset)) {
+        nodeType = "Text";
+    }
+
+    int nodeId = graph->addNode(nodeType);
+    Q_UNUSED(nodeId)
+
+    strip->setNodeGraph(graph);
+
+    // Clone the asset element for backward compat
+    auto *element = asset->clone(strip);
+    strip->setElement(element);
+
+    addStrip(strip);
+    return strip;
+#else
+    auto *strip = new Strip(this);
+    strip->setName(stripName.isEmpty() ? asset->name() : stripName);
+    strip->setStartFrame(startFrame);
+    strip->setDuration(duration);
+    auto *element = asset->clone(strip);
+    strip->setElement(element);
+    addStrip(strip);
+    return strip;
+#endif
+}
+
+void Track::deleteTrack()
+{
+    if (m_layer)
+        m_layer->removeTrack(this);
+}
+
+// ── Track property setters ──
+
+void Track::setEnabled(bool v)
+{
+    if (m_enabled != v) {
+        m_enabled = v;
+        emit enabledChanged();
+    }
+}
+
+void Track::setMute(bool v)
+{
+    if (m_mute != v) {
+        m_mute = v;
+        emit muteChanged();
+    }
+}
+
+void Track::setSolo(bool v)
+{
+    if (m_solo != v) {
+        m_solo = v;
+        emit soloChanged();
+    }
+}
+
+void Track::setOpacity(qreal v)
+{
+    v = qBound(0.0, v, 1.0);
+    if (!qFuzzyCompare(m_opacity, v)) {
+        m_opacity = v;
+        emit opacityChanged();
+    }
+}
+
+void Track::setPan(qreal v)
+{
+    v = qBound(-1.0, v, 1.0);
+    if (!qFuzzyCompare(m_pan, v)) {
+        m_pan = v;
+        emit panChanged();
+    }
+}
+
+void Track::setCollapsed(bool v)
+{
+    if (m_collapsed != v) {
+        m_collapsed = v;
+        emit collapsedChanged();
+    }
+}
+
+void Track::setLocked(bool v)
+{
+    if (m_locked != v) {
+        m_locked = v;
         emit lockedChanged();
     }
 }
 
-QQmlListProperty<Layer> Track::clips()
+void Track::setPriority(int v)
 {
-    return QQmlListProperty<Layer>(this, &m_clips);
-}
-
-Layer* Track::clipAt(int index) const
-{
-    if (index >= 0 && index < m_clips.size())
-        return m_clips[index];
-    return nullptr;
-}
-
-void Track::addClip(Layer *layer)
-{
-    if (!layer || m_clips.contains(layer))
-        return;
-    layer->setParent(this);
-    m_clips.append(layer);
-    emit clipsChanged();
-}
-
-void Track::removeClip(Layer *layer)
-{
-    if (m_clips.removeOne(layer)) {
-        emit clipsChanged();
+    if (m_priority != v) {
+        m_priority = v;
+        emit priorityChanged();
     }
 }
 
-Layer* Track::removeClipAt(int index)
+void Track::setLooping(bool v)
 {
-    if (index < 0 || index >= m_clips.size())
-        return nullptr;
-    auto *layer = m_clips.takeAt(index);
-    emit clipsChanged();
-    return layer;
+    if (m_looping != v) {
+        m_looping = v;
+        emit loopingChanged();
+    }
 }
 
-void Track::moveClip(int fromIndex, int toIndex)
+void Track::setLoopCount(int v)
 {
-    if (fromIndex < 0 || fromIndex >= m_clips.size())
-        return;
-    if (toIndex < 0 || toIndex >= m_clips.size())
-        return;
-    if (fromIndex == toIndex)
-        return;
-    m_clips.move(fromIndex, toIndex);
-    emit clipsChanged();
+    v = qMax(1, v);
+    if (m_loopCount != v) {
+        m_loopCount = v;
+        emit loopCountChanged();
+    }
 }
 
-int Track::indexOf(Layer *layer) const
+void Track::setLayer(TimelineLayer *layer)
 {
-    return m_clips.indexOf(layer);
+    m_layer = layer;
 }

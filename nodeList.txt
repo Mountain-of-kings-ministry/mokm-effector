@@ -651,3 +651,309 @@ That alone can already rival:
 * Apple Motion
 
 for many workflows.
+
+Layer
+ └── Track
+      └── NodeStrip
+            └── NodeGraph
+                  ├── Nodes
+                  └── Connections
+
+Menu {
+    id: contextMenu
+
+    /*
+        ============================================================
+        GENERATORS
+        ============================================================
+    */
+
+    Menu {
+        title: qsTr("Generators")
+
+        MenuItem { text: qsTr("Rectangle"); onTriggered: createNodeStrip("Rectangle") }
+        MenuItem { text: qsTr("Circle"); onTriggered: createNodeStrip("Circle") }
+        MenuItem { text: qsTr("Ellipse"); onTriggered: createNodeStrip("Ellipse") }
+        MenuItem { text: qsTr("Polygon"); onTriggered: createNodeStrip("Polygon") }
+        MenuItem { text: qsTr("Star"); onTriggered: createNodeStrip("Star") }
+        MenuItem { text: qsTr("Line"); onTriggered: createNodeStrip("Line") }
+        MenuItem { text: qsTr("Arc"); onTriggered: createNodeStrip("Arc") }
+        MenuItem { text: qsTr("Grid"); onTriggered: createNodeStrip("Grid") }
+        MenuItem { text: qsTr("Spiral"); onTriggered: createNodeStrip("Spiral") }
+        MenuItem { text: qsTr("Arrow"); onTriggered: createNodeStrip("Arrow") }
+        MenuItem { text: qsTr("Rounded Rectangle"); onTriggered: createNodeStrip("RoundedRectangle") }
+        MenuItem { text: qsTr("Bezier Shape"); onTriggered: createNodeStrip("BezierShape") }
+        MenuItem { text: qsTr("Path"); onTriggered: createNodeStrip("Path") }
+        MenuItem { text: qsTr("SVG"); onTriggered: createNodeStrip("SVG") }
+        MenuItem { text: qsTr("Spline"); onTriggered: createNodeStrip("Spline") }
+        MenuItem { text: qsTr("Lottie"); onTriggered: createNodeStrip("Lottie") }
+    }
+
+    /*
+        ============================================================
+        TEXT
+        ============================================================
+    */
+
+    Menu {
+        title: qsTr("Text")
+
+        MenuItem { text: qsTr("Text"); onTriggered: createNodeStrip("Text") }
+        MenuItem { text: qsTr("Text Along Path"); onTriggered: createNodeStrip("TextAlongPath") }
+        MenuItem { text: qsTr("Text Animator"); onTriggered: createNodeStrip("TextAnimator") }
+        MenuItem { text: qsTr("Text Repeater"); onTriggered: createNodeStrip("TextRepeater") }
+        MenuItem { text: qsTr("Rich Text"); onTriggered: createNodeStrip("RichText") }
+        MenuItem { text: qsTr("Typewriter"); onTriggered: createNodeStrip("Typewriter") }
+    }
+
+    /*
+        ============================================================
+        MEDIA
+        ============================================================
+    */
+
+    Menu {
+        title: qsTr("Media")
+
+        MenuItem { text: qsTr("Image"); onTriggered: createNodeStrip("Image") }
+        MenuItem { text: qsTr("Video"); onTriggered: createNodeStrip("Video") }
+        MenuItem { text: qsTr("Image Sequence"); onTriggered: createNodeStrip("ImageSequence") }
+        MenuItem { text: qsTr("Audio File"); onTriggered: createNodeStrip("AudioFile") }
+        MenuItem { text: qsTr("Webcam"); onTriggered: createNodeStrip("Webcam") }
+        MenuItem { text: qsTr("Screen Capture"); onTriggered: createNodeStrip("ScreenCapture") }
+        MenuItem { text: qsTr("GIF"); onTriggered: createNodeStrip("GIF") }
+        MenuItem { text: qsTr("Sprite Sheet"); onTriggered: createNodeStrip("SpriteSheet") }
+    }
+
+    /*
+        ============================================================
+        GEOMETRY
+        ============================================================
+    */
+
+    Menu {
+        title: qsTr("Geometry")
+
+        MenuItem { text: qsTr("Extrude"); onTriggered: createNodeStrip("Extrude") }
+        MenuItem { text: qsTr("Bevel"); onTriggered: createNodeStrip("Bevel") }
+        MenuItem { text: qsTr("Boolean"); onTriggered: createNodeStrip("Boolean") }
+        MenuItem { text: qsTr("Offset Path"); onTriggered: createNodeStrip("OffsetPath") }
+        MenuItem { text: qsTr("Merge Shapes"); onTriggered: createNodeStrip("MergeShapes") }
+        MenuItem { text: qsTr("Trim Path"); onTriggered: createNodeStrip("TrimPath") }
+        MenuItem { text: qsTr("Scatter"); onTriggered: createNodeStrip("Scatter") }
+        MenuItem { text: qsTr("Instance"); onTriggered: createNodeStrip("Instance") }
+        MenuItem { text: qsTr("Array"); onTriggered: createNodeStrip("Array") }
+    }
+
+    /*
+        ============================================================
+        ANIMATION
+        ============================================================
+    */
+
+    Menu {
+        title: qsTr("Animation")
+
+        MenuItem { text: qsTr("Keyframe"); onTriggered: createNodeStrip("Keyframe") }
+        MenuItem { text: qsTr("Curve"); onTriggered: createNodeStrip("Curve") }
+        MenuItem { text: qsTr("Easing"); onTriggered: createNodeStrip("Easing") }
+        MenuItem { text: qsTr("Spring"); onTriggered: createNodeStrip("Spring") }
+        MenuItem { text: qsTr("Bounce"); onTriggered: createNodeStrip("Bounce") }
+        MenuItem { text: qsTr("Oscillator"); onTriggered: createNodeStrip("Oscillator") }
+        MenuItem { text: qsTr("Wiggle"); onTriggered: createNodeStrip("Wiggle") }
+        MenuItem { text: qsTr("Loop"); onTriggered: createNodeStrip("Loop") }
+        MenuItem { text: qsTr("Ping Pong"); onTriggered: createNodeStrip("PingPong") }
+        MenuItem { text: qsTr("Time Stretch"); onTriggered: createNodeStrip("TimeStretch") }
+    }
+
+    /*
+        ============================================================
+        MOTION
+        ============================================================
+    */
+
+    Menu {
+        title: qsTr("Motion")
+
+        MenuItem { text: qsTr("Cloner"); onTriggered: createNodeStrip("Cloner") }
+        MenuItem { text: qsTr("Radial Clone"); onTriggered: createNodeStrip("RadialClone") }
+        MenuItem { text: qsTr("Grid Clone"); onTriggered: createNodeStrip("GridClone") }
+        MenuItem { text: qsTr("Follow Path"); onTriggered: createNodeStrip("FollowPath") }
+        MenuItem { text: qsTr("Look At"); onTriggered: createNodeStrip("LookAt") }
+        MenuItem { text: qsTr("Align"); onTriggered: createNodeStrip("Align") }
+        MenuItem { text: qsTr("Distribute"); onTriggered: createNodeStrip("Distribute") }
+        MenuItem { text: qsTr("Random Transform"); onTriggered: createNodeStrip("RandomTransform") }
+        MenuItem { text: qsTr("Trail"); onTriggered: createNodeStrip("Trail") }
+        MenuItem { text: qsTr("Echo"); onTriggered: createNodeStrip("Echo") }
+    }
+
+    /*
+        ============================================================
+        PROCEDURAL
+        ============================================================
+    */
+
+    Menu {
+        title: qsTr("Procedural")
+
+        MenuItem { text: qsTr("Noise"); onTriggered: createNodeStrip("Noise") }
+        MenuItem { text: qsTr("Curl Noise"); onTriggered: createNodeStrip("CurlNoise") }
+        MenuItem { text: qsTr("Random"); onTriggered: createNodeStrip("Random") }
+        MenuItem { text: qsTr("Voronoi"); onTriggered: createNodeStrip("Voronoi") }
+        MenuItem { text: qsTr("Perlin"); onTriggered: createNodeStrip("Perlin") }
+        MenuItem { text: qsTr("Fractal"); onTriggered: createNodeStrip("Fractal") }
+        MenuItem { text: qsTr("Expression"); onTriggered: createNodeStrip("Expression") }
+        MenuItem { text: qsTr("Formula"); onTriggered: createNodeStrip("Formula") }
+    }
+
+    /*
+        ============================================================
+        EFFECTS
+        ============================================================
+    */
+
+    Menu {
+        title: qsTr("Effects")
+
+        MenuItem { text: qsTr("Blur"); onTriggered: createNodeStrip("Blur") }
+        MenuItem { text: qsTr("Glow"); onTriggered: createNodeStrip("Glow") }
+        MenuItem { text: qsTr("Bloom"); onTriggered: createNodeStrip("Bloom") }
+        MenuItem { text: qsTr("Shadow"); onTriggered: createNodeStrip("Shadow") }
+        MenuItem { text: qsTr("Outline"); onTriggered: createNodeStrip("Outline") }
+        MenuItem { text: qsTr("Chromatic Aberration"); onTriggered: createNodeStrip("ChromaticAberration") }
+        MenuItem { text: qsTr("Distortion"); onTriggered: createNodeStrip("Distortion") }
+        MenuItem { text: qsTr("Pixelate"); onTriggered: createNodeStrip("Pixelate") }
+        MenuItem { text: qsTr("Sharpen"); onTriggered: createNodeStrip("Sharpen") }
+        MenuItem { text: qsTr("Glitch"); onTriggered: createNodeStrip("Glitch") }
+        MenuItem { text: qsTr("Film Grain"); onTriggered: createNodeStrip("FilmGrain") }
+        MenuItem { text: qsTr("Color Correction"); onTriggered: createNodeStrip("ColorCorrection") }
+        MenuItem { text: qsTr("Curves"); onTriggered: createNodeStrip("Curves") }
+        MenuItem { text: qsTr("Levels"); onTriggered: createNodeStrip("Levels") }
+        MenuItem { text: qsTr("Keyer"); onTriggered: createNodeStrip("Keyer") }
+    }
+
+    /*
+        ============================================================
+        AUDIO
+        ============================================================
+    */
+
+    Menu {
+        title: qsTr("Audio")
+
+        MenuItem { text: qsTr("Audio Reactive"); onTriggered: createNodeStrip("AudioReactive") }
+        MenuItem { text: qsTr("Audio Spectrum"); onTriggered: createNodeStrip("AudioSpectrum") }
+        MenuItem { text: qsTr("Audio Waveform"); onTriggered: createNodeStrip("AudioWaveform") }
+        MenuItem { text: qsTr("Beat Detection"); onTriggered: createNodeStrip("BeatDetection") }
+        MenuItem { text: qsTr("FFT"); onTriggered: createNodeStrip("FFT") }
+        MenuItem { text: qsTr("MIDI Input"); onTriggered: createNodeStrip("MIDIInput") }
+    }
+
+    /*
+        ============================================================
+        COMPOSITING
+        ============================================================
+    */
+
+    Menu {
+        title: qsTr("Compositing")
+
+        MenuItem { text: qsTr("Merge"); onTriggered: createNodeStrip("Merge") }
+        MenuItem { text: qsTr("Alpha Over"); onTriggered: createNodeStrip("AlphaOver") }
+        MenuItem { text: qsTr("Multiply"); onTriggered: createNodeStrip("Multiply") }
+        MenuItem { text: qsTr("Screen"); onTriggered: createNodeStrip("Screen") }
+        MenuItem { text: qsTr("Overlay"); onTriggered: createNodeStrip("Overlay") }
+        MenuItem { text: qsTr("Mask"); onTriggered: createNodeStrip("Mask") }
+        MenuItem { text: qsTr("Crop"); onTriggered: createNodeStrip("Crop") }
+        MenuItem { text: qsTr("Transform 2D"); onTriggered: createNodeStrip("Transform2D") }
+    }
+
+    /*
+        ============================================================
+        3D
+        ============================================================
+    */
+
+    Menu {
+        title: qsTr("3D")
+
+        MenuItem { text: qsTr("Cube"); onTriggered: createNodeStrip("Cube") }
+        MenuItem { text: qsTr("Sphere"); onTriggered: createNodeStrip("Sphere") }
+        MenuItem { text: qsTr("Plane"); onTriggered: createNodeStrip("Plane") }
+        MenuItem { text: qsTr("Mesh"); onTriggered: createNodeStrip("Mesh") }
+        MenuItem { text: qsTr("Import Model"); onTriggered: createNodeStrip("ImportModel") }
+        MenuItem { text: qsTr("Skeleton"); onTriggered: createNodeStrip("Skeleton") }
+        MenuItem { text: qsTr("Instancer"); onTriggered: createNodeStrip("Instancer") }
+        MenuItem { text: qsTr("USD Scene"); onTriggered: createNodeStrip("USDScene") }
+    }
+
+    /*
+        ============================================================
+        CAMERA
+        ============================================================
+    */
+
+    Menu {
+        title: qsTr("Camera")
+
+        MenuItem { text: qsTr("Camera"); onTriggered: createNodeStrip("Camera") }
+        MenuItem { text: qsTr("Camera Rig"); onTriggered: createNodeStrip("CameraRig") }
+        MenuItem { text: qsTr("Orbit Camera"); onTriggered: createNodeStrip("OrbitCamera") }
+        MenuItem { text: qsTr("Dolly"); onTriggered: createNodeStrip("Dolly") }
+        MenuItem { text: qsTr("Crane"); onTriggered: createNodeStrip("Crane") }
+        MenuItem { text: qsTr("Shake"); onTriggered: createNodeStrip("Shake") }
+        MenuItem { text: qsTr("DOF"); onTriggered: createNodeStrip("DOF") }
+    }
+
+    /*
+        ============================================================
+        LIGHTING
+        ============================================================
+    */
+
+    Menu {
+        title: qsTr("Lighting")
+
+        MenuItem { text: qsTr("Directional Light"); onTriggered: createNodeStrip("DirectionalLight") }
+        MenuItem { text: qsTr("Point Light"); onTriggered: createNodeStrip("PointLight") }
+        MenuItem { text: qsTr("Spot Light"); onTriggered: createNodeStrip("SpotLight") }
+        MenuItem { text: qsTr("HDRI"); onTriggered: createNodeStrip("HDRI") }
+        MenuItem { text: qsTr("Fog"); onTriggered: createNodeStrip("Fog") }
+        MenuItem { text: qsTr("Volumetric"); onTriggered: createNodeStrip("Volumetric") }
+    }
+
+    /*
+        ============================================================
+        UTILITY
+        ============================================================
+    */
+
+    Menu {
+        title: qsTr("Utility")
+
+        MenuItem { text: qsTr("Clamp"); onTriggered: createNodeStrip("Clamp") }
+        MenuItem { text: qsTr("Remap"); onTriggered: createNodeStrip("Remap") }
+        MenuItem { text: qsTr("Lerp"); onTriggered: createNodeStrip("Lerp") }
+        MenuItem { text: qsTr("Mix"); onTriggered: createNodeStrip("Mix") }
+        MenuItem { text: qsTr("Math"); onTriggered: createNodeStrip("Math") }
+        MenuItem { text: qsTr("Vector Math"); onTriggered: createNodeStrip("VectorMath") }
+        MenuItem { text: qsTr("Timer"); onTriggered: createNodeStrip("Timer") }
+        MenuItem { text: qsTr("Counter"); onTriggered: createNodeStrip("Counter") }
+    }
+
+    /*
+        ============================================================
+        DEBUG
+        ============================================================
+    */
+
+    Menu {
+        title: qsTr("Debug")
+
+        MenuItem { text: qsTr("Print"); onTriggered: createNodeStrip("Print") }
+        MenuItem { text: qsTr("Inspector"); onTriggered: createNodeStrip("Inspector") }
+        MenuItem { text: qsTr("FPS"); onTriggered: createNodeStrip("FPS") }
+        MenuItem { text: qsTr("Profiler"); onTriggered: createNodeStrip("Profiler") }
+        MenuItem { text: qsTr("Graph Debug"); onTriggered: createNodeStrip("GraphDebug") }
+    }
+}

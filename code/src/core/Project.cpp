@@ -1,6 +1,8 @@
 #include "Project.h"
 #include "Composition.h"
+#include "TimelineLayer.h"
 #include "Track.h"
+#include "Strip.h"
 #include "Layer.h"
 #include "ShapeLayer.h"
 #include "TextLayer.h"
@@ -177,7 +179,7 @@ QString Project::serializeToJson() const
 {
     QJsonObject root;
     root["name"] = m_name;
-    root["version"] = "0.1";
+    root["version"] = "0.2";
     root["frameRate"] = m_frameRate;
 
     // Assets
@@ -200,28 +202,32 @@ QString Project::serializeToJson() const
         compObj["duration"] = comp->duration();
         compObj["frameRate"] = comp->frameRate();
 
-        // Tracks
-        QJsonArray tracksArr;
-        for (int ti = 0; ti < comp->trackCount(); ++ti) {
-            auto *track = comp->trackAt(ti);
-            QJsonObject trackObj;
-            trackObj["name"] = track->name();
-            trackObj["locked"] = track->locked();
+        // Layers → Tracks → Strips
+        QJsonArray layersArr;
+        for (int li = 0; li < comp->layerCount(); ++li) {
+            auto *tl = comp->layerAt(li);
+            QJsonObject tlObj;
+            tlObj["name"] = tl->name();
 
-            QJsonArray clipsArr;
-            for (int ci = 0; ci < track->clipCount(); ++ci) {
-                auto *clip = track->clipAt(ci);
-                QJsonObject clipObj;
-                if (auto *sl = qobject_cast<ShapeLayer*>(clip))
-                    clipObj = sl->toJson();
-                else if (auto *tl = qobject_cast<TextLayer*>(clip))
-                    clipObj = tl->toJson();
-                clipsArr.append(clipObj);
+            QJsonArray tracksArr;
+            for (int ti = 0; ti < tl->trackCount(); ++ti) {
+                auto *track = tl->trackAt(ti);
+                QJsonObject trackObj;
+                trackObj["name"] = track->name();
+
+                QJsonArray stripsArr;
+                for (int si = 0; si < track->stripCount(); ++si) {
+                    auto *strip = track->stripAt(si);
+                    QJsonObject stripObj = strip->toJson();
+                    stripsArr.append(stripObj);
+                }
+                trackObj["strips"] = stripsArr;
+                tracksArr.append(trackObj);
             }
-            trackObj["clips"] = clipsArr;
-            tracksArr.append(trackObj);
+            tlObj["tracks"] = tracksArr;
+            layersArr.append(tlObj);
         }
-        compObj["tracks"] = tracksArr;
+        compObj["layers"] = layersArr;
         compsArr.append(compObj);
     }
     root["compositions"] = compsArr;
@@ -274,19 +280,33 @@ bool Project::deserializeFromJson(const QString &json)
         comp->setDuration(compObj["duration"].toInt(150));
         comp->setFrameRate(compObj["frameRate"].toDouble(30.0));
 
-        // Load tracks
-        QJsonArray tracksArr = compObj["tracks"].toArray();
-        for (const auto &tval : tracksArr) {
-            QJsonObject trackObj = tval.toObject();
-            auto *track = comp->addTrack(trackObj["name"].toString());
-            track->setLocked(trackObj["locked"].toBool(false));
+        // Load layers → tracks → strips
+        QJsonArray layersArr = compObj["layers"].toArray();
+        for (const auto &lval : layersArr) {
+            QJsonObject tlObj = lval.toObject();
+            auto *tl = new TimelineLayer(comp);
+            tl->setName(tlObj["name"].toString("Layer"));
+            comp->addLayer(tl);
 
-            QJsonArray clipsArr = trackObj["clips"].toArray();
-            for (const auto &cval : clipsArr) {
-                QJsonObject clipObj = cval.toObject();
-                Layer *clip = layerFromJson(clipObj, track);
-                if (clip)
-                    track->addClip(clip);
+            QJsonArray tracksArr = tlObj["tracks"].toArray();
+            for (const auto &tval : tracksArr) {
+                QJsonObject trackObj = tval.toObject();
+                auto *track = tl->addTrack(trackObj["name"].toString());
+
+                QJsonArray stripsArr = trackObj["strips"].toArray();
+                for (const auto &sval : stripsArr) {
+                    QJsonObject stripObj = sval.toObject();
+                    auto *strip = new Strip(track);
+                    strip->fromJson(stripObj);
+                    // Restore element if present
+                    if (stripObj.contains("element")) {
+                        QJsonObject elemObj = stripObj["element"].toObject();
+                        Layer *elem = layerFromJson(elemObj, strip);
+                        if (elem)
+                            strip->setElement(elem);
+                    }
+                    track->addStrip(strip);
+                }
             }
         }
         m_compositions.append(comp);

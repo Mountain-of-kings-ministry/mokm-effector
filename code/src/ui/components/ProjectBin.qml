@@ -8,7 +8,6 @@ Rectangle {
     color: Theme.secondary
     clip: true
 
-    // Robust root reference for delegates
     readonly property var bin: binRoot
 
     property Composition composition: null
@@ -24,6 +23,102 @@ Rectangle {
 
     property var _selected: null
 
+    property Component shapeLayerComponent: ShapeLayer {}
+    property Component textLayerComponent: TextLayer {}
+    property Component timelineLayerComponent: TimelineLayer {}
+
+    function createNodeStrip(type) {
+        if (!bin.project)
+            return;
+        var proj = bin.project;
+        var layer;
+        var names = ["Rectangle", "Ellipse", "Circle", "Triangle"];
+        var num = proj.assetCount + 1;
+
+        switch (type) {
+        case "Rectangle":
+            layer = shapeLayerComponent.createObject(proj, {
+                name: "Rectangle " + num,
+                shapeType: ShapeLayer.Rectangle,
+                shapeWidth: 200,
+                shapeHeight: 200,
+                color: Theme.primary
+            });
+            break;
+        case "Ellipse":
+            layer = shapeLayerComponent.createObject(proj, {
+                name: "Ellipse " + num,
+                shapeType: ShapeLayer.Ellipse,
+                shapeWidth: 200,
+                shapeHeight: 150,
+                color: Theme.primary
+            });
+            break;
+        case "Circle":
+            layer = shapeLayerComponent.createObject(proj, {
+                name: "Circle " + num,
+                shapeType: ShapeLayer.Circle,
+                shapeWidth: 200,
+                shapeHeight: 200,
+                color: Theme.primary
+            });
+            break;
+        case "Triangle":
+            layer = shapeLayerComponent.createObject(proj, {
+                name: "Triangle " + num,
+                shapeType: ShapeLayer.Triangle,
+                shapeWidth: 200,
+                shapeHeight: 200,
+                color: Theme.primary
+            });
+            break;
+        case "Text":
+            layer = textLayerComponent.createObject(proj, {
+                name: "Text " + num,
+                text: type,
+                color: Theme.foreground,
+                fontSize: 48
+            });
+            break;
+        default:
+            layer = shapeLayerComponent.createObject(proj, {
+                name: type + " " + num,
+                shapeType: ShapeLayer.Rectangle,
+                shapeWidth: 200,
+                shapeHeight: 200,
+                color: Theme.primary
+            });
+            break;
+        }
+
+        if (layer) {
+            proj.addAsset(layer);
+            bin._selected = layer;
+            bin.layerSelected(layer);
+        }
+    }
+
+    // ── Collect layers and tracks into JS arrays for reliable menu population ──
+    function getLayers() {
+        if (!bin.composition) return [];
+        var result = [];
+        var count = bin.composition.layerCount();
+        for (var i = 0; i < count; i++) {
+            result.push(bin.composition.layerAt(i));
+        }
+        return result;
+    }
+
+    function getTracks(layerObj) {
+        if (!layerObj) return [];
+        var result = [];
+        var count = layerObj.trackCount;
+        for (var i = 0; i < count; i++) {
+            result.push(layerObj.trackAt(i));
+        }
+        return result;
+    }
+
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
@@ -35,7 +130,7 @@ Rectangle {
 
             Text {
                 anchors.centerIn: parent
-                text: qsTr("Project")
+                text: qsTr("Project Bin")
                 color: Theme.mutedForeground
                 font.pixelSize: 11
                 font.letterSpacing: 0.5
@@ -77,9 +172,11 @@ Rectangle {
                         Layout.fillWidth: true
                         height: 22
                         color: {
-                            if (bin._selected === modelData) return Theme.selected
-                            if (assetMouse.containsMouse) return Theme.secondaryHover
-                            return index % 2 === 0 ? "transparent" : Qt.alpha(Theme.secondaryHover, 0.15)
+                            if (bin._selected === modelData)
+                                return Theme.selected;
+                            if (assetMouse.containsMouse)
+                                return Theme.secondaryHover;
+                            return index % 2 === 0 ? "transparent" : Qt.alpha(Theme.secondaryHover, 0.15);
                         }
 
                         RowLayout {
@@ -111,16 +208,16 @@ Rectangle {
                             acceptedButtons: Qt.LeftButton | Qt.RightButton
                             onClicked: mouse => {
                                 if (mouse.button === Qt.LeftButton) {
-                                    bin._selected = modelData
-                                    bin.layerSelected(modelData)
+                                    bin._selected = modelData;
+                                    bin.layerSelected(modelData);
                                 }
                             }
                             onPressed: mouse => {
                                 if (mouse.button === Qt.RightButton) {
-                                    bin._selected = modelData
-                                    bin.layerSelected(modelData)
-                                    assetContextMenu.asset = modelData
-                                    assetContextMenu.popup(assetMouse, mouse.x, mouse.y)
+                                    bin._selected = modelData;
+                                    bin.layerSelected(modelData);
+                                    assetContextMenu.asset = modelData;
+                                    assetContextMenu.popup(assetMouse, mouse.x, mouse.y);
                                 }
                             }
                         }
@@ -130,13 +227,14 @@ Rectangle {
                 Item {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    Layout.minimumHeight: 50
+                    Layout.minimumHeight: 100
 
                     MouseArea {
                         anchors.fill: parent
                         acceptedButtons: Qt.RightButton
-                        onPressed: function(m) {
-                            if (!bin.project) return;
+                        onPressed: function (m) {
+                            if (!bin.project)
+                                return;
                             contextMenu.popup(m.x, m.y);
                         }
                     }
@@ -145,57 +243,161 @@ Rectangle {
         }
     }
 
+    // ── Right-click empty area menu ──
     Menu {
         id: contextMenu
-        MenuItem { text: qsTr("Add Rectangle"); onTriggered: bin.createRectLayer() }
-        MenuItem { text: qsTr("Add Circle"); onTriggered: bin.createCircleLayer() }
-        MenuItem { text: qsTr("Add Triangle"); onTriggered: bin.createTriangleLayer() }
-        MenuSeparator {}
-        MenuItem { text: qsTr("Add Text"); onTriggered: bin.createTextLayer() }
+
+        Menu {
+            title: qsTr("Generators")
+
+            MenuItem { text: qsTr("Rectangle"); onTriggered: createNodeStrip("Rectangle") }
+            MenuItem { text: qsTr("Text"); onTriggered: createNodeStrip("Text") }
+            MenuItem { text: qsTr("Circle"); onTriggered: createNodeStrip("Circle") }
+            MenuItem { text: qsTr("Ellipse"); onTriggered: createNodeStrip("Ellipse") }
+            MenuItem { text: qsTr("Polygon"); onTriggered: createNodeStrip("Polygon") }
+            MenuItem { text: qsTr("Star"); onTriggered: createNodeStrip("Star") }
+            MenuItem { text: qsTr("Line"); onTriggered: createNodeStrip("Line") }
+            MenuItem { text: qsTr("Arc"); onTriggered: createNodeStrip("Arc") }
+            MenuItem { text: qsTr("Grid"); onTriggered: createNodeStrip("Grid") }
+            MenuItem { text: qsTr("Spiral"); onTriggered: createNodeStrip("Spiral") }
+            MenuItem { text: qsTr("Arrow"); onTriggered: createNodeStrip("Arrow") }
+            MenuItem { text: qsTr("Rounded Rectangle"); onTriggered: createNodeStrip("RoundedRectangle") }
+            MenuItem { text: qsTr("Bezier Shape"); onTriggered: createNodeStrip("BezierShape") }
+            MenuItem { text: qsTr("Path"); onTriggered: createNodeStrip("Path") }
+            MenuItem { text: qsTr("SVG"); onTriggered: createNodeStrip("SVG") }
+            MenuItem { text: qsTr("Spline"); onTriggered: createNodeStrip("Spline") }
+            MenuItem { text: qsTr("Lottie"); onTriggered: createNodeStrip("Lottie") }
+        }
+
+        Menu {
+            title: qsTr("Media")
+
+            MenuItem { text: qsTr("Image"); onTriggered: createNodeStrip("Image") }
+            MenuItem { text: qsTr("Video"); onTriggered: createNodeStrip("Video") }
+            MenuItem { text: qsTr("Image Sequence"); onTriggered: createNodeStrip("ImageSequence") }
+            MenuItem { text: qsTr("Audio File"); onTriggered: createNodeStrip("AudioFile") }
+            MenuItem { text: qsTr("Webcam"); onTriggered: createNodeStrip("Webcam") }
+            MenuItem { text: qsTr("Screen Capture"); onTriggered: createNodeStrip("ScreenCapture") }
+            MenuItem { text: qsTr("GIF"); onTriggered: createNodeStrip("GIF") }
+            MenuItem { text: qsTr("Sprite Sheet"); onTriggered: createNodeStrip("SpriteSheet") }
+        }
+
+        Menu {
+            title: qsTr("Procedural")
+
+            MenuItem { text: qsTr("Noise"); onTriggered: createNodeStrip("Noise") }
+            MenuItem { text: qsTr("Curl Noise"); onTriggered: createNodeStrip("CurlNoise") }
+            MenuItem { text: qsTr("Voronoi"); onTriggered: createNodeStrip("Voronoi") }
+        }
     }
 
+    // ── Right-click asset menu ──
     Menu {
         id: assetContextMenu
         property var asset: null
 
         MenuItem {
-            text: qsTr("Add to Track")
+            text: qsTr("Add to Layer")
             enabled: bin.composition !== null && assetContextMenu.asset !== null
-            Menu {
-                id: trackSubmenu
-                Instantiator {
-                    model: bin.composition && bin.composition.tracks ? bin.composition.tracks : 0
-                    delegate: MenuItem {
-                        text: modelData?.name ?? "Track " + (index + 1)
-                        onTriggered: {
-                            if (assetContextMenu.asset && bin.composition) {
-                                var track = modelData;
-                                var clip = assetContextMenu.asset.clone(track);
-                                clip.startFrame = 0;
-                                clip.duration = 90;
-                                track.addClip(clip);
-                                if (bin.project) bin.project.captureSnapshot();
-                            }
-                        }
-                    }
-                    onObjectAdded: (index, obj) => trackSubmenu.insertItem(index, obj)
-                    onObjectRemoved: (index, obj) => trackSubmenu.removeItem(obj)
-                }
-                MenuSeparator {}
-                MenuItem {
-                    text: qsTr("+ New Track")
-                    onTriggered: {
-                        if (assetContextMenu.asset && bin.composition) {
-                            var track = bin.composition.addTrack();
-                            var clip = assetContextMenu.asset.clone(track);
-                            clip.startFrame = 0;
-                            clip.duration = 90;
-                            track.addClip(clip);
-                            if (bin.project) bin.project.captureSnapshot();
-                        }
-                    }
+
+            // Dynamically populate submenus on open
+            onTriggered: {} // Popup happens via submenus' aboutToShow
+        }
+
+        // ── Layer submenus built dynamically ──
+        Instantiator {
+            id: layerInstantiator
+            active: false // We populate manually
+
+            delegate: Menu { }
+        }
+
+        // Populate asset context menu when it's about to show
+        onAboutToShow: {
+            // Remove all dynamic items, keeping only "Delete Asset" (the last one)
+            while (this.count > 1) {
+                var item = this.itemAt(this.count - 2);
+                if (!item) break;
+                this.removeItem(item);
+                if (item && item.destroy)
+                    item.destroy();
+            }
+
+            // Add "Add to Layer" header at the beginning
+            var layers = getLayers();
+            if (layers.length === 0) {
+                // No layers yet — offer to create one
+                var noLayerItem = addMenuItem(qsTr("+ New Layer First"));
+                noLayerItem.triggered.connect(function() {
+                    if (!assetContextMenu.asset || !bin.composition) return;
+                    var comp = bin.composition;
+                    var tl = bin.timelineLayerComponent.createObject(comp, {
+                        name: "Layer " + (comp.layerCount() + 1)
+                    });
+                    comp.addLayer(tl);
+                    var track = tl.addTrack();
+                    track.createStripFromAsset(assetContextMenu.asset, "", 0, 90);
+                    if (bin.project)
+                        bin.project.captureSnapshot();
+                });
+            } else {
+                for (var li = 0; li < layers.length; li++) {
+                    var layerObj = layers[li];
+                    addMenu(layerObj);
                 }
             }
+        }
+
+        // Helper: add a plain MenuItem and return it
+        function addMenuItem(text) {
+            var item = Qt.createQmlObject(
+                'import QtQuick.Controls; MenuItem { text: "' + text.replace(/"/g, '\\"') + '" }',
+                assetContextMenu, "dynamicMenuItem");
+            var idx = Math.max(0, assetContextMenu.count - 1);
+            assetContextMenu.insertItem(idx, item);
+            return item;
+        }
+
+        // Helper: add menu items for tracks within a layer
+        function addMenu(layerObj) {
+            var tracks = getTracks(layerObj);
+            var headerItem = addMenuItem(layerObj.name || "Layer");
+            headerItem.enabled = false;
+
+            if (tracks.length === 0) {
+                var newTrackItem = addMenuItem("  + New Track");
+                newTrackItem.triggered.connect(function() {
+                    if (!assetContextMenu.asset || !layerObj) return;
+                    var track = layerObj.addTrack();
+                    track.createStripFromAsset(assetContextMenu.asset, "", 0, 90);
+                    if (bin.project)
+                        bin.project.captureSnapshot();
+                });
+                return;
+            }
+
+            for (var ti = 0; ti < tracks.length; ti++) {
+                var trackObj = tracks[ti];
+                var trackItem = addMenuItem("  " + (trackObj.name || ("Track " + (ti + 1))));
+                trackItem.triggered.connect(function(t) {
+                    return function() {
+                        if (assetContextMenu.asset && t) {
+                            t.createStripFromAsset(assetContextMenu.asset, "", 0, 90);
+                            if (bin.project)
+                                bin.project.captureSnapshot();
+                        }
+                    };
+                }(trackObj));
+            }
+
+            var addTrackItem = addMenuItem("  + New Track");
+            addTrackItem.triggered.connect(function() {
+                if (!assetContextMenu.asset || !layerObj) return;
+                var track = layerObj.addTrack();
+                track.createStripFromAsset(assetContextMenu.asset, "", 0, 90);
+                if (bin.project)
+                    bin.project.captureSnapshot();
+            });
         }
 
         MenuSeparator {}
@@ -207,9 +409,12 @@ Rectangle {
                     bin.project.removeAsset(assetContextMenu.asset);
                     if (bin._selected === assetContextMenu.asset)
                         bin._selected = null;
-                    if (bin.project) bin.project.captureSnapshot();
+                    if (bin.project)
+                        bin.project.captureSnapshot();
                 }
             }
         }
     }
+
+    // Dead code removed — old Instantiator approach replaced with dynamic onAboutToShow
 }

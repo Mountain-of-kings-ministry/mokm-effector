@@ -8,6 +8,8 @@
 
 class Layer;
 class Track;
+class TimelineLayer;
+class Strip;
 
 class Composition : public QObject
 {
@@ -17,8 +19,7 @@ class Composition : public QObject
     Q_PROPERTY(int height READ height WRITE setHeight NOTIFY resolutionChanged)
     Q_PROPERTY(int duration READ duration WRITE setDuration NOTIFY durationChanged)
     Q_PROPERTY(qreal frameRate READ frameRate WRITE setFrameRate NOTIFY frameRateChanged)
-    Q_PROPERTY(QQmlListProperty<Layer> layers READ layers NOTIFY layersChanged)
-    Q_PROPERTY(QQmlListProperty<Track> tracks READ tracks NOTIFY tracksChanged)
+    Q_PROPERTY(QQmlListProperty<TimelineLayer> layers READ layers NOTIFY layersChanged)
 public:
     explicit Composition(QObject *parent = nullptr);
     ~Composition() override;
@@ -36,24 +37,21 @@ public:
     qreal frameRate() const { return m_frameRate; }
     void setFrameRate(qreal fps);
 
-    QQmlListProperty<Layer> layers();
-    int layerCount() const { return m_layers.size(); }
-    Layer* layerAt(int index) const;
-    int layerIndex(Layer *layer) const;
-
-    Q_INVOKABLE void addLayer(Layer *layer);
-    Q_INVOKABLE void removeLayer(Layer *layer);
+    // TimelineLayer management
+    QQmlListProperty<TimelineLayer> layers();
+    Q_INVOKABLE int layerCount() const { return m_timelineLayers.size(); }
+    Q_INVOKABLE TimelineLayer* layerAt(int index) const;
+    Q_INVOKABLE void addLayer(TimelineLayer *layer);
+    Q_INVOKABLE void removeLayer(TimelineLayer *layer);
+    Q_INVOKABLE int layerIndex(TimelineLayer *layer) const;
     Q_INVOKABLE void moveLayer(int fromIndex, int toIndex);
     Q_INVOKABLE void clearLayers();
+    Q_INVOKABLE TimelineLayer* ensureDefaultLayer();
 
-    QQmlListProperty<Track> tracks();
-    Q_PROPERTY(int trackCount READ trackCount NOTIFY tracksChanged)
-    int trackCount() const { return m_tracks.size(); }
-    Q_INVOKABLE Track* trackAt(int index) const;
-    Q_INVOKABLE Track* addTrack(const QString &name = QString());
-    Q_INVOKABLE void removeTrack(Track *track);
-    Q_INVOKABLE int trackIndex(Track *track) const;
-    Q_INVOKABLE void moveTrack(int fromIndex, int toIndex);
+    // Flat visual layer list (computed from all strips' elements — for viewport/export)
+    Q_PROPERTY(int flatLayerCount READ flatLayerCount NOTIFY layersChanged)
+    int flatLayerCount() const { return m_flatLayers.size(); }
+    Q_INVOKABLE Layer* flatLayerAt(int index) const;
 
 signals:
     void nameChanged();
@@ -61,22 +59,18 @@ signals:
     void durationChanged();
     void frameRateChanged();
     void layersChanged();
-    void tracksChanged();
 
 public slots:
-    void rebuildLayers();
+    void rebuildFlatLayers();
 
 private:
-    Track* ensureDefaultTrack();
-    void connectTrack(Track *track);
-
     QString m_name = "New Composition";
     int m_width = 1920;
     int m_height = 1080;
     int m_duration = 150;
     qreal m_frameRate = 30.0;
-    QVector<Layer*> m_layers;
-    QVector<Track*> m_tracks;
+    QVector<TimelineLayer*> m_timelineLayers;
+    QVector<Layer*> m_flatLayers;
 };
 
 #endif
