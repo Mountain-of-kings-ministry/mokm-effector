@@ -38,6 +38,14 @@ void ShapeLayer::setRadius(qreal r)
     }
 }
 
+void ShapeLayer::setSides(int s)
+{
+    if (m_sides != s) {
+        m_sides = qBound(3, s, 64);
+        emit sidesChanged();
+    }
+}
+
 void ShapeLayer::setColor(const QColor &color)
 {
     if (m_color != color) {
@@ -80,6 +88,7 @@ Layer* ShapeLayer::clone(QObject *parent) const
     s->m_shapeWidth = m_shapeWidth;
     s->m_shapeHeight = m_shapeHeight;
     s->m_radius = m_radius;
+    s->m_sides = m_sides;
     s->m_color = m_color;
     s->m_strokeColor = m_strokeColor;
     s->m_strokeWidth = m_strokeWidth;
@@ -93,6 +102,7 @@ QJsonObject ShapeLayer::toJson() const
     obj["shapeWidth"] = m_shapeWidth;
     obj["shapeHeight"] = m_shapeHeight;
     obj["radius"] = m_radius;
+    obj["sides"] = m_sides;
     obj["color"] = m_color.name();
     obj["strokeColor"] = m_strokeColor.name();
     obj["strokeWidth"] = m_strokeWidth;
@@ -106,6 +116,7 @@ void ShapeLayer::fromJson(const QJsonObject &obj)
     setShapeWidth(obj["shapeWidth"].toDouble(200));
     setShapeHeight(obj["shapeHeight"].toDouble(200));
     setRadius(obj["radius"].toDouble());
+    setSides(obj["sides"].toInt(6));
     setColor(QColor(obj["color"].toString("#eab308")));
     setStrokeColor(QColor(obj["strokeColor"].toString("transparent")));
     setStrokeWidth(obj["strokeWidth"].toDouble());

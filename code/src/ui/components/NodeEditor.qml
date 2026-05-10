@@ -64,7 +64,7 @@ Rectangle {
                 flat: true
                 onClicked: {
                     if (root.nodeGraph)
-                        root.nodeGraph.addNode("Rectangle");
+                        root.nodeGraph.addNodeAutoConnect("Rectangle");
                 }
             }
             Button {
@@ -74,7 +74,7 @@ Rectangle {
                 flat: true
                 onClicked: {
                     if (root.nodeGraph)
-                        root.nodeGraph.addNode("Ellipse");
+                        root.nodeGraph.addNodeAutoConnect("Ellipse");
                 }
             }
             Button {
@@ -84,7 +84,7 @@ Rectangle {
                 flat: true
                 onClicked: {
                     if (root.nodeGraph)
-                        root.nodeGraph.addNode("Circle");
+                        root.nodeGraph.addNodeAutoConnect("Circle");
                 }
             }
             Button {
@@ -94,7 +94,7 @@ Rectangle {
                 flat: true
                 onClicked: {
                     if (root.nodeGraph)
-                        root.nodeGraph.addNode("Triangle");
+                        root.nodeGraph.addNodeAutoConnect("Triangle");
                 }
             }
             Button {
@@ -104,7 +104,27 @@ Rectangle {
                 flat: true
                 onClicked: {
                     if (root.nodeGraph)
-                        root.nodeGraph.addNode("Text");
+                        root.nodeGraph.addNodeAutoConnect("Text");
+                }
+            }
+            Button {
+                text: "Polygon"
+                visible: root.nodeGraph !== null
+                height: 28
+                flat: true
+                onClicked: {
+                    if (root.nodeGraph)
+                        root.nodeGraph.addNodeAutoConnect("Polygon");
+                }
+            }
+            Button {
+                text: "Star"
+                visible: root.nodeGraph !== null
+                height: 28
+                flat: true
+                onClicked: {
+                    if (root.nodeGraph)
+                        root.nodeGraph.addNodeAutoConnect("Star");
                 }
             }
             Button {

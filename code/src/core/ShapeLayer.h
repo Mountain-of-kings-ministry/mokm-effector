@@ -11,11 +11,15 @@ class ShapeLayer : public Layer
     Q_PROPERTY(qreal shapeWidth READ shapeWidth WRITE setShapeWidth NOTIFY shapeGeometryChanged)
     Q_PROPERTY(qreal shapeHeight READ shapeHeight WRITE setShapeHeight NOTIFY shapeGeometryChanged)
     Q_PROPERTY(qreal radius READ radius WRITE setRadius NOTIFY shapeGeometryChanged)
+    Q_PROPERTY(int sides READ sides WRITE setSides NOTIFY sidesChanged)
     Q_PROPERTY(QColor color READ color WRITE setColor NOTIFY colorChanged)
     Q_PROPERTY(QColor strokeColor READ strokeColor WRITE setStrokeColor NOTIFY strokeChanged)
     Q_PROPERTY(qreal strokeWidth READ strokeWidth WRITE setStrokeWidth NOTIFY strokeChanged)
 public:
-    enum ShapeType { Rectangle, Ellipse, Circle, Triangle };
+    enum ShapeType {
+        Rectangle, Ellipse, Circle, Triangle,
+        Polygon, Star, Line, Arrow, RoundedRect
+    };
     Q_ENUM(ShapeType)
 
     explicit ShapeLayer(QObject *parent = nullptr);
@@ -30,6 +34,8 @@ public:
     void setShapeHeight(qreal h);
     qreal radius() const { return m_radius; }
     void setRadius(qreal r);
+    int sides() const { return m_sides; }
+    void setSides(int s);
 
     QColor color() const { return m_color; }
     void setColor(const QColor &color);
@@ -45,6 +51,7 @@ public:
 signals:
     void shapeTypeChanged();
     void shapeGeometryChanged();
+    void sidesChanged();
     void colorChanged();
     void strokeChanged();
 
@@ -53,6 +60,7 @@ private:
     qreal m_shapeWidth = 200;
     qreal m_shapeHeight = 200;
     qreal m_radius = 0;
+    int m_sides = 6;
     QColor m_color = QColor("#eab308");
     QColor m_strokeColor = Qt::transparent;
     qreal m_strokeWidth = 0;

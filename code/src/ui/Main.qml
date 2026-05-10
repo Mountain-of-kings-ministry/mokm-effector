@@ -113,7 +113,8 @@ Window {
             }
 
             ColumnLayout {
-                SplitView.preferredHeight: 250
+                SplitView.preferredHeight: 450
+                SplitView.minimumHeight: 200
                 spacing: 0
 
                 Toolbar {

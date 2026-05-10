@@ -652,13 +652,6 @@ That alone can already rival:
 
 for many workflows.
 
-Layer
- └── Track
-      └── NodeStrip
-            └── NodeGraph
-                  ├── Nodes
-                  └── Connections
-
 Menu {
     id: contextMenu
 

@@ -72,6 +72,26 @@ Rectangle {
                 color: Theme.primary
             });
             break;
+        case "Polygon":
+            layer = shapeLayerComponent.createObject(proj, {
+                name: "Polygon " + num,
+                shapeType: ShapeLayer.Polygon,
+                shapeWidth: 200,
+                shapeHeight: 200,
+                sides: 6,
+                color: Theme.primary
+            });
+            break;
+        case "Star":
+            layer = shapeLayerComponent.createObject(proj, {
+                name: "Star " + num,
+                shapeType: ShapeLayer.Star,
+                shapeWidth: 200,
+                shapeHeight: 200,
+                sides: 5,
+                color: Theme.primary
+            });
+            break;
         case "Text":
             layer = textLayerComponent.createObject(proj, {
                 name: "Text " + num,

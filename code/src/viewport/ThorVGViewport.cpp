@@ -211,6 +211,65 @@ void ThorVGViewport::renderShapeLayer(QPainter *painter, ShapeLayer *layer)
         painter->drawPolygon(tri);
         break;
     }
+    case ShapeLayer::Polygon: {
+        painter->setBrush(layer->color());
+        painter->setPen(pen);
+        QPolygonF poly;
+        int sides = layer->sides();
+        qreal a = qMin(w, h) / 2.0;
+        for (int i = 0; i < sides; ++i) {
+            qreal angle = 2.0 * M_PI * i / sides - M_PI_2;
+            poly << QPointF(a * cos(angle), a * sin(angle));
+        }
+        painter->drawPolygon(poly);
+        break;
+    }
+    case ShapeLayer::Star: {
+        painter->setBrush(layer->color());
+        painter->setPen(pen);
+        QPolygonF star;
+        int points = layer->sides();
+        qreal outer = qMin(w, h) / 2.0;
+        qreal inner = outer * 0.4;
+        for (int i = 0; i < points * 2; ++i) {
+            qreal angle = M_PI * i / points - M_PI_2;
+            qreal r2 = (i % 2 == 0) ? outer : inner;
+            star << QPointF(r2 * cos(angle), r2 * sin(angle));
+        }
+        painter->drawPolygon(star);
+        break;
+    }
+    case ShapeLayer::Line: {
+        QPen linePen(layer->strokeColor() == Qt::transparent ? layer->color() : layer->strokeColor(),
+                     layer->strokeWidth() > 0 ? layer->strokeWidth() : 2);
+        painter->setPen(linePen);
+        painter->setBrush(Qt::NoBrush);
+        qreal len = qMin(w, h) * 0.8;
+        painter->drawLine(QPointF(-len / 2, 0), QPointF(len / 2, 0));
+        break;
+    }
+    case ShapeLayer::Arrow: {
+        QPen arrowPen(layer->strokeColor() == Qt::transparent ? layer->color() : layer->strokeColor(),
+                      layer->strokeWidth() > 0 ? layer->strokeWidth() : 2);
+        painter->setPen(arrowPen);
+        painter->setBrush(layer->color());
+        qreal len = qMin(w, h) * 0.7;
+        qreal head = qMin(w, h) * 0.25;
+        QPolygonF arrow;
+        arrow << QPointF(len / 2, 0)
+              << QPointF(len / 2 - head, -head * 0.4)
+              << QPointF(len / 2 - head, head * 0.4);
+        painter->drawLine(QPointF(-len / 2, 0), QPointF(len / 2, 0));
+        painter->drawPolygon(arrow);
+        break;
+    }
+    case ShapeLayer::RoundedRect: {
+        painter->setBrush(layer->color());
+        painter->setPen(pen);
+        painter->drawRoundedRect(rect, qMin(r > 0 ? r : 20.0, qMin(w, h) / 2.0),
+                                 qMin(r > 0 ? r : 20.0, qMin(w, h) / 2.0));
+        break;
+    }
     }
 }
 

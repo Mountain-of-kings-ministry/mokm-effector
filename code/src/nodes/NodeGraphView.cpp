@@ -17,7 +17,6 @@ NodeGraphView::NodeGraphView(QQuickItem *parent)
     // Enable multisampling for smooth rendering
     setAntialiasing(true);
     setRenderTarget(QQuickPaintedItem::FramebufferObject);
-    setMipmap(true);
 }
 
 NodeGraphView::~NodeGraphView()
@@ -35,9 +34,6 @@ void NodeGraphView::setNodeGraph(NodeGraph *graph)
         m_nodeGraph = graph;
         ensureView();
         emit nodeGraphChanged();
-
-        if (m_view)
-            m_view->show();
 
         // Repaint when the graph changes (nodes added/removed/connected)
         if (m_nodeGraph) {
@@ -114,8 +110,15 @@ void NodeGraphView::paint(QPainter *painter)
         return;
     }
 
-    // Render the QtNodes GraphicsView content
-    m_view->render(painter, boundingRect(), m_view->sceneRect().toRect(), Qt::KeepAspectRatio);
+    // Ensure the view is sized to match our geometry
+    QRectF br = boundingRect();
+    QSize viewSize = m_view->viewport()->size();
+    if (viewSize != br.size().toSize()) {
+        m_view->resize(static_cast<int>(br.width()), static_cast<int>(br.height()));
+    }
+
+    // Render the viewport content directly (view is already sized to match)
+    m_view->render(painter, br, m_view->viewport()->rect(), Qt::IgnoreAspectRatio);
 }
 
 void NodeGraphView::geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry)
