@@ -128,6 +128,36 @@ Rectangle {
                 }
             }
             Button {
+                text: "Line"
+                visible: root.nodeGraph !== null
+                height: 28
+                flat: true
+                onClicked: {
+                    if (root.nodeGraph)
+                        root.nodeGraph.addNodeAutoConnect("Line");
+                }
+            }
+            Button {
+                text: "Arrow"
+                visible: root.nodeGraph !== null
+                height: 28
+                flat: true
+                onClicked: {
+                    if (root.nodeGraph)
+                        root.nodeGraph.addNodeAutoConnect("Arrow");
+                }
+            }
+            Button {
+                text: "Blur"
+                visible: root.nodeGraph !== null
+                height: 28
+                flat: true
+                onClicked: {
+                    if (root.nodeGraph)
+                        root.nodeGraph.addNodeAutoConnect("Blur");
+                }
+            }
+            Button {
                 text: "Cook"
                 visible: root.nodeGraph !== null
                 height: 28

@@ -98,6 +98,15 @@ void Layer::setDuration(int frames)
     }
 }
 
+void Layer::setBlurRadius(qreal r)
+{
+    r = qMax(0.0, r);
+    if (!qFuzzyCompare(m_blurRadius, r)) {
+        m_blurRadius = r;
+        emit blurChanged();
+    }
+}
+
 Layer* Layer::clone(QObject *parent) const
 {
     auto *l = new Layer(m_type, parent);
@@ -112,6 +121,7 @@ Layer* Layer::clone(QObject *parent) const
     l->m_scaleY = m_scaleY;
     l->m_startFrame = m_startFrame;
     l->m_duration = m_duration;
+    l->m_blurRadius = m_blurRadius;
     return l;
 }
 
@@ -130,6 +140,7 @@ QJsonObject Layer::toJson() const
     obj["scaleY"] = m_scaleY;
     obj["startFrame"] = m_startFrame;
     obj["duration"] = m_duration;
+    obj["blurRadius"] = m_blurRadius;
     return obj;
 }
 
@@ -146,6 +157,7 @@ void Layer::fromJson(const QJsonObject &obj)
     setScaleY(obj["scaleY"].toDouble(1.0));
     setStartFrame(obj["startFrame"].toInt());
     setDuration(obj["duration"].toInt(90));
+    setBlurRadius(obj["blurRadius"].toDouble());
 }
 
 QString Layer::serialize() const

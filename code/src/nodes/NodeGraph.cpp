@@ -6,6 +6,9 @@
 #include "nodes/TextNode.h"
 #include "nodes/PolygonNode.h"
 #include "nodes/StarNode.h"
+#include "nodes/LineNode.h"
+#include "nodes/ArrowNode.h"
+#include "nodes/BlurNode.h"
 #include "nodes/OutputNode.h"
 #include "nodes/LayerData.hpp"
 
@@ -39,6 +42,10 @@ void NodeGraph::setupRegistry()
     m_registry->registerModel<TextNode>("Generators");
     m_registry->registerModel<PolygonNode>("Generators");
     m_registry->registerModel<StarNode>("Generators");
+    m_registry->registerModel<LineNode>("Generators");
+    m_registry->registerModel<ArrowNode>("Generators");
+
+    m_registry->registerModel<BlurNode>("Effects");
 
     m_registry->registerModel<OutputNode>("Output");
 }
