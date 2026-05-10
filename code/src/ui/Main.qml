@@ -102,6 +102,12 @@ Window {
                         onLayerSelected: function (layer) {
                             selectedObject = layer;
                         }
+                        onLayerDragFinished: function (layer, x, y) {
+                            if (globalTimelineModel && globalTimelineModel.autoKeyframeEnabled) {
+                                globalTimelineModel.addKeyframe(layer, "x", globalTimelineModel.currentFrame, x);
+                                globalTimelineModel.addKeyframe(layer, "y", globalTimelineModel.currentFrame, y);
+                            }
+                        }
                     }
                 }
 
@@ -213,7 +219,10 @@ Window {
                 Component {
                     id: keyframeEditorPage
 
-                    KeyframeEditor {}
+                    KeyframeEditor {
+                        timelineModel: globalTimelineModel
+                        selectedObject: selectedObject
+                    }
                 }
             }
         }

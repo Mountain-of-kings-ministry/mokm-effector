@@ -41,6 +41,7 @@ signals:
     void currentFrameChanged();
     void layerSelected(Layer *layer);
     void selectionChanged(QVariantList selected);
+    void layerDragFinished(Layer *layer, qreal x, qreal y);
 
 private:
     void renderShapeLayer(QPainter *painter, ShapeLayer *layer);

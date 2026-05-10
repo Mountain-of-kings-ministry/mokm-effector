@@ -20,6 +20,7 @@ class TimelineModel : public QObject
     Q_PROPERTY(bool playing READ playing WRITE setPlaying NOTIFY playingChanged)
     Q_PROPERTY(qreal playbackSpeed READ playbackSpeed WRITE setPlaybackSpeed NOTIFY playbackSpeedChanged)
     Q_PROPERTY(int keyframesStamp READ keyframesStamp NOTIFY keyframesChanged)
+    Q_PROPERTY(bool autoKeyframeEnabled READ autoKeyframeEnabled WRITE setAutoKeyframeEnabled NOTIFY autoKeyframeEnabledChanged)
 public:
     explicit TimelineModel(QObject *parent = nullptr);
     ~TimelineModel() override;
@@ -47,11 +48,16 @@ public:
     Q_INVOKABLE void stepForward();
     Q_INVOKABLE void stepBackward();
 
-    Q_INVOKABLE void addKeyframe(Layer *layer, const QString &property, int frame, const QVariant &value);
-    Q_INVOKABLE void removeKeyframe(Layer *layer, const QString &property, int frame);
-    Q_INVOKABLE QVariant getValueAt(Layer *layer, const QString &property, int frame) const;
-    Q_INVOKABLE bool hasKeyframe(Layer *layer, const QString &property, int frame) const;
-    Q_INVOKABLE QVector<int> keyframeFrames(Layer *layer, const QString &property) const;
+    bool autoKeyframeEnabled() const { return m_autoKeyframeEnabled; }
+    void setAutoKeyframeEnabled(bool enabled);
+
+    Q_INVOKABLE void addKeyframe(QObject *obj, const QString &property, int frame, const QVariant &value);
+    Q_INVOKABLE void removeKeyframe(QObject *obj, const QString &property, int frame);
+    Q_INVOKABLE void setKeyframeEasing(QObject *obj, const QString &property, int frame, int easing);
+    Q_INVOKABLE QVariant getValueAt(QObject *obj, const QString &property, int frame) const;
+    Q_INVOKABLE bool hasKeyframe(QObject *obj, const QString &property, int frame) const;
+    Q_INVOKABLE QVector<int> keyframeFrames(QObject *obj, const QString &property) const;
+    Q_INVOKABLE QVariantList getKeyframeData(QObject *obj, const QString &property) const;
 
     void applyKeyframes();
 
@@ -61,6 +67,7 @@ signals:
     void playingChanged();
     void playbackSpeedChanged();
     void keyframesChanged();
+    void autoKeyframeEnabledChanged();
 
 private slots:
     void onTick();
@@ -78,10 +85,11 @@ private:
     bool m_playing = false;
     qreal m_playbackSpeed = 1.0;
     int m_keyframesStamp = 0;
+    bool m_autoKeyframeEnabled = false;
     QTimer *m_timer = nullptr;
 
-    // keyframes grouped by layer ptr -> property name -> frame -> keyframe
-    QMap<Layer*, QMap<QString, KeyframeMap>> m_keyframes;
+    // keyframes grouped by QObject ptr -> property name -> frame -> keyframe
+    QMap<QObject*, QMap<QString, KeyframeMap>> m_keyframes;
 };
 
 #endif

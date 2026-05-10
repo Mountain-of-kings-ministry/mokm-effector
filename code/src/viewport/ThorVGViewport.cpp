@@ -509,8 +509,12 @@ void ThorVGViewport::mouseMoveEvent(QMouseEvent *event)
 void ThorVGViewport::mouseReleaseEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton && m_draggedLayer) {
+        Layer *layer = m_draggedLayer;
+        qreal x = layer->x();
+        qreal y = layer->y();
         m_draggedLayer = nullptr;
         unsetCursor();
+        emit layerDragFinished(layer, x, y);
         return;
     }
 

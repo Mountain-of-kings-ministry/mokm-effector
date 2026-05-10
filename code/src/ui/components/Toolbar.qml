@@ -64,38 +64,11 @@ Rectangle {
 
         ToolIconButton {
             source: "qrc:/icons/outline/diamond.svg"
-            property int _kfStamp: root.timelineModel?.keyframesStamp ?? 0
-            badge: {
-                var dummy = _kfStamp;
-                if (!root.currentElement || !root.timelineModel) return false;
-                var frame = root.timelineModel.currentFrame;
-                var props = ["opacity", "x", "y", "rotation", "scaleX", "scaleY"];
-                for (var i = 0; i < props.length; i++) {
-                    if (root.timelineModel.hasKeyframe(root.currentElement, props[i], frame)) return true;
-                }
-                return false;
-            }
+            accented: root.timelineModel ? root.timelineModel.autoKeyframeEnabled : false
             onClicked: {
-                if (!root.currentElement || !root.timelineModel) return;
-                var frame = root.timelineModel.currentFrame;
-                var props = ["opacity", "x", "y", "rotation", "scaleX", "scaleY"];
-                var hasAny = false;
-                for (var i = 0; i < props.length; i++) {
-                    if (root.timelineModel.hasKeyframe(root.currentElement, props[i], frame)) {
-                        hasAny = true;
-                        break;
-                    }
-                }
-                if (hasAny) {
-                    for (var j = 0; j < props.length; j++) {
-                        root.timelineModel.removeKeyframe(root.currentElement, props[j], frame);
-                    }
-                } else {
-                    for (var k = 0; k < props.length; k++) {
-                        var val = root.currentElement[props[k]];
-                        root.timelineModel.addKeyframe(root.currentElement, props[k], frame, val);
-                    }
-                }
+                if (!root.timelineModel) return;
+                root.timelineModel.autoKeyframeEnabled = !root.timelineModel.autoKeyframeEnabled;
+                console.log("Diamond clicked. autoKeyframeEnabled now:", root.timelineModel.autoKeyframeEnabled);
             }
         }
 
@@ -109,11 +82,12 @@ Rectangle {
     component ToolIconButton : Rectangle {
         implicitWidth: 28
         implicitHeight: 28
-        color: ma.containsMouse ? Theme.secondaryHover : "transparent"
+        color: accented ? Qt.alpha(Theme.accent, 0.18) : (ma.containsMouse ? Theme.secondaryHover : "transparent")
         radius: 4
 
         property string source: ""
         property bool badge: false
+        property bool accented: false
         signal clicked()
 
         Image {

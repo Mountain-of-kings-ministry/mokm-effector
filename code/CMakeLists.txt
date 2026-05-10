@@ -109,6 +109,7 @@ qt_add_executable(appmokm_effector
     main.cpp
     resources/resources.qrc
     resources/qtnodes_resources.qrc
+    resources/color_widgets.qrc
 )
 
 add_subdirectory(src)

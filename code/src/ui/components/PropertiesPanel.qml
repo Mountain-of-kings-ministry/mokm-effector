@@ -23,7 +23,7 @@ Rectangle {
         if (!obj) return;
         if (obj.element) {
             obj.element[propName] = val;
-            if (root.timelineModel && root.timelineModel.keyframeFrames(obj.element, propName).length > 0) {
+            if (root.timelineModel && root.timelineModel.autoKeyframeEnabled) {
                 root.timelineModel.addKeyframe(obj.element, propName, root.timelineModel.currentFrame, val);
             }
         } else if (obj[propName] !== undefined) {

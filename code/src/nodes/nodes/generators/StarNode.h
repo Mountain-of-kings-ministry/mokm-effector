@@ -14,7 +14,7 @@ public:
 
     QString name() const override { return "Star"; }
     QString caption() const override { return "Star"; }
-    bool captionVisible() const override { return true; }
+    bool captionVisible() const override { return false; }
 
     unsigned int nPorts(QtNodes::PortType portType) const override;
     QtNodes::NodeDataType dataType(QtNodes::PortType portType, QtNodes::PortIndex portIndex) const override;

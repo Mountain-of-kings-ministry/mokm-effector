@@ -66,6 +66,14 @@ void TimelineModel::setPlaybackSpeed(qreal speed)
     }
 }
 
+void TimelineModel::setAutoKeyframeEnabled(bool enabled)
+{
+    if (m_autoKeyframeEnabled != enabled) {
+        m_autoKeyframeEnabled = enabled;
+        emit autoKeyframeEnabledChanged();
+    }
+}
+
 void TimelineModel::play()
 {
     if (!m_composition) return;
@@ -109,11 +117,11 @@ void TimelineModel::stepBackward()
     setCurrentFrame(m_currentFrame - 1);
 }
 
-void TimelineModel::addKeyframe(Layer *layer, const QString &property, int frame, const QVariant &value)
+void TimelineModel::addKeyframe(QObject *obj, const QString &property, int frame, const QVariant &value)
 {
-    if (!layer) return;
+    if (!obj) return;
 
-    auto &layerKeyframes = m_keyframes[layer];
+    auto &layerKeyframes = m_keyframes[obj];
     auto &propKeyframes = layerKeyframes[property];
 
     if (propKeyframes.contains(frame)) {
@@ -130,11 +138,11 @@ void TimelineModel::addKeyframe(Layer *layer, const QString &property, int frame
     emit keyframesChanged();
 }
 
-void TimelineModel::removeKeyframe(Layer *layer, const QString &property, int frame)
+void TimelineModel::removeKeyframe(QObject *obj, const QString &property, int frame)
 {
-    if (!layer) return;
+    if (!obj) return;
 
-    auto layerIt = m_keyframes.find(layer);
+    auto layerIt = m_keyframes.find(obj);
     if (layerIt == m_keyframes.end()) return;
 
     auto propIt = layerIt.value().find(property);
@@ -157,11 +165,27 @@ void TimelineModel::removeKeyframe(Layer *layer, const QString &property, int fr
     }
 }
 
-QVariant TimelineModel::getValueAt(Layer *layer, const QString &property, int frame) const
+void TimelineModel::setKeyframeEasing(QObject *obj, const QString &property, int frame, int easing)
 {
-    if (!layer) return QVariant();
+    if (!obj) return;
+    auto layerIt = m_keyframes.find(obj);
+    if (layerIt == m_keyframes.end()) return;
+    auto propIt = layerIt.value().find(property);
+    if (propIt == layerIt.value().end()) return;
+    auto kfIt = propIt.value().find(frame);
+    if (kfIt != propIt.value().end()) {
+        kfIt.value()->setEasing(static_cast<Keyframe::Easing>(qBound(0, easing, 3)));
+        m_keyframesStamp++;
+        emit keyframesChanged();
+        qDebug() << "Set easing:" << property << "at frame" << frame << "easing:" << easing;
+    }
+}
 
-    auto layerIt = m_keyframes.find(layer);
+QVariant TimelineModel::getValueAt(QObject *obj, const QString &property, int frame) const
+{
+    if (!obj) return QVariant();
+
+    auto layerIt = m_keyframes.find(obj);
     if (layerIt == m_keyframes.end()) return QVariant();
 
     auto propIt = layerIt.value().find(property);
@@ -204,21 +228,21 @@ QVariant TimelineModel::getValueAt(Layer *layer, const QString &property, int fr
                             easing);
 }
 
-bool TimelineModel::hasKeyframe(Layer *layer, const QString &property, int frame) const
+bool TimelineModel::hasKeyframe(QObject *obj, const QString &property, int frame) const
 {
-    if (!layer) return false;
-    auto layerIt = m_keyframes.find(layer);
+    if (!obj) return false;
+    auto layerIt = m_keyframes.find(obj);
     if (layerIt == m_keyframes.end()) return false;
     auto propIt = layerIt.value().find(property);
     if (propIt == layerIt.value().end()) return false;
     return propIt.value().contains(frame);
 }
 
-QVector<int> TimelineModel::keyframeFrames(Layer *layer, const QString &property) const
+QVector<int> TimelineModel::keyframeFrames(QObject *obj, const QString &property) const
 {
     QVector<int> frames;
-    if (!layer) return frames;
-    auto layerIt = m_keyframes.find(layer);
+    if (!obj) return frames;
+    auto layerIt = m_keyframes.find(obj);
     if (layerIt == m_keyframes.end()) return frames;
     auto propIt = layerIt.value().find(property);
     if (propIt == layerIt.value().end()) return frames;
@@ -230,17 +254,35 @@ QVector<int> TimelineModel::keyframeFrames(Layer *layer, const QString &property
     return frames;
 }
 
+QVariantList TimelineModel::getKeyframeData(QObject *obj, const QString &property) const
+{
+    QVariantList result;
+    if (!obj) return result;
+    auto objIt = m_keyframes.find(obj);
+    if (objIt == m_keyframes.end()) return result;
+    auto propIt = objIt.value().find(property);
+    if (propIt == objIt.value().end()) return result;
+    for (auto it = propIt.value().begin(); it != propIt.value().end(); ++it) {
+        QVariantMap entry;
+        entry["frame"] = it.key();
+        entry["value"] = it.value()->value().toReal();
+        entry["easing"] = static_cast<int>(it.value()->easing());
+        result.append(entry);
+    }
+    return result;
+}
+
 void TimelineModel::applyKeyframes()
 {
     for (auto lit = m_keyframes.begin(); lit != m_keyframes.end(); ++lit) {
-        Layer *layer = lit.key();
-        if (!layer) continue;
+        QObject *obj = lit.key();
+        if (!obj) continue;
         const auto &props = lit.value();
         for (auto pit = props.begin(); pit != props.end(); ++pit) {
             const QString &prop = pit.key();
-            QVariant val = getValueAt(layer, prop, m_currentFrame);
+            QVariant val = getValueAt(obj, prop, m_currentFrame);
             if (val.isValid())
-                layer->setProperty(prop.toUtf8().constData(), val);
+                obj->setProperty(prop.toUtf8().constData(), val);
         }
     }
 }
