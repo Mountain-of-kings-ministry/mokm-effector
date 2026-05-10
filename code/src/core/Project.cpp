@@ -6,6 +6,8 @@
 #include "Layer.h"
 #include "ShapeLayer.h"
 #include "TextLayer.h"
+#include "ImageLayer.h"
+#include "AudioLayer.h"
 #include "Keyframe.h"
 
 #include <QFile>
@@ -189,6 +191,10 @@ QString Project::serializeToJson() const
             assetsArr.append(sl->toJson());
         else if (auto *tl = qobject_cast<TextLayer*>(asset))
             assetsArr.append(tl->toJson());
+        else if (auto *il = qobject_cast<ImageLayer*>(asset))
+            assetsArr.append(il->toJson());
+        else if (auto *al = qobject_cast<AudioLayer*>(asset))
+            assetsArr.append(al->toJson());
     }
     root["assets"] = assetsArr;
 
@@ -388,6 +394,14 @@ Layer* Project::layerFromJson(const QJsonObject &obj, QObject *parent) const
         auto *tl = new TextLayer(parent);
         tl->fromJson(obj);
         return tl;
+    } else if (type == "image") {
+        auto *il = new ImageLayer(parent);
+        il->fromJson(obj);
+        return il;
+    } else if (type == "audio") {
+        auto *al = new AudioLayer(parent);
+        al->fromJson(obj);
+        return al;
     }
     return nullptr;
 }

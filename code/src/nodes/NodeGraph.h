@@ -5,11 +5,12 @@
 #include <QVector>
 #include <memory>
 
-namespace QtNodes {
-class DataFlowGraphModel;
-class DataFlowGraphicsScene;
-class GraphicsView;
-class NodeDelegateModelRegistry;
+namespace QtNodes
+{
+    class DataFlowGraphModel;
+    class DataFlowGraphicsScene;
+    class GraphicsView;
+    class NodeDelegateModelRegistry;
 }
 
 class Layer;
@@ -24,6 +25,7 @@ public:
     ~NodeGraph() override;
 
     Q_INVOKABLE int addNode(const QString &type);
+    Q_INVOKABLE int addNodeAt(const QString &type, qreal x, qreal y);
     Q_INVOKABLE void removeNode(int nodeId);
     Q_INVOKABLE void connectNodes(int outNodeId, int outPort, int inNodeId, int inPort);
     Q_INVOKABLE void disconnectAll();
@@ -33,6 +35,7 @@ public:
     Q_INVOKABLE QStringList nodeIds() const;
     Q_INVOKABLE int outputNodeId() const;
     Q_INVOKABLE int addNodeAutoConnect(const QString &type);
+    Q_INVOKABLE int addNodeAutoConnectAt(const QString &type, qreal x, qreal y);
 
     int selectedNodeId() const { return m_selectedNodeId; }
 
@@ -41,10 +44,10 @@ public:
     Q_INVOKABLE QVariant nodeParameter(int nodeId, const QString &name) const;
     Q_INVOKABLE void setNodeParameter(int nodeId, const QString &name, const QVariant &value);
 
-    Layer* cook();
+    Layer *cook();
 
-    QtNodes::DataFlowGraphModel* graphModel() const { return m_graphModel.get(); }
-    QtNodes::DataFlowGraphicsScene* graphicsScene() const { return m_scene.get(); }
+    QtNodes::DataFlowGraphModel *graphModel() const { return m_graphModel.get(); }
+    QtNodes::DataFlowGraphicsScene *graphicsScene() const { return m_scene.get(); }
 
 signals:
     void graphChanged();

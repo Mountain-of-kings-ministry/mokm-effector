@@ -58,6 +58,14 @@ void Strip::setTrack(Track *track)
     m_track = track;
 }
 
+void Strip::setLinkGroupId(int id)
+{
+    if (m_linkGroupId != id) {
+        m_linkGroupId = id;
+        emit linkGroupIdChanged();
+    }
+}
+
 void Strip::moveToTrack(Track *newTrack)
 {
     if (!newTrack || !m_track || newTrack == m_track)
@@ -67,6 +75,16 @@ void Strip::moveToTrack(Track *newTrack)
         return;
     m_track->removeStrip(this);
     newTrack->addStrip(this);
+
+    // Move linked strips too
+    if (m_linkGroupId != 0) {
+        auto strips = m_track->stripList();
+        for (auto *s : strips) {
+            if (s != this && s->linkGroupId() == m_linkGroupId) {
+                s->moveToTrack(newTrack);
+            }
+        }
+    }
 }
 
 void Strip::deleteStrip()

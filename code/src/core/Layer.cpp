@@ -116,6 +116,36 @@ void Layer::setBlendMode(int mode)
     }
 }
 
+void Layer::setLift(qreal v)
+{
+    v = qBound(-1.0, v, 1.0);
+    if (!qFuzzyCompare(m_lift, v)) { m_lift = v; emit colorGradeChanged(); }
+}
+
+void Layer::setGamma(qreal v)
+{
+    v = qMax(0.1, v);
+    if (!qFuzzyCompare(m_gamma, v)) { m_gamma = v; emit colorGradeChanged(); }
+}
+
+void Layer::setGain(qreal v)
+{
+    v = qMax(0.0, v);
+    if (!qFuzzyCompare(m_gain, v)) { m_gain = v; emit colorGradeChanged(); }
+}
+
+void Layer::setSaturation(qreal v)
+{
+    v = qBound(0.0, v, 4.0);
+    if (!qFuzzyCompare(m_saturation, v)) { m_saturation = v; emit colorGradeChanged(); }
+}
+
+void Layer::setContrast(qreal v)
+{
+    v = qBound(-1.0, v, 1.0);
+    if (!qFuzzyCompare(m_contrast, v)) { m_contrast = v; emit colorGradeChanged(); }
+}
+
 Layer* Layer::clone(QObject *parent) const
 {
     auto *l = new Layer(m_type, parent);
@@ -132,13 +162,18 @@ Layer* Layer::clone(QObject *parent) const
     l->m_duration = m_duration;
     l->m_blurRadius = m_blurRadius;
     l->m_blendMode = m_blendMode;
+    l->m_lift = m_lift;
+    l->m_gamma = m_gamma;
+    l->m_gain = m_gain;
+    l->m_saturation = m_saturation;
+    l->m_contrast = m_contrast;
     return l;
 }
 
 QJsonObject Layer::toJson() const
 {
     QJsonObject obj;
-    obj["type"] = (m_type == ShapeLayer) ? "shape" : (m_type == TextLayer) ? "text" : "null";
+    obj["type"] = (m_type == ShapeLayer) ? "shape" : (m_type == TextLayer) ? "text" : (m_type == ImageLayer) ? "image" : (m_type == AudioLayer) ? "audio" : (m_type == VideoLayer) ? "video" : "null";
     obj["name"] = m_name;
     obj["enabled"] = m_enabled;
     obj["opacity"] = m_opacity;
@@ -152,6 +187,11 @@ QJsonObject Layer::toJson() const
     obj["duration"] = m_duration;
     obj["blurRadius"] = m_blurRadius;
     obj["blendMode"] = m_blendMode;
+    obj["lift"] = m_lift;
+    obj["gamma"] = m_gamma;
+    obj["gain"] = m_gain;
+    obj["saturation"] = m_saturation;
+    obj["contrast"] = m_contrast;
     return obj;
 }
 
@@ -170,6 +210,11 @@ void Layer::fromJson(const QJsonObject &obj)
     setDuration(obj["duration"].toInt(90));
     setBlurRadius(obj["blurRadius"].toDouble());
     setBlendMode(obj["blendMode"].toInt());
+    setLift(obj["lift"].toDouble());
+    setGamma(obj["gamma"].toDouble(1.0));
+    setGain(obj["gain"].toDouble(1.0));
+    setSaturation(obj["saturation"].toDouble(1.0));
+    setContrast(obj["contrast"].toDouble());
 }
 
 QString Layer::serialize() const

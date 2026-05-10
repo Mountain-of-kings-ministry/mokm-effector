@@ -28,6 +28,7 @@
 #include <QJsonObject>
 #include <QGraphicsScene>
 #include <QSize>
+#include <QPointF>
 
 NodeGraph::NodeGraph(QObject *parent)
     : QObject(parent)
@@ -58,7 +59,7 @@ NodeGraph::NodeGraph(QObject *parent)
             "WarningColor": [255, 179, 0],
             "PenWidth": 0.8,
             "HoveredPenWidth": 1.2,
-            "ConnectionPointDiameter": 8.0,
+            "ConnectionPointDiameter": 14.0,
             "Opacity": 0.95
         }
     })");
@@ -72,7 +73,7 @@ NodeGraph::NodeGraph(QObject *parent)
             "HoveredColor": "cyan",
             "LineWidth": 2.0,
             "ConstructionLineWidth": 1.2,
-            "PointDiameter": 8.0,
+            "PointDiameter": 14.0,
             "UseDataDefinedColors": true
         }
     })");
@@ -88,6 +89,9 @@ NodeGraph::NodeGraph(QObject *parent)
     // Auto-create a non-removable Output node
     m_outputNodeId = m_graphModel->addNode("Output");
     m_hasAutoOutput = true;
+    // Make the auto-created output node compact so it doesn't dominate the canvas
+    QSize outputSize(120, 32);
+    m_graphModel->setNodeData(static_cast<QtNodes::NodeId>(m_outputNodeId), QtNodes::NodeRole::Size, outputSize);
 }
 
 NodeGraph::~NodeGraph() = default;
@@ -133,8 +137,111 @@ int NodeGraph::addNode(const QString &type)
     QSize defaultSize(140, 40);
     m_graphModel->setNodeData(nodeId, QtNodes::NodeRole::Size, defaultSize);
 
+    // Apply a category-based header color style where possible.
+    // Lightweight heuristic map from node `type` -> category palette.
+    const auto toLower = [](const QString &s)
+    { return s.toLower(); };
+    QString t = toLower(type);
+
+    // Define colors per category (GradientColor0, GradientColor1)
+    QMap<QString, QList<int>> cat0;
+    QMap<QString, QList<int>> cat1;
+    cat0["generators"] = {60, 120, 190};
+    cat1["generators"] = {40, 90, 160};
+    cat0["text"] = {120, 60, 170};
+    cat1["text"] = {90, 40, 130};
+    cat0["media"] = {16, 150, 140};
+    cat1["media"] = {12, 120, 110};
+    cat0["animation"] = {255, 135, 0};
+    cat1["animation"] = {200, 100, 0};
+    cat0["motion"] = {200, 60, 140};
+    cat1["motion"] = {160, 40, 110};
+    cat0["procedural"] = {40, 160, 80};
+    cat1["procedural"] = {20, 120, 60};
+    cat0["effects"] = {200, 60, 60};
+    cat1["effects"] = {150, 40, 40};
+    cat0["audio"] = {255, 200, 0};
+    cat1["audio"] = {200, 150, 0};
+    cat0["utility"] = {120, 120, 120};
+    cat1["utility"] = {90, 90, 90};
+    cat0["compositing"] = {0, 170, 170};
+    cat1["compositing"] = {0, 120, 120};
+    cat0["rendering"] = {40, 200, 120};
+    cat1["rendering"] = {20, 160, 80};
+    cat0["geometry"] = {180, 120, 60};
+    cat1["geometry"] = {140, 90, 40};
+
+    // Simple membership checks
+    auto isOneOf = [&](const QStringList &list)
+    {
+        for (auto &s : list) if (t == toLower(s)) return true; return false; };
+
+    QString chosenCat;
+    if (isOneOf({"rectangle", "circle", "ellipse", "polygon", "star", "line", "arrow", "roundedrect", "arc", "grid", "spiral", "generator"}))
+        chosenCat = "generators";
+    else if (isOneOf({"text", "svg", "font", "glyphs", "textpath"}))
+        chosenCat = "text";
+    else if (isOneOf({"image", "movie", "camera", "render", "fbo", "color", "gradient", "noisemap", "pattern"}))
+        chosenCat = "media";
+    else if (isOneOf({"keyframe", "animation", "curve", "easing", "spring", "bounce", "oscillator", "wiggle", "loop", "pingpong", "timestretch"}))
+        chosenCat = "animation";
+    else if (isOneOf({"cloner", "radialclone", "gridclone", "followpath", "lookat", "align", "distribute", "randomtransform", "trail", "echo"}))
+        chosenCat = "motion";
+    else if (isOneOf({"noise", "curlnoise", "random", "voronoi", "perlin", "fractal", "expression", "formula"}))
+        chosenCat = "procedural";
+    else if (isOneOf({"blur", "glow", "bloom", "shadow", "outline", "chromaticaberration", "distortion", "pixelate", "sharpen", "glitch", "filmgrain", "colorcorrection", "curves", "levels", "keyer"}))
+        chosenCat = "effects";
+    else if (isOneOf({"audioreactive", "audiospectrum", "audiowaveform", "beatdetection", "fft", "midiinput"}))
+        chosenCat = "audio";
+    else if (isOneOf({"clamp", "remap", "lerp", "mix", "math", "vectormath", "timer", "counter", "utility"}))
+        chosenCat = "utility";
+    else if (isOneOf({"blend", "merge", "alphaover", "multiply", "screen", "overlay", "mask", "crop", "transform2d"}))
+        chosenCat = "compositing";
+    else if (isOneOf({"output", "renderlayer", "renderpass", "viewport"}))
+        chosenCat = "rendering";
+    else if (isOneOf({"point", "line", "polygon", "path", "curve", "textshape", "extrude", "bevel", "subdivide", "boolean"}))
+        chosenCat = "geometry";
+
+    if (!chosenCat.isEmpty() && cat0.contains(chosenCat))
+    {
+        QVariantMap nodeStyle;
+        QVariantMap inner;
+        inner["GradientColor0"] = QVariant::fromValue(cat0[chosenCat]);
+        inner["GradientColor1"] = QVariant::fromValue(cat1[chosenCat]);
+        inner["FontColor"] = QString("white");
+        nodeStyle["NodeStyle"] = inner;
+        m_graphModel->setNodeData(nodeId, QtNodes::NodeRole::Style, nodeStyle);
+    }
+
     emit graphChanged();
     return static_cast<int>(nodeId);
+}
+
+int NodeGraph::addNodeAt(const QString &type, qreal x, qreal y)
+{
+    int nodeId = addNode(type);
+
+    // Set requested scene position for the newly created node
+    m_graphModel->setNodeData(static_cast<QtNodes::NodeId>(nodeId), QtNodes::NodeRole::Position, QPointF(x, y));
+
+    emit graphChanged();
+    return nodeId;
+}
+
+int NodeGraph::addNodeAutoConnectAt(const QString &type, qreal x, qreal y)
+{
+    int nodeId = addNodeAt(type, x, y);
+    int outId = outputNodeId();
+    if (outId >= 0 && nodeId >= 0)
+    {
+        unsigned int outPorts = m_graphModel->nodeData(
+                                                static_cast<QtNodes::NodeId>(nodeId),
+                                                QtNodes::NodeRole::OutPortCount)
+                                    .value<unsigned int>();
+        if (outPorts > 0)
+            connectNodes(nodeId, 0, outId, 0);
+    }
+    return nodeId;
 }
 
 void NodeGraph::removeNode(int nodeId)

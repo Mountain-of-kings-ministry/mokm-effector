@@ -24,6 +24,8 @@ Item {
     signal createTriangleLayer
     signal createTextLayer
     signal deleteSelectedLayer
+    signal importImageRequested
+    signal importAudioRequested
     signal exportVideoRequested
     signal exportImageSequenceRequested
     signal preferencesRequested
@@ -62,7 +64,10 @@ Item {
                         MenuItem { text: qsTr("Save"); onTriggered: topBar.saveFileRequested() }
                         MenuItem { text: qsTr("Save As..."); onTriggered: topBar.saveAsRequested() }
                         MenuSeparator {}
-                        MenuItem { text: qsTr("Import") }
+                        Menu { title: qsTr("Import")
+                            MenuItem { text: qsTr("Image..."); onTriggered: topBar.importImageRequested() }
+                            MenuItem { text: qsTr("Audio..."); onTriggered: topBar.importAudioRequested() }
+                        }
                         MenuItem { text: qsTr("Export Animation..."); onTriggered: topBar.exportVideoRequested() }
                         MenuItem { text: qsTr("Export Image Sequence..."); onTriggered: topBar.exportImageSequenceRequested() }
                         MenuSeparator {}

@@ -41,6 +41,8 @@ Window {
             onCreateTriangleLayer: createShapeLayer(ShapeLayer.Triangle)
             onCreateTextLayer: createTextLayer()
             onDeleteSelectedLayer: deleteSelectedLayer()
+            onImportImageRequested: importImageDialog.open()
+            onImportAudioRequested: importAudioDialog.open()
             onExportVideoRequested: exportDialog.open()
             onExportImageSequenceRequested: exportImageSequenceDialog.open()
             onPreferencesRequested: prefsDialog.open()
@@ -80,6 +82,8 @@ Window {
                     composition: project.activeComposition
                     project: project
 
+                    onImportImageRequested: importImageDialog.open()
+                    onImportAudioRequested: importAudioDialog.open()
                     onCreateRectLayer: createShapeLayer(ShapeLayer.Rectangle)
                     onCreateCircleLayer: createShapeLayer(ShapeLayer.Circle)
                     onCreateTriangleLayer: createShapeLayer(ShapeLayer.Triangle)
@@ -192,9 +196,8 @@ Window {
                     id: audioPage
 
                     AudioEditor {
-                        // timelineModel: root.timelineModel
-                        // selectedClip: timeline.selectedObject   // or whatever your current clip is
-                        // pixelPerFrame: timeline.pixelPerFrame
+                        timelineModel: globalTimelineModel
+                        selectedObject: mainWindow.selectedObject
                     }
                 }
 
@@ -202,9 +205,8 @@ Window {
                     id: colorGradingPage
 
                     ColorGradingEditor {
-                        // timelineModel: root.timelineModel
-                        // selectedClip: timeline.selectedObject   // or whatever your current clip is
-                        // pixelPerFrame: timeline.pixelPerFrame
+                        timelineModel: globalTimelineModel
+                        selectedObject: mainWindow.selectedObject
                     }
                 }
 
@@ -212,7 +214,7 @@ Window {
                     id: nodeEditorPage
 
                     NodeEditor {
-                        selectedStrip: selectedObject
+                        nodeGraph: selectedObject && selectedObject.nodeGraph ? selectedObject.nodeGraph : null
                     }
                 }
 
@@ -230,6 +232,8 @@ Window {
 
     property Component shapeLayerComponent: ShapeLayer {}
     property Component textLayerComponent: TextLayer {}
+    property Component imageLayerComponent: ImageLayer {}
+    property Component audioLayerComponent: AudioLayer {}
     property var selectedObject: null
 
     ExportController {
@@ -509,6 +513,39 @@ Window {
         edgeRight: 1
         edgeBottom: 1
         cursorShape: Qt.SizeFDiagCursor
+    }
+
+    // ── Media Import Dialogs ──
+    FileDialog {
+        id: importImageDialog
+        title: qsTr("Import Image")
+        nameFilters: ["Images (*.png *.jpg *.jpeg *.gif *.bmp *.webp)", "All Files (*)"]
+        onAccepted: {
+            if (!importImageDialog.selectedFile) return;
+            var layer = imageLayerComponent.createObject(project, {
+                name: "Image " + (project.assetCount + 1),
+                source: importImageDialog.selectedFile
+            });
+            project.addAsset(layer);
+            selectedObject = layer;
+            project.captureSnapshot();
+        }
+    }
+
+    FileDialog {
+        id: importAudioDialog
+        title: qsTr("Import Audio")
+        nameFilters: ["Audio (*.wav *.mp3 *.ogg *.flac *.aac *.m4a)", "All Files (*)"]
+        onAccepted: {
+            if (!importAudioDialog.selectedFile) return;
+            var layer = audioLayerComponent.createObject(project, {
+                name: "Audio " + (project.assetCount + 1),
+                source: importAudioDialog.selectedFile
+            });
+            project.addAsset(layer);
+            selectedObject = layer;
+            project.captureSnapshot();
+        }
     }
 
     Component.onCompleted: {

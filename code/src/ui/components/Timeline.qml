@@ -231,84 +231,87 @@ Rectangle {
             }
         }
 
-        ScrollView {
+        Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            clip: true
 
-            ColumnLayout {
-                width: parent.width
-                spacing: 2
+            ScrollView {
+                id: timelineScroll
+                anchors.fill: parent
+                clip: true
 
-                Repeater {
-                    model: root.timelineModel && root.timelineModel.composition ? root.timelineModel.composition.layers : 0
+                ColumnLayout {
+                    width: parent.width
+                    spacing: 2
 
-                    delegate: Column {
-                        id: layerColumn
-                        width: parent.width
-                        spacing: 1
-                        property var layerModel: modelData
-
-                        // ==================== LAYER HEADER ====================
-                        Rectangle {
-                            width: parent.width
-                            height: root.rowHeight
-                            color: root.selectedObject === modelData ? Qt.alpha(Theme.accent, 0.25) : Theme.secondaryHover
-
-                            RowLayout {
-                                anchors.fill: parent
-                                anchors.leftMargin: 8
-                                spacing: 6
-
-                                Text {
-                                    text: modelData ? modelData.name : ""
-                                    font.bold: true
-                                    color: Theme.foreground
-                                }
-
-                                Item {
-                                    Layout.fillWidth: true
-                                }
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                acceptedButtons: Qt.RightButton
-                                onClicked: layerMenu.popup()
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                acceptedButtons: Qt.LeftButton
-                                onClicked: root.objectSelected(modelData)
-                            }
-                        }
-
-                        Menu {
-                            id: layerMenu
-                            MenuItem {
-                                text: "Rename Layer"
-                                onTriggered: renameItem(layerColumn.layerModel)
-                            }
-                            MenuItem {
-                                text: "Add Track"
-                                onTriggered: {
-                                    var m = layerColumn.layerModel;
-                                    m.addTrack();
-                                    if (m.composition)
-                                        m.composition.rebuildFlatLayers();
-                                }
-                            }
-                            MenuSeparator {}
-                            MenuItem {
-                                text: "Delete Layer"
-                                onTriggered: layerColumn.layerModel.deleteLayer()
-                            }
-                        }
-
-                    // ==================== TRACKS ====================
                     Repeater {
-                        model: modelData ? modelData.tracks : 0
+                        model: root.timelineModel && root.timelineModel.composition ? root.timelineModel.composition.layers : 0
+
+                        delegate: Column {
+                            id: layerColumn
+                            width: parent.width
+                            spacing: 1
+                            property var layerModel: modelData
+
+                            // ==================== LAYER HEADER ====================
+                            Rectangle {
+                                width: parent.width
+                                height: root.rowHeight
+                                color: root.selectedObject === modelData ? Qt.alpha(Theme.accent, 0.25) : Theme.secondaryHover
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 8
+                                    spacing: 6
+
+                                    Text {
+                                        text: modelData ? modelData.name : ""
+                                        font.bold: true
+                                        color: Theme.foreground
+                                    }
+
+                                    Item {
+                                        Layout.fillWidth: true
+                                    }
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    acceptedButtons: Qt.RightButton
+                                    onClicked: layerMenu.popup()
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    acceptedButtons: Qt.LeftButton
+                                    onClicked: root.objectSelected(modelData)
+                                }
+                            }
+
+                            Menu {
+                                id: layerMenu
+                                MenuItem {
+                                    text: "Rename Layer"
+                                    onTriggered: renameItem(layerColumn.layerModel)
+                                }
+                                MenuItem {
+                                    text: "Add Track"
+                                    onTriggered: {
+                                        var m = layerColumn.layerModel;
+                                        m.addTrack();
+                                        if (m.composition)
+                                            m.composition.rebuildFlatLayers();
+                                    }
+                                }
+                                MenuItem {
+                                    text: "Delete Layer"
+                                    onTriggered: layerColumn.layerModel.deleteLayer()
+                                }
+                            }
+
+                        // ==================== TRACKS ====================
+                        Repeater {
+                            model: modelData ? modelData.tracks : 0
                         delegate: Rectangle {
                             id: trackRow
                             width: parent.width
@@ -606,6 +609,35 @@ Rectangle {
                     }
                 }
             }
+
+            Rectangle {
+                id: playhead
+                x: (root.timelineModel ? root.timelineModel.currentFrame : 0) * root.pixelPerFrame
+                y: 0; width: 2; height: parent.height; z: 20; color: Theme.error
+                visible: root.timelineModel != null
+
+                Rectangle {
+                    width: 10; height: 14; radius: 7
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.top: parent.top; anchors.topMargin: -7
+                    color: Theme.error
+                }
+
+                MouseArea {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    width: 20; height: parent.height
+                    cursorShape: Qt.SizeHorCursor
+                    drag.target: parent; drag.axis: Drag.XAxis
+                    drag.minimumX: 0
+                    onPositionChanged: {
+                        if (drag.active && root.timelineModel) {
+                            var f = Math.round(playhead.x / root.pixelPerFrame);
+                            root.timelineModel.currentFrame = Math.max(0, f);
+                        }
+                    }
+                }
+            }
         }
     }
+}
 }

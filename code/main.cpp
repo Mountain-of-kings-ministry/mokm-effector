@@ -7,6 +7,8 @@
 #include "src/core/Layer.h"
 #include "src/core/ShapeLayer.h"
 #include "src/core/TextLayer.h"
+#include "src/core/ImageLayer.h"
+#include "src/core/AudioLayer.h"
 #include "src/core/Composition.h"
 #include "src/core/Project.h"
 #include "src/core/Keyframe.h"
@@ -38,6 +40,8 @@ int main(int argc, char *argv[])
     qmlRegisterType<Layer>("mokm_effector", 1, 0, "Layer");
     qmlRegisterType<ShapeLayer>("mokm_effector", 1, 0, "ShapeLayer");
     qmlRegisterType<TextLayer>("mokm_effector", 1, 0, "TextLayer");
+    qmlRegisterType<ImageLayer>("mokm_effector", 1, 0, "ImageLayer");
+    qmlRegisterType<AudioLayer>("mokm_effector", 1, 0, "AudioLayer");
     qmlRegisterType<Composition>("mokm_effector", 1, 0, "Composition");
     qmlRegisterType<Project>("mokm_effector", 1, 0, "Project");
     qmlRegisterType<Keyframe>("mokm_effector", 1, 0, "Keyframe");

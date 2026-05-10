@@ -1,101 +1,34 @@
-import QtQuick
-import QtQuick.Controls
-import QtQuick.Layouts
+import QtQuick 2.15
+import QtQuick.Controls 2.15
+import QtQuick.Layouts 1.15
 import mokm_effector
 
-Rectangle {
+Item {
     id: root
-    color: Theme.background
-    clip: true
-
-    property var nodeGraph: null
-    property var selectedStrip: null
-
-    function _detectType(obj) {
-        if (!obj)
-            return "none";
-        if (obj.nodeGraph !== undefined)
-            return "nodeStrip";
-        if (obj.deleteStrip)
-            return "strip";
-        if (obj.deleteTrack)
-            return "track";
-        if (obj.deleteLayer)
-            return "layer";
-        if (obj.tracks !== undefined)
-            return "layer";
-        if (obj.strips !== undefined)
-            return "track";
-        if (obj.element !== undefined)
-            return "strip";
-        return "unknown";
+    property var nodeGraph
+    property real menuSceneX: 0
+    property real menuSceneY: 0
+    function createNodeAt(type) {
+        if (root.nodeGraph)
+            root.nodeGraph.addNodeAt(type, menuSceneX, menuSceneY);
     }
-
-    onSelectedStripChanged: {
-        var t = _detectType(selectedStrip);
-        if (t === "nodeStrip" && selectedStrip.nodeGraph) {
-            root.nodeGraph = selectedStrip.nodeGraph;
-        } else if (t === "strip" && selectedStrip.element) {
-            root.nodeGraph = null;
-        } else {
-            root.nodeGraph = null;
-        }
-    }
-
-    // Top toolbar
+    // Top toolbar: zoom controls and node count
     Rectangle {
+        id: topBar
         anchors.top: parent.top
-        width: parent.width
+        anchors.left: parent.left
+        anchors.right: parent.right
         height: 36
-        z: 10
-        color: Theme.secondary
+        color: Theme.headerBackground
         border.color: Theme.border
 
-        Row {
-            anchors.verticalCenter: parent.verticalCenter
-            anchors.left: parent.left
-            anchors.leftMargin: 8
-            spacing: 6
+        RowLayout {
+            anchors.fill: parent
+            anchors.margins: 6
 
-            Button {
-                text: "Cook"
-                visible: root.nodeGraph !== null
-                height: 26
-                flat: true
-                onClicked: {
-                    if (root.selectedStrip && root.selectedStrip.cook)
-                        root.selectedStrip.cook();
-                }
-            }
-
-            Button {
-                text: "Reset View"
-                visible: root.nodeGraph !== null
-                height: 26
-                flat: true
-                onClicked: graphView.resetView()
-            }
-
-            Button {
-                text: "Zoom Out"
-                visible: root.nodeGraph !== null
-                height: 26
-                flat: true
-                onClicked: {
-                    if (graphView)
-                        graphView.scale = Math.max(0.2, graphView.scale / 1.2);
-                }
-            }
-
-            Button {
-                text: "Zoom In"
-                visible: root.nodeGraph !== null
-                height: 26
-                flat: true
-                onClicked: {
-                    if (graphView)
-                        graphView.scale = Math.min(3.0, graphView.scale * 1.2);
-                }
+            // Zoom controls
+            Item {
+                Layout.fillWidth: true
             }
 
             Text {
@@ -105,6 +38,7 @@ Rectangle {
                 color: Theme.mutedForeground
                 font.pixelSize: 11
                 verticalAlignment: Text.AlignVCenter
+                Layout.alignment: Qt.AlignVCenter
             }
 
             Button {
@@ -114,15 +48,16 @@ Rectangle {
                 flat: true
                 onClicked: graphView.fitContent()
             }
-        }
 
-        Text {
-            anchors.right: parent.right
-            anchors.rightMargin: 12
-            anchors.verticalCenter: parent.verticalCenter
-            text: root.nodeGraph ? (root.nodeGraph.nodeCount + " nodes") : "No Graph Selected"
-            color: Theme.mutedForeground
-            font.pixelSize: 10
+            Text {
+                anchors.right: parent.right
+                anchors.rightMargin: 12
+                anchors.verticalCenter: parent.verticalCenter
+                text: root.nodeGraph ? (root.nodeGraph.nodeCount + " nodes") : "No Graph Selected"
+                color: Theme.mutedForeground
+                font.pixelSize: 10
+                Layout.alignment: Qt.AlignVCenter
+            }
         }
     }
 
@@ -145,8 +80,11 @@ Rectangle {
                     graphView.scale = 0.75;
             }
             onCanvasRightClicked: function (sceneX, sceneY, screenX, screenY) {
-                if (root.nodeGraph)
+                if (root.nodeGraph) {
+                    menuSceneX = sceneX;
+                    menuSceneY = sceneY;
                     addNodeMenu.popup(screenX, screenY);
+                }
             }
         }
 
@@ -197,79 +135,107 @@ Rectangle {
 
             MenuItem {
                 text: qsTr("Rectangle")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Rectangle")
+                onTriggered: root.createNodeAt("Rectangle")
             }
             MenuItem {
                 text: qsTr("Circle")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Circle")
+                onTriggered: root.createNodeAt("Circle")
             }
             MenuItem {
                 text: qsTr("Ellipse")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Ellipse")
+                onTriggered: root.createNodeAt("Ellipse")
             }
             MenuItem {
                 text: qsTr("Polygon")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Polygon")
+                onTriggered: root.createNodeAt("Polygon")
             }
             MenuItem {
                 text: qsTr("Star")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Star")
+                onTriggered: root.createNodeAt("Star")
             }
             MenuItem {
                 text: qsTr("Line")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Line")
+                onTriggered: root.createNodeAt("Line")
             }
             MenuItem {
                 text: qsTr("Arc")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Arc")
+                onTriggered: root.createNodeAt("Arc")
             }
             MenuItem {
                 text: qsTr("Grid")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Grid")
+                onTriggered: root.createNodeAt("Grid")
             }
             MenuItem {
                 text: qsTr("Spiral")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Spiral")
+                onTriggered: root.createNodeAt("Spiral")
             }
             MenuItem {
                 text: qsTr("Arrow")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Arrow")
-            }
-            MenuItem {
-                text: qsTr("Rounded Rectangle")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("RoundedRect")
-            }
-            MenuItem {
-                text: qsTr("Bezier Shape")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("BezierShape")
-            }
-            MenuItem {
-                text: qsTr("Path")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Path")
+                onTriggered: root.createNodeAt("Arrow")
+                MenuItem {
+                    text: qsTr("Keyframe")
+                    onTriggered: root.createNodeAt("Keyframe")
+                }
+                MenuItem {
+                    text: qsTr("Curve")
+                    onTriggered: root.createNodeAt("Curve")
+                }
+                MenuItem {
+                    text: qsTr("Easing")
+                    onTriggered: root.createNodeAt("Easing")
+                }
+                MenuItem {
+                    text: qsTr("Spring")
+                    onTriggered: root.createNodeAt("Spring")
+                }
+                MenuItem {
+                    text: qsTr("Bounce")
+                    onTriggered: root.createNodeAt("Bounce")
+                }
+                MenuItem {
+                    text: qsTr("Oscillator")
+                    onTriggered: root.createNodeAt("Oscillator")
+                }
+                MenuItem {
+                    text: qsTr("Wiggle")
+                    onTriggered: root.createNodeAt("Wiggle")
+                }
+                MenuItem {
+                    text: qsTr("Loop")
+                    onTriggered: root.createNodeAt("Loop")
+                }
+                MenuItem {
+                    text: qsTr("Ping Pong")
+                    onTriggered: root.createNodeAt("PingPong")
+                }
+                MenuItem {
+                    text: qsTr("Time Stretch")
+                    onTriggered: root.createNodeAt("TimeStretch")
+                }
             }
             MenuItem {
                 text: qsTr("SVG")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("SVG")
+                onTriggered: root.createNodeAt("SVG")
             }
             MenuItem {
                 text: qsTr("Spline")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Spline")
+                onTriggered: root.createNodeAt("Spline")
             }
             MenuItem {
                 text: qsTr("Lottie")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Lottie")
+                onTriggered: root.createNodeAt("Lottie")
             }
             MenuItem {
                 text: qsTr("Gradient Shape")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("GradientShape")
+                onTriggered: root.createNodeAt("GradientShape")
             }
             MenuItem {
                 text: qsTr("Parametric Shape")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("ParametricShape")
+                onTriggered: root.createNodeAt("ParametricShape")
             }
             MenuItem {
                 text: qsTr("Waveform")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Waveform")
+                onTriggered: root.createNodeAt("Waveform")
             }
         }
 
@@ -278,31 +244,31 @@ Rectangle {
 
             MenuItem {
                 text: qsTr("Text")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Text")
+                onTriggered: root.createNodeAt("Text")
             }
             MenuItem {
                 text: qsTr("Text Along Path")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("TextAlongPath")
+                onTriggered: root.createNodeAt("TextAlongPath")
             }
             MenuItem {
                 text: qsTr("Text Animator")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("TextAnimator")
+                onTriggered: root.createNodeAt("TextAnimator")
             }
             MenuItem {
                 text: qsTr("Text Range Selector")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("TextRangeSelector")
+                onTriggered: root.createNodeAt("TextRangeSelector")
             }
             MenuItem {
                 text: qsTr("Text Repeater")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("TextRepeater")
+                onTriggered: root.createNodeAt("TextRepeater")
             }
             MenuItem {
                 text: qsTr("Rich Text")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("RichText")
+                onTriggered: root.createNodeAt("RichText")
             }
             MenuItem {
                 text: qsTr("Typewriter")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Typewriter")
+                onTriggered: root.createNodeAt("Typewriter")
             }
         }
 
@@ -311,35 +277,35 @@ Rectangle {
 
             MenuItem {
                 text: qsTr("Image")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Image")
+                onTriggered: root.createNodeAt("Image")
             }
             MenuItem {
                 text: qsTr("Video")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Video")
+                onTriggered: root.createNodeAt("Video")
             }
             MenuItem {
                 text: qsTr("Image Sequence")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("ImageSequence")
+                onTriggered: root.createNodeAt("ImageSequence")
             }
             MenuItem {
                 text: qsTr("Audio File")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("AudioFile")
+                onTriggered: root.createNodeAt("AudioFile")
             }
             MenuItem {
                 text: qsTr("Webcam")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Webcam")
+                onTriggered: root.createNodeAt("Webcam")
             }
             MenuItem {
                 text: qsTr("Screen Capture")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("ScreenCapture")
+                onTriggered: root.createNodeAt("ScreenCapture")
             }
             MenuItem {
                 text: qsTr("GIF")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("GIF")
+                onTriggered: root.createNodeAt("GIF")
             }
             MenuItem {
                 text: qsTr("Sprite Sheet")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("SpriteSheet")
+                onTriggered: root.createNodeAt("SpriteSheet")
             }
         }
 
@@ -348,39 +314,39 @@ Rectangle {
 
             MenuItem {
                 text: qsTr("Extrude")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Extrude")
+                onTriggered: root.createNodeAt("Extrude")
             }
             MenuItem {
                 text: qsTr("Bevel")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Bevel")
+                onTriggered: root.createNodeAt("Bevel")
             }
             MenuItem {
                 text: qsTr("Boolean")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Boolean")
+                onTriggered: root.createNodeAt("Boolean")
             }
             MenuItem {
                 text: qsTr("Offset Path")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("OffsetPath")
+                onTriggered: root.createNodeAt("OffsetPath")
             }
             MenuItem {
                 text: qsTr("Merge Shapes")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("MergeShapes")
+                onTriggered: root.createNodeAt("MergeShapes")
             }
             MenuItem {
                 text: qsTr("Trim Path")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("TrimPath")
+                onTriggered: root.createNodeAt("TrimPath")
             }
             MenuItem {
                 text: qsTr("Scatter")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Scatter")
+                onTriggered: root.createNodeAt("Scatter")
             }
             MenuItem {
                 text: qsTr("Instance")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Instance")
+                onTriggered: root.createNodeAt("Instance")
             }
             MenuItem {
                 text: qsTr("Array")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Array")
+                onTriggered: root.createNodeAt("Array")
             }
         }
 
@@ -389,43 +355,43 @@ Rectangle {
 
             MenuItem {
                 text: qsTr("Keyframe")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Keyframe")
+                onTriggered: root.createNodeAt("Keyframe")
             }
             MenuItem {
                 text: qsTr("Curve")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Curve")
+                onTriggered: root.createNodeAt("Curve")
             }
             MenuItem {
                 text: qsTr("Easing")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Easing")
+                onTriggered: root.createNodeAt("Easing")
             }
             MenuItem {
                 text: qsTr("Spring")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Spring")
+                onTriggered: root.createNodeAt("Spring")
             }
             MenuItem {
                 text: qsTr("Bounce")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Bounce")
+                onTriggered: root.createNodeAt("Bounce")
             }
             MenuItem {
                 text: qsTr("Oscillator")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Oscillator")
+                onTriggered: root.createNodeAt("Oscillator")
             }
             MenuItem {
                 text: qsTr("Wiggle")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Wiggle")
+                onTriggered: root.createNodeAt("Wiggle")
             }
             MenuItem {
                 text: qsTr("Loop")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Loop")
+                onTriggered: root.createNodeAt("Loop")
             }
             MenuItem {
                 text: qsTr("Ping Pong")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("PingPong")
+                onTriggered: root.createNodeAt("PingPong")
             }
             MenuItem {
                 text: qsTr("Time Stretch")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("TimeStretch")
+                onTriggered: root.createNodeAt("TimeStretch")
             }
         }
 
@@ -434,43 +400,43 @@ Rectangle {
 
             MenuItem {
                 text: qsTr("Cloner")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Cloner")
+                onTriggered: root.createNodeAt("Cloner")
             }
             MenuItem {
                 text: qsTr("Radial Clone")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("RadialClone")
+                onTriggered: root.createNodeAt("RadialClone")
             }
             MenuItem {
                 text: qsTr("Grid Clone")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("GridClone")
+                onTriggered: root.createNodeAt("GridClone")
             }
             MenuItem {
                 text: qsTr("Follow Path")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("FollowPath")
+                onTriggered: root.createNodeAt("FollowPath")
             }
             MenuItem {
                 text: qsTr("Look At")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("LookAt")
+                onTriggered: root.createNodeAt("LookAt")
             }
             MenuItem {
                 text: qsTr("Align")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Align")
+                onTriggered: root.createNodeAt("Align")
             }
             MenuItem {
                 text: qsTr("Distribute")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Distribute")
+                onTriggered: root.createNodeAt("Distribute")
             }
             MenuItem {
                 text: qsTr("Random Transform")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("RandomTransform")
+                onTriggered: root.createNodeAt("RandomTransform")
             }
             MenuItem {
                 text: qsTr("Trail")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Trail")
+                onTriggered: root.createNodeAt("Trail")
             }
             MenuItem {
                 text: qsTr("Echo")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Echo")
+                onTriggered: root.createNodeAt("Echo")
             }
         }
 
@@ -479,35 +445,35 @@ Rectangle {
 
             MenuItem {
                 text: qsTr("Noise")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Noise")
+                onTriggered: root.createNodeAt("Noise")
             }
             MenuItem {
                 text: qsTr("Curl Noise")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("CurlNoise")
+                onTriggered: root.createNodeAt("CurlNoise")
             }
             MenuItem {
                 text: qsTr("Random")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Random")
+                onTriggered: root.createNodeAt("Random")
             }
             MenuItem {
                 text: qsTr("Voronoi")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Voronoi")
+                onTriggered: root.createNodeAt("Voronoi")
             }
             MenuItem {
                 text: qsTr("Perlin")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Perlin")
+                onTriggered: root.createNodeAt("Perlin")
             }
             MenuItem {
                 text: qsTr("Fractal")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Fractal")
+                onTriggered: root.createNodeAt("Fractal")
             }
             MenuItem {
                 text: qsTr("Expression")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Expression")
+                onTriggered: root.createNodeAt("Expression")
             }
             MenuItem {
                 text: qsTr("Formula")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Formula")
+                onTriggered: root.createNodeAt("Formula")
             }
         }
 
@@ -516,67 +482,67 @@ Rectangle {
 
             MenuItem {
                 text: qsTr("Blur")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Blur")
+                onTriggered: root.createNodeAt("Blur")
             }
             MenuItem {
                 text: qsTr("Transform")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Transform")
+                onTriggered: root.createNodeAt("Transform")
             }
             MenuItem {
                 text: qsTr("Glow")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Glow")
+                onTriggered: root.createNodeAt("Glow")
             }
             MenuItem {
                 text: qsTr("Bloom")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Bloom")
+                onTriggered: root.createNodeAt("Bloom")
             }
             MenuItem {
                 text: qsTr("Shadow")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Shadow")
+                onTriggered: root.createNodeAt("Shadow")
             }
             MenuItem {
                 text: qsTr("Outline")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Outline")
+                onTriggered: root.createNodeAt("Outline")
             }
             MenuItem {
                 text: qsTr("Chromatic Aberration")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("ChromaticAberration")
+                onTriggered: root.createNodeAt("ChromaticAberration")
             }
             MenuItem {
                 text: qsTr("Distortion")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Distortion")
+                onTriggered: root.createNodeAt("Distortion")
             }
             MenuItem {
                 text: qsTr("Pixelate")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Pixelate")
+                onTriggered: root.createNodeAt("Pixelate")
             }
             MenuItem {
                 text: qsTr("Sharpen")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Sharpen")
+                onTriggered: root.createNodeAt("Sharpen")
             }
             MenuItem {
                 text: qsTr("Glitch")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Glitch")
+                onTriggered: root.createNodeAt("Glitch")
             }
             MenuItem {
                 text: qsTr("Film Grain")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("FilmGrain")
+                onTriggered: root.createNodeAt("FilmGrain")
             }
             MenuItem {
                 text: qsTr("Color Correction")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("ColorCorrection")
+                onTriggered: root.createNodeAt("ColorCorrection")
             }
             MenuItem {
                 text: qsTr("Curves")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Curves")
+                onTriggered: root.createNodeAt("Curves")
             }
             MenuItem {
                 text: qsTr("Levels")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Levels")
+                onTriggered: root.createNodeAt("Levels")
             }
             MenuItem {
                 text: qsTr("Keyer")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Keyer")
+                onTriggered: root.createNodeAt("Keyer")
             }
         }
 
@@ -585,27 +551,27 @@ Rectangle {
 
             MenuItem {
                 text: qsTr("Audio Reactive")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("AudioReactive")
+                onTriggered: root.createNodeAt("AudioReactive")
             }
             MenuItem {
                 text: qsTr("Audio Spectrum")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("AudioSpectrum")
+                onTriggered: root.createNodeAt("AudioSpectrum")
             }
             MenuItem {
                 text: qsTr("Audio Waveform")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("AudioWaveform")
+                onTriggered: root.createNodeAt("AudioWaveform")
             }
             MenuItem {
                 text: qsTr("Beat Detection")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("BeatDetection")
+                onTriggered: root.createNodeAt("BeatDetection")
             }
             MenuItem {
                 text: qsTr("FFT")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("FFT")
+                onTriggered: root.createNodeAt("FFT")
             }
             MenuItem {
                 text: qsTr("MIDI Input")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("MIDIInput")
+                onTriggered: root.createNodeAt("MIDIInput")
             }
         }
 
@@ -614,39 +580,39 @@ Rectangle {
 
             MenuItem {
                 text: qsTr("Blend")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Blend")
+                onTriggered: root.createNodeAt("Blend")
             }
             MenuItem {
                 text: qsTr("Merge")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Merge")
+                onTriggered: root.createNodeAt("Merge")
             }
             MenuItem {
                 text: qsTr("Alpha Over")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("AlphaOver")
+                onTriggered: root.createNodeAt("AlphaOver")
             }
             MenuItem {
                 text: qsTr("Multiply")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Multiply")
+                onTriggered: root.createNodeAt("Multiply")
             }
             MenuItem {
                 text: qsTr("Screen")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Screen")
+                onTriggered: root.createNodeAt("Screen")
             }
             MenuItem {
                 text: qsTr("Overlay")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Overlay")
+                onTriggered: root.createNodeAt("Overlay")
             }
             MenuItem {
                 text: qsTr("Mask")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Mask")
+                onTriggered: root.createNodeAt("Mask")
             }
             MenuItem {
                 text: qsTr("Crop")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Crop")
+                onTriggered: root.createNodeAt("Crop")
             }
             MenuItem {
                 text: qsTr("Transform 2D")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Transform2D")
+                onTriggered: root.createNodeAt("Transform2D")
             }
         }
 
@@ -655,35 +621,35 @@ Rectangle {
 
             MenuItem {
                 text: qsTr("Clamp")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Clamp")
+                onTriggered: root.createNodeAt("Clamp")
             }
             MenuItem {
                 text: qsTr("Remap")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Remap")
+                onTriggered: root.createNodeAt("Remap")
             }
             MenuItem {
                 text: qsTr("Lerp")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Lerp")
+                onTriggered: root.createNodeAt("Lerp")
             }
             MenuItem {
                 text: qsTr("Mix")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Mix")
+                onTriggered: root.createNodeAt("Mix")
             }
             MenuItem {
                 text: qsTr("Math")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Math")
+                onTriggered: root.createNodeAt("Math")
             }
             MenuItem {
                 text: qsTr("Vector Math")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("VectorMath")
+                onTriggered: root.createNodeAt("VectorMath")
             }
             MenuItem {
                 text: qsTr("Timer")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Timer")
+                onTriggered: root.createNodeAt("Timer")
             }
             MenuItem {
                 text: qsTr("Counter")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Counter")
+                onTriggered: root.createNodeAt("Counter")
             }
         }
 
@@ -692,23 +658,23 @@ Rectangle {
 
             MenuItem {
                 text: qsTr("Print")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Print")
+                onTriggered: root.createNodeAt("Print")
             }
             MenuItem {
                 text: qsTr("Inspector")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Inspector")
+                onTriggered: root.createNodeAt("Inspector")
             }
             MenuItem {
                 text: qsTr("FPS")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("FPS")
+                onTriggered: root.createNodeAt("FPS")
             }
             MenuItem {
                 text: qsTr("Profiler")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("Profiler")
+                onTriggered: root.createNodeAt("Profiler")
             }
             MenuItem {
                 text: qsTr("Graph Debug")
-                onTriggered: root.nodeGraph.addNodeAutoConnect("GraphDebug")
+                onTriggered: root.createNodeAt("GraphDebug")
             }
         }
     }

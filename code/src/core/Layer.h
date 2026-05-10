@@ -22,8 +22,15 @@ class Layer : public QObject
     Q_PROPERTY(int duration READ duration WRITE setDuration NOTIFY durationChanged)
     Q_PROPERTY(qreal blurRadius READ blurRadius WRITE setBlurRadius NOTIFY blurChanged)
     Q_PROPERTY(int blendMode READ blendMode WRITE setBlendMode NOTIFY blendModeChanged)
+
+    // Color grading
+    Q_PROPERTY(qreal lift READ lift WRITE setLift NOTIFY colorGradeChanged)
+    Q_PROPERTY(qreal gamma READ gamma WRITE setGamma NOTIFY colorGradeChanged)
+    Q_PROPERTY(qreal gain READ gain WRITE setGain NOTIFY colorGradeChanged)
+    Q_PROPERTY(qreal saturation READ saturation WRITE setSaturation NOTIFY colorGradeChanged)
+    Q_PROPERTY(qreal contrast READ contrast WRITE setContrast NOTIFY colorGradeChanged)
 public:
-    enum Type { ShapeLayer, TextLayer, NullLayer };
+    enum Type { ShapeLayer, TextLayer, ImageLayer, AudioLayer, VideoLayer, NullLayer };
     Q_ENUM(Type)
 
     explicit Layer(Type type = NullLayer, QObject *parent = nullptr);
@@ -65,6 +72,18 @@ public:
     int blendMode() const { return m_blendMode; }
     void setBlendMode(int mode);
 
+    // Color grading
+    qreal lift() const { return m_lift; }
+    void setLift(qreal v);
+    qreal gamma() const { return m_gamma; }
+    void setGamma(qreal v);
+    qreal gain() const { return m_gain; }
+    void setGain(qreal v);
+    qreal saturation() const { return m_saturation; }
+    void setSaturation(qreal v);
+    qreal contrast() const { return m_contrast; }
+    void setContrast(qreal v);
+
     Q_INVOKABLE virtual Layer* clone(QObject *parent = nullptr) const;
     virtual QJsonObject toJson() const;
     virtual void fromJson(const QJsonObject &obj);
@@ -81,6 +100,7 @@ signals:
     void durationChanged();
     void blurChanged();
     void blendModeChanged();
+    void colorGradeChanged();
 
 private:
     Type m_type;
@@ -97,6 +117,13 @@ private:
     int m_duration = 90;
     qreal m_blurRadius = 0;
     int m_blendMode = 0; // 0=Normal,1=Add,2=Multiply,3=Screen,4=Overlay
+
+    // Color grading
+    qreal m_lift = 0.0;
+    qreal m_gamma = 1.0;
+    qreal m_gain = 1.0;
+    qreal m_saturation = 1.0;
+    qreal m_contrast = 0.0;
 };
 
 #endif

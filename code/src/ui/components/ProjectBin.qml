@@ -25,7 +25,12 @@ Rectangle {
 
     property Component shapeLayerComponent: ShapeLayer {}
     property Component textLayerComponent: TextLayer {}
+    property Component imageLayerComponent: ImageLayer {}
+    property Component audioLayerComponent: AudioLayer {}
     property Component timelineLayerComponent: TimelineLayer {}
+
+    signal importImageRequested()
+    signal importAudioRequested()
 
     function createNodeStrip(type) {
         if (!bin.project)
@@ -100,6 +105,12 @@ Rectangle {
                 fontSize: 48
             });
             break;
+        case "Image":
+            binRoot.importImageRequested();
+            return;
+        case "Audio File":
+            binRoot.importAudioRequested();
+            return;
         default:
             layer = shapeLayerComponent.createObject(proj, {
                 name: type + " " + num,
