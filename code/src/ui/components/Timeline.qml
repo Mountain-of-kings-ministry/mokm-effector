@@ -252,7 +252,7 @@ Rectangle {
                             width: parent.width
                             height: root.rowHeight
                             color: root.selectedObject === modelData ? Qt.alpha(Theme.accent, 0.25) : Theme.secondaryHover
-                            readonly property var _layerModel: modelData
+                            property var _layerModel: modelData
 
                             RowLayout {
                                 anchors.fill: parent
@@ -260,7 +260,7 @@ Rectangle {
                                 spacing: 6
 
                                 Text {
-                                    text: _layerModel.name
+                                    text: modelData ? modelData.name : ""
                                     font.bold: true
                                     color: Theme.foreground
                                 }
@@ -279,7 +279,10 @@ Rectangle {
                             MouseArea {
                                 anchors.fill: parent
                                 acceptedButtons: Qt.LeftButton
-                                onClicked: root.objectSelected(_layerModel)
+                                onClicked: {
+                                    console.log("Timeline.layerClick: _layerModel =", _layerModel, typeof _layerModel);
+                                    root.objectSelected(_layerModel);
+                                }
                             }
 
                             Menu {
@@ -410,6 +413,7 @@ Rectangle {
                                             border.color: root.selectedObject === modelData ? Theme.accent : Qt.lighter(color, 1.4)
 
                                             property var stripObj: modelData
+                                            property var tlRoot: root
 
                                             // Visual Edges
                                             Rectangle {
@@ -585,7 +589,7 @@ Rectangle {
                                                     text: "Delete Strip"
                                                     onTriggered: {
                                                         stripObj.deleteStrip();
-                                                        root.selectedObject = null;
+                                                        tlRoot.selectedObject = null;
                                                         _selectedLayers = [];
                                                     }
                                                 }

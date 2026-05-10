@@ -9,6 +9,16 @@ Rectangle {
     clip: true
 
     property var selectedObject: null
+    onSelectedObjectChanged: {
+        console.log("PropertiesPanel.selectedObject CHANGED:", selectedObject, typeof selectedObject);
+        console.log("  _isLayer:", _isLayer(selectedObject));
+        console.log("  _isTrack:", _isTrack(selectedObject));
+        console.log("  _isStrip:", _isStrip(selectedObject));
+        console.log("  _isRawElement:", _isRawElement(selectedObject));
+        if (selectedObject) {
+            console.log("  name:", selectedObject.name, "deleteLayer:", selectedObject.deleteLayer, "tracks:", selectedObject.tracks);
+        }
+    }
     property var timelineModel: null
 
     // ── Type detection helpers ──

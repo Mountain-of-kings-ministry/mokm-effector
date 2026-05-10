@@ -166,7 +166,8 @@ Window {
                         selectedObject: selectedObject
 
                         onObjectSelected: function (obj) {
-                            selectedObject = obj;
+                            console.log("Main.onObjectSelected: obj =", obj, obj ? obj.name : "null");
+                            mainWindow.selectedObject = obj;
                         }
 
                         onElementSelected: function (element) {
