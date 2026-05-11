@@ -1,0 +1,1 @@
+# Geometry Node Category\n\nShape processing.\n\nIntended nodes:\n- Extrude\n- Bevel\n- Subdivide\n- Boolean\n- Offset Path\n- Merge Shapes\n- Trim Path\n- Path Deform\n- Resample Path\n- Scatter\n- Instance\n- Array\n- Shape Weld\n- Mesh Convert\n- Triangulate

@@ -1,0 +1,1 @@
+# Material Node Category\n\nFor 2D and 3D shading.\nUses Qt-Color-Widgets.\n\nIntended nodes:\n- Color\n- Gradient\n- Texture\n- Normal Map\n- Roughness\n- Metallic\n- Emission\n- Fresnel\n- UV Transform\n- Pattern\n- Noise Texture

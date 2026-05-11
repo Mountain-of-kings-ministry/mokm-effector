@@ -1,0 +1,1 @@
+# Generators Node Category\n\nCreates objects from nothing.\n\nIntended nodes:\n- Rectangle\n- Circle\n- Ellipse\n- Polygon\n- Star\n- Line\n- Arc\n- Grid\n- Spiral\n- Arrow\n- Rounded Rectangle\n- Bezier Shape\n- Path\n- SVG\n- Spline\n- Lottie\n- Gradient Shape\n- Parametric Shape\n- Waveform
