@@ -591,7 +591,7 @@ Rectangle {
                                                 text: "Delete Strip"
                                                 onTriggered: {
                                                     stripObj.deleteStrip();
-                                                    tlRoot.selectedObject = null;
+                                                    root.selectedObject = null;
                                                     _selectedLayers = [];
                                                 }
                                             }

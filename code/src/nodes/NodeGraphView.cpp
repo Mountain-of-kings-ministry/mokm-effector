@@ -4,6 +4,7 @@
 #include <QtNodes/GraphicsView>
 #include <QtNodes/DataFlowGraphicsScene>
 #include <QtNodes/BasicGraphicsScene>
+#include <QtNodes/NodeGraphicsObject>
 #include <QPainter>
 #include <QDebug>
 #include <QContextMenuEvent>
@@ -87,6 +88,7 @@ void NodeGraphView::ensureView()
     // Create a new GraphicsView for the scene
     m_view = new QtNodes::GraphicsView();
     m_view->setScene(m_nodeGraph->graphicsScene());
+    m_view->setDragMode(QGraphicsView::NoDrag);
     m_view->setScaleRange(0.1, 10.0);
     m_view->setupScale(m_scale);
     m_view->centerScene();
@@ -169,11 +171,18 @@ void NodeGraphView::mousePressEvent(QMouseEvent *event)
                 emit canvasRightClicked(scenePos.x(), scenePos.y(), screenPos.x(), screenPos.y());
                 return;
             }
-            // If an item exists, forward a context menu event to the viewport so the item receives it
-            QPoint vpLocal = m_view->viewport()->mapFromGlobal(event->globalPosition().toPoint());
-            QContextMenuEvent ctx(QContextMenuEvent::Mouse, vpLocal, event->globalPosition().toPoint());
-            QCoreApplication::sendEvent(m_view->viewport(), &ctx);
-            qDebug() << "Right-click forwarded as context menu to item:" << item << "scenePos:" << scenePos;
+            // If an item exists, emit nodeRightClicked with the node ID
+            auto *nodeItem = qgraphicsitem_cast<QtNodes::NodeGraphicsObject *>(item);
+            if (nodeItem)
+            {
+                QtNodes::NodeId nid = nodeItem->nodeId();
+                QPointF screenPos = event->globalPosition();
+                emit nodeRightClicked(static_cast<int>(nid), screenPos.x(), screenPos.y());
+                return;
+            }
+            // Non-node item (connection, etc.) — still show canvas menu
+            QPointF screenPos = event->globalPosition();
+            emit canvasRightClicked(scenePos.x(), scenePos.y(), screenPos.x(), screenPos.y());
         }
         return;
     }

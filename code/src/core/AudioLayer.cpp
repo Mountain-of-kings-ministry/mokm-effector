@@ -68,9 +68,11 @@ void AudioLayer::loadWaveform()
     QByteArray data = file.readAll();
     file.close();
 
-    // Parse WAV header to determine duration and extract waveform
-    if (data.size() < 44)
-        return;
+    // Validate WAV header
+    if (data.size() < 12) return;
+    if (qstrncmp(data.constData(), "RIFF", 4) != 0) return;
+    if (qstrncmp(data.constData() + 8, "WAVE", 4) != 0) return;
+    if (data.size() < 44) return;
 
     // WAV header fields (little-endian)
     int channels = *reinterpret_cast<const quint16*>(data.constData() + 22);
@@ -80,21 +82,18 @@ void AudioLayer::loadWaveform()
     if (channels <= 0 || sampleRate <= 0 || bitsPerSample <= 0)
         return;
 
-    // Find "data" chunk (may not start at offset 36 in all WAV files)
-    int dataOffset = 44; // default PCM offset
-    int dataSize = *reinterpret_cast<const quint32*>(data.constData() + 40);
-    // For non-standard WAV files, search for "data" marker
-    if (dataSize <= 0 || dataOffset + dataSize > data.size()) {
-        dataOffset = -1;
-        for (int i = 0; i < data.size() - 8; i++) {
-            if (qstrncmp(data.constData() + i, "data", 4) == 0) {
-                dataOffset = i + 8;
-                dataSize = *reinterpret_cast<const quint32*>(data.constData() + i + 4);
-                break;
-            }
+    // Find "data" chunk
+    int dataOffset = -1;
+    int dataSize = 0;
+    for (int i = 12; i < data.size() - 8; i++) {
+        if (qstrncmp(data.constData() + i, "data", 4) == 0) {
+            dataOffset = i + 8;
+            dataSize = *reinterpret_cast<const quint32*>(data.constData() + i + 4);
+            break;
         }
-        if (dataOffset < 0) return;
     }
+    if (dataOffset < 0 || dataSize <= 0) return;
+    dataSize = qMin(dataSize, data.size() - dataOffset);
 
     int bytesPerSample = bitsPerSample / 8;
     if (bytesPerSample <= 0) return;

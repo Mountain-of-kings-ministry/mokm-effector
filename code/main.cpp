@@ -22,6 +22,14 @@
 #include "src/core/TimelineLayer.h"
 #include "src/core/StartupConfig.h"
 #include "src/core/AppSettings.h"
+#include "src/core/OFXPluginManager.h"
+#include "src/core/OFXPlugin.h"
+
+#ifdef MOKM_ENABLE_CLAP
+#include "src/core/CLAPPluginManager.h"
+#include "src/core/CLAPPlugin.h"
+#include "src/core/CLAPInstance.h"
+#endif
 
 #ifdef MOKM_ENABLE_NODES
 #include "src/nodes/NodeGraph.h"
@@ -56,6 +64,14 @@ int main(int argc, char *argv[])
     qmlRegisterType<Strip>("mokm_effector", 1, 0, "Strip");
     qmlRegisterType<TimelineLayer>("mokm_effector", 1, 0, "TimelineLayer");
 
+    qmlRegisterType<OFXPlugin>("mokm_effector", 1, 0, "OFXPlugin");
+    qmlRegisterType<OFXPluginManager>("mokm_effector", 1, 0, "OFXPluginManager");
+#ifdef MOKM_ENABLE_CLAP
+    qmlRegisterType<CLAPPlugin>("mokm_effector", 1, 0, "CLAPPlugin");
+    qmlRegisterType<CLAPPluginManager>("mokm_effector", 1, 0, "CLAPPluginManager");
+    qmlRegisterType<CLAPInstance>("mokm_effector", 1, 0, "CLAPInstance");
+#endif
+
     qmlRegisterSingletonType<AppSettings>("mokm_effector", 1, 0, "AppSettings",
         [](QQmlEngine *, QJSEngine *) -> QObject * {
             return new AppSettings();
@@ -75,6 +91,15 @@ int main(int argc, char *argv[])
 
     auto *project = new Project(&engine);
     engine.rootContext()->setContextProperty("project", project);
+
+    // Plugin managers
+    auto *ofxManager = new OFXPluginManager(&engine);
+    engine.rootContext()->setContextProperty("_ofxPluginManager", ofxManager);
+
+#ifdef MOKM_ENABLE_CLAP
+    auto *clapManager = new CLAPPluginManager(&engine);
+    engine.rootContext()->setContextProperty("_clapPluginManager", clapManager);
+#endif
 
     QObject::connect(
         &engine,

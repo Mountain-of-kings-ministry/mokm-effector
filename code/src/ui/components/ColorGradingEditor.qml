@@ -16,15 +16,20 @@ Rectangle {
     readonly property var _target: {
         if (!selectedObject) return null;
         if (selectedObject.element !== undefined)
-            return selectedObject.element; // Strip → its element (Layer)
+            return selectedObject.element;
         if (selectedObject.strips !== undefined && selectedObject.tracks === undefined)
-            return selectedObject; // Track
+            return selectedObject;
         if (selectedObject.tracks !== undefined)
-            return selectedObject; // TimelineLayer
+            return selectedObject;
         return selectedObject;
     }
 
     readonly property var _comp: timelineModel ? timelineModel.composition : null
+
+    // ── OpenFX plugin state ──
+    property var _ofxPlugins: []
+    property var _selectedOfxPlugin: null
+    property var _builtinLut: "No LUT"
 
     function _buildSearchableItems() {
         var items = [];
@@ -45,8 +50,14 @@ Rectangle {
         return items;
     }
 
-    // Split view state
     property bool showSplitView: true
+
+    // Scan for OFX plugins on load
+    Component.onCompleted: {
+        if (typeof _ofxPluginManager !== "undefined") {
+            _ofxPluginManager.rescan();
+        }
+    }
 
     ColumnLayout {
         anchors.fill: parent
@@ -85,10 +96,21 @@ Rectangle {
                     onCheckedChanged: root.showSplitView = checked
                 }
 
-                Button { text: "Reset All"; onClicked: console.log("Color grading reset") }
+                Button { text: "Reset All"
+                    onClicked: {
+                        if (_target) {
+                            _target.lift = 0; _target.gamma = 1; _target.gain = 1;
+                            _target.saturation = 1; _target.contrast = 0;
+                            _target.liftColor = "#000000";
+                            _target.gammaColor = "#000000";
+                            _target.gainColor = "#000000";
+                            _target._ofxPluginId = "";
+                            _target._ofxPluginEnabled = false;
+                            _selectedOfxPlugin = null;
+                        }
+                    }
+                }
                 Button { text: "Save Preset"; onClicked: console.log("Preset saved") }
-
-                ComboBox { model: ["No LUT", "Film Stock", "Cinematic Teal", "Vintage", "Custom"] }
             }
         }
 
@@ -150,6 +172,89 @@ Rectangle {
 
                                 Text { text: "Temperature"; color: Theme.mutedForeground }
                                 Slider { Layout.fillWidth: true; from: -1; to: 1; value: 0 }
+                            }
+                        }
+
+                        // LUT / OpenFX Plugin Selector
+                        GroupBox {
+                            title: "LUT / OpenFX Plugin"; Layout.fillWidth: true
+                            ColumnLayout { width: parent.width; spacing: 8
+
+                                ComboBox {
+                                    id: lutCombo
+                                    Layout.fillWidth: true
+                                    model: {
+                                        var items = ["No LUT", "Film Stock", "Cinematic Teal", "Vintage", "Custom\u2026"];
+                                        if (typeof _ofxPluginManager !== "undefined" && _ofxPluginManager.scanDone) {
+                                            for (var i = 0; i < _ofxPluginManager.plugins.length; i++) {
+                                                items.push("[OFX] " + _ofxPluginManager.plugins[i].identifier);
+                                            }
+                                        }
+                                        return items;
+                                    }
+                                    onActivated: function(index) {
+                                        var text = model[index];
+                                        root._builtinLut = text;
+                                        if (text.startsWith("[OFX] ")) {
+                                            var id = text.substring(6);
+                                            if (typeof _ofxPluginManager !== "undefined") {
+                                                var plugin = _ofxPluginManager.pluginByIdentifier(id);
+                                                if (plugin && _target) {
+                                                    _selectedOfxPlugin = plugin;
+                                                    _ofxPluginManager.applyPluginToLayer(plugin, _target);
+                                                }
+                                            }
+                                        } else if (_target) {
+                                            _target._ofxPluginId = "";
+                                            _target._ofxPluginEnabled = false;
+                                            _selectedOfxPlugin = null;
+                                        }
+                                    }
+                                }
+
+                                // OFX plugin parameters (only shown when an OFX plugin is selected)
+                                Rectangle {
+                                    visible: _selectedOfxPlugin !== null
+                                    Layout.fillWidth: true; height: 24; color: "transparent"
+                                    RowLayout {
+                                        anchors.fill: parent; spacing: 6
+                                        Text { text: "Plugin:"; color: Theme.mutedForeground; font.pixelSize: 10 }
+                                        Text { text: _selectedOfxPlugin ? _selectedOfxPlugin.identifier : ""; color: Theme.accent; font.pixelSize: 10 }
+                                        Item { Layout.fillWidth: true }
+                                        Button {
+                                            text: "Bypass"; flat: true; height: 20; font.pixelSize: 10
+                                            checkable: true
+                                            onCheckedChanged: { if (_target) _target._ofxPluginEnabled = !checked }
+                                        }
+                                        Button {
+                                            text: "Remove"; flat: true; height: 20; font.pixelSize: 10
+                                            onClicked: {
+                                                if (_target) { _target._ofxPluginId = ""; _target._ofxPluginEnabled = false; }
+                                                _selectedOfxPlugin = null;
+                                            }
+                                        }
+                                    }
+                                }
+
+                                RowLayout {
+                                    Layout.fillWidth: true; spacing: 6
+                                    Button {
+                                        text: "Load .cube LUT\u2026"
+                                        flat: true; height: 22; font.pixelSize: 10
+                                        onClicked: lutFileDialog.open()
+                                    }
+                                    Button {
+                                        text: "Rescan OFX"
+                                        flat: true; height: 22; font.pixelSize: 10
+                                        onClicked: { if (typeof _ofxPluginManager !== "undefined") _ofxPluginManager.rescan(); }
+                                    }
+                                }
+
+                                Text {
+                                    text: "No OpenFX plugins found"
+                                    visible: (typeof _ofxPluginManager !== "undefined") && _ofxPluginManager.scanDone && _ofxPluginManager.plugins.length === 0
+                                    color: Theme.mutedForeground; font.pixelSize: 9; font.italic: true
+                                }
                             }
                         }
 
@@ -266,4 +371,14 @@ Rectangle {
     }
 
     ColorDialog { id: colorDialog; title: "Pick a color"; onAccepted: console.log("Color:", colorDialog.color) }
+    FileDialog {
+        id: lutFileDialog
+        title: "Load .cube LUT"
+        nameFilters: ["LUT Files (*.cube)", "All Files (*)"]
+        onAccepted: {
+            if (_target) _target._ofxPluginId = "lut:" + selectedFile;
+            _builtinLut = "Custom LUT: " + selectedFile.toString().split("/").pop();
+            console.log("LUT loaded:", selectedFile);
+        }
+    }
 }

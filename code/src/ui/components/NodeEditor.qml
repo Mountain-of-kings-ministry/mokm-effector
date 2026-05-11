@@ -8,6 +8,7 @@ Item {
     property var nodeGraph
     property real menuSceneX: 0
     property real menuSceneY: 0
+    property int _contextNodeId: -1
     function createNodeAt(type) {
         if (root.nodeGraph)
             root.nodeGraph.addNodeAt(type, menuSceneX, menuSceneY);
@@ -83,6 +84,10 @@ Item {
                     menuSceneY = sceneY;
                     addNodeMenu.popup(screenX, screenY);
                 }
+            }
+            onNodeRightClicked: function (nodeId, screenX, screenY) {
+                _contextNodeId = nodeId;
+                nodeContextMenu.popup(screenX, screenY);
             }
         }
 
@@ -673,6 +678,42 @@ Item {
             MenuItem {
                 text: qsTr("Graph Debug")
                 onTriggered: root.createNodeAt("GraphDebug")
+            }
+        }
+    }
+
+    // ── Right-click node context menu ──
+    Menu {
+        id: nodeContextMenu
+
+        MenuItem {
+            text: qsTr("Delete")
+            onTriggered: {
+                if (root.nodeGraph && _contextNodeId >= 0)
+                    root.nodeGraph.removeNode(_contextNodeId);
+                _contextNodeId = -1;
+            }
+        }
+        MenuItem {
+            text: qsTr("Duplicate")
+            onTriggered: {
+                if (root.nodeGraph && _contextNodeId >= 0) {
+                    var ids = root.nodeGraph.nodeIds();
+                    var json = root.nodeGraph.nodeParameters(_contextNodeId);
+                    var type = json["name"] || "";
+                    if (type) {
+                        var pos = root.nodeGraph.nodeParameters(_contextNodeId);
+                        var newId = root.nodeGraph.addNode(type);
+                        if (newId >= 0) {
+                            // Copy parameters from source
+                            for (var k in pos) {
+                                if (k !== "name" && k !== "id")
+                                    root.nodeGraph.setNodeParameter(newId, k, pos[k]);
+                            }
+                        }
+                    }
+                }
+                _contextNodeId = -1;
             }
         }
     }

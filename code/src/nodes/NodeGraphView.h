@@ -42,6 +42,7 @@ signals:
     void scaleChanged();
     void interactiveChanged();
     void canvasRightClicked(qreal sceneX, qreal sceneY, qreal screenX, qreal screenY);
+    void nodeRightClicked(int nodeId, qreal screenX, qreal screenY);
 
 protected:
     void geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry) override;
