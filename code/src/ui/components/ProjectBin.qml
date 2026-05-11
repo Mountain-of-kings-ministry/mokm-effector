@@ -11,7 +11,7 @@ Rectangle {
     readonly property var bin: binRoot
 
     property Composition composition: null
-    property Project project: null
+    property Project projectModel: null
 
     signal createRectLayer
     signal createCircleLayer
@@ -34,9 +34,9 @@ Rectangle {
     signal importVideoRequested()
 
     function createNodeStrip(type) {
-        if (!bin.project)
+        if (!bin.projectModel)
             return;
-        var proj = bin.project;
+        var proj = bin.projectModel;
         var layer;
         var names = ["Rectangle", "Ellipse", "Circle", "Triangle"];
         var num = proj.assetCount + 1;
@@ -201,7 +201,7 @@ Rectangle {
                 }
 
                 Repeater {
-                    model: bin.project && bin.project.assets ? bin.project.assets : 0
+                    model: bin.projectModel && bin.projectModel.assets ? bin.projectModel.assets : 0
 
                     delegate: Rectangle {
                         id: assetDelegate
@@ -269,7 +269,7 @@ Rectangle {
                         anchors.fill: parent
                         acceptedButtons: Qt.RightButton
                         onPressed: function (m) {
-                            if (!bin.project)
+                            if (!bin.projectModel)
                                 return;
                             contextMenu.popup(m.x, m.y);
                         }
@@ -372,9 +372,9 @@ Rectangle {
                     });
                     comp.addLayer(tl);
                     var track = tl.addTrack();
-                    track.createStripFromAsset(assetContextMenu.asset, "", 0, 90);
-                    if (bin.project)
-                        bin.project.captureSnapshot();
+                    track.createStripFromAsset(assetContextMenu.asset, "", 0, -1);
+                    if (bin.projectModel)
+                        bin.projectModel.captureSnapshot();
                 });
             } else {
                 for (var li = 0; li < layers.length; li++) {
@@ -405,9 +405,9 @@ Rectangle {
                 newTrackItem.triggered.connect(function() {
                     if (!assetContextMenu.asset || !layerObj) return;
                     var track = layerObj.addTrack();
-                    track.createStripFromAsset(assetContextMenu.asset, "", 0, 90);
-                    if (bin.project)
-                        bin.project.captureSnapshot();
+                    track.createStripFromAsset(assetContextMenu.asset, "", 0, -1);
+                    if (bin.projectModel)
+                        bin.projectModel.captureSnapshot();
                 });
                 return;
             }
@@ -418,9 +418,9 @@ Rectangle {
                 trackItem.triggered.connect(function(t) {
                     return function() {
                         if (assetContextMenu.asset && t) {
-                            t.createStripFromAsset(assetContextMenu.asset, "", 0, 90);
-                            if (bin.project)
-                                bin.project.captureSnapshot();
+                            t.createStripFromAsset(assetContextMenu.asset, "", 0, -1);
+                            if (bin.projectModel)
+                                bin.projectModel.captureSnapshot();
                         }
                     };
                 }(trackObj));
@@ -430,9 +430,9 @@ Rectangle {
             addTrackItem.triggered.connect(function() {
                 if (!assetContextMenu.asset || !layerObj) return;
                 var track = layerObj.addTrack();
-                track.createStripFromAsset(assetContextMenu.asset, "", 0, 90);
-                if (bin.project)
-                    bin.project.captureSnapshot();
+                track.createStripFromAsset(assetContextMenu.asset, "", 0, -1);
+                if (bin.projectModel)
+                    bin.projectModel.captureSnapshot();
             });
         }
 
@@ -441,12 +441,12 @@ Rectangle {
         MenuItem {
             text: qsTr("Delete Asset")
             onTriggered: {
-                if (assetContextMenu.asset && bin.project) {
-                    bin.project.removeAsset(assetContextMenu.asset);
+                if (assetContextMenu.asset && bin.projectModel) {
+                    bin.projectModel.removeAsset(assetContextMenu.asset);
                     if (bin._selected === assetContextMenu.asset)
                         bin._selected = null;
-                    if (bin.project)
-                        bin.project.captureSnapshot();
+                    if (bin.projectModel)
+                        bin.projectModel.captureSnapshot();
                 }
             }
         }

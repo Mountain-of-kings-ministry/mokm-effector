@@ -3,6 +3,8 @@
 #include "Layer.h"
 #include "ShapeLayer.h"
 #include "TextLayer.h"
+#include "VideoLayer.h"
+#include "AudioLayer.h"
 #include "TimelineLayer.h"
 
 #ifdef MOKM_ENABLE_NODES
@@ -91,11 +93,24 @@ Strip* Track::createStripFromAsset(Layer *asset, const QString &stripName, int s
     if (!asset)
         return nullptr;
 
+    int actualDuration = duration;
+    if (actualDuration <= 0) {
+        if (auto *vl = qobject_cast<VideoLayer*>(asset)) {
+            actualDuration = vl->frameCount();
+            if (actualDuration <= 0) actualDuration = 90;
+        } else if (auto *al = qobject_cast<AudioLayer*>(asset)) {
+            actualDuration = al->frameCount();
+            if (actualDuration <= 0) actualDuration = qMax(1, al->duration());
+        } else {
+            actualDuration = 90;
+        }
+    }
+
 #ifdef MOKM_ENABLE_NODES
     auto *strip = new NodeStrip(this);
     strip->setName(stripName.isEmpty() ? asset->name() : stripName);
     strip->setStartFrame(startFrame);
-    strip->setDuration(duration);
+    strip->setDuration(actualDuration);
 
     // Create a NodeGraph with a generator node matching the asset type
     auto *graph = new NodeGraph(strip);
@@ -130,7 +145,7 @@ Strip* Track::createStripFromAsset(Layer *asset, const QString &stripName, int s
     auto *strip = new Strip(this);
     strip->setName(stripName.isEmpty() ? asset->name() : stripName);
     strip->setStartFrame(startFrame);
-    strip->setDuration(duration);
+    strip->setDuration(actualDuration);
     auto *element = asset->clone(strip);
     strip->setElement(element);
     addStrip(strip);

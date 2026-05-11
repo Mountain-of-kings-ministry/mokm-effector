@@ -13,12 +13,15 @@ class AudioLayer : public Layer
     Q_PROPERTY(qreal pan READ pan WRITE setPan NOTIFY panChanged)
     Q_PROPERTY(bool mute READ mute WRITE setMute NOTIFY muteChanged)
     Q_PROPERTY(bool solo READ solo WRITE setSolo NOTIFY soloChanged)
+    Q_PROPERTY(int frameCount READ frameCount NOTIFY frameCountChanged)
 public:
     explicit AudioLayer(QObject *parent = nullptr);
     ~AudioLayer() override = default;
 
     QUrl source() const { return m_source; }
     void setSource(const QUrl &url);
+
+    int frameCount() const { return m_frameCount; }
 
     qreal volume() const { return m_volume; }
     void setVolume(qreal v);
@@ -44,6 +47,7 @@ signals:
     void panChanged();
     void muteChanged();
     void soloChanged();
+    void frameCountChanged();
 
 private:
     void loadWaveform();
@@ -53,6 +57,7 @@ private:
     qreal m_pan = 0.0;
     bool m_mute = false;
     bool m_solo = false;
+    int m_frameCount = 0;
     QVector<float> m_waveformData;
 };
 

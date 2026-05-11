@@ -38,5 +38,17 @@
         "MOKM_ENABLE_ALL": "ON"
       }
     }
+  ],
+  "buildPresets": [
+    {
+      "name": "debug",
+      "configurePreset": "debug",
+      "displayName": "Debug Build"
+    },
+    {
+      "name": "default",
+      "configurePreset": "default",
+      "displayName": "Release Build"
+    }
   ]
 }

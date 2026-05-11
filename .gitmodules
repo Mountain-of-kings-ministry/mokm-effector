@@ -1,0 +1,6 @@
+[submodule "third_parties/clap-main"]
+	path = third_parties/clap-main
+	url = https://github.com/free-audio/clap.git
+[submodule "third_parties/openfx-main"]
+	path = third_parties/openfx-main
+	url = https://github.com/AcademySoftwareFoundation/OpenFX.git

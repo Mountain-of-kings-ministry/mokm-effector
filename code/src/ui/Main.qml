@@ -15,9 +15,9 @@ Window {
     // frameless window with topbar
     flags: Qt.FramelessWindowHint
 
-    Project {
-        id: project
-        onUndoChanged: {
+    Connections {
+        target: project
+        function onUndoChanged() {
             topBar.canUndo = project.canUndo;
             topBar.canRedo = project.canRedo;
         }
@@ -81,7 +81,7 @@ Window {
                     id: projectBin
                     SplitView.preferredWidth: 220
                     composition: project.activeComposition
-                    project: project
+                    projectModel: project
 
                     onImportImageRequested: importImageDialog.open()
                     onImportAudioRequested: importAudioDialog.open()
@@ -233,6 +233,7 @@ Window {
     }
 
     property Component shapeLayerComponent: ShapeLayer {}
+    property Component compositionComponent: Composition {}
     property Component textLayerComponent: TextLayer {}
     property Component imageLayerComponent: ImageLayer {}
     property Component audioLayerComponent: AudioLayer {}
@@ -596,28 +597,55 @@ Window {
                     name: name + " Audio",
                     source: audioUrl
                 });
-                project.addAsset(audioLayer);
+                audioLayer.duration = layer.frameCount;
+            project.addAsset(audioLayer);
             }
             project.captureSnapshot();
         }
     }
 
     Component.onCompleted: {
-        var comp = project.activeComposition;
-        if (comp && project) {
-            var rect = shapeLayerComponent.createObject(project, {
-                name: "Rectangle 1",
-                shapeType: ShapeLayer.Rectangle,
-                shapeWidth: 300,
-                shapeHeight: 200,
-                color: Theme.primary
-            });
-            project.addAsset(rect);
+        var cfg = _startupConfig;
+        if (cfg && cfg.mode === "new") {
+            project.name = cfg.projectName || "Untitled";
+            var comp = project.activeComposition;
+            if (!comp) {
+                comp = compositionComponent.createObject(project, {});
+                project.addComposition(comp);
+                project.activeComposition = comp;
+            }
+            comp.width = cfg.width || 1920;
+            comp.height = cfg.height || 1080;
+            comp.frameRate = cfg.fps || 30;
+            project.frameRate = cfg.fps || 30;
+            comp.duration = cfg.duration || 150;
             var tl = comp.ensureDefaultLayer();
             var track = tl.trackAt(0);
-            var strip = track.createStripFromAsset(rect, "Rect Strip", 0, 90);
+            comp.rebuildFlatLayers();
+            globalTimelineModel.composition = comp;
+        } else if (cfg && cfg.mode === "open") {
+            var fileUrl = cfg.filePath;
+            if (fileUrl) {
+                project.loadFromFile(fileUrl);
+                globalTimelineModel.composition = project.activeComposition;
+            }
+        } else {
+            // Fallback: ensure basic setup
+            var comp = project.activeComposition;
+            if (!comp) {
+                comp = compositionComponent.createObject(project, {});
+                project.addComposition(comp);
+                project.activeComposition = comp;
+            }
+            var tl = comp.ensureDefaultLayer();
+            var track = tl.trackAt(0);
             comp.rebuildFlatLayers();
             globalTimelineModel.composition = comp;
         }
+        // Window title
+        mainWindow.title = "MOKM Effector — " + (project.name || "Untitled");
+        project.nameChanged.connect(function() {
+            mainWindow.title = "MOKM Effector — " + (project.name || "Untitled");
+        });
     }
 }

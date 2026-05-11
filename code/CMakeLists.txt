@@ -104,6 +104,16 @@ if(MOKM_ENABLE_INTEROP)
   message(STATUS "OpenFX included from local source")
 endif()
 
+# ── CLAP Audio Plugin Support ────────────────────────────────
+if(EXISTS "${CMAKE_SOURCE_DIR}/../third_parties/clap-main/include/clap/clap.h")
+    add_library(CLAP INTERFACE)
+    target_include_directories(CLAP INTERFACE
+        "${CMAKE_SOURCE_DIR}/../third_parties/clap-main/include")
+    message(STATUS "CLAP headers found at third_parties/clap-main")
+else()
+    message(STATUS "CLAP headers NOT found — audio plugin support disabled")
+endif()
+
 # ── Executable + QML Module ─────────────────────────────────
 qt_add_executable(appmokm_effector
     main.cpp
@@ -125,6 +135,7 @@ qt_add_qml_module(appmokm_effector
         src/ui/Main.qml
         src/ui/Theme.qml
         src/ui/SplashScreen.qml
+        src/ui/ProjectProperties.qml
         src/ui/components/ProjectBin.qml
         src/ui/components/PropertiesPanel.qml
         src/ui/components/Toolbar.qml
@@ -148,6 +159,12 @@ target_link_libraries(appmokm_effector
     PRIVATE ThorVG::ThorVG
     PRIVATE ${FFMPEG_LIBRARIES}
 )
+
+if(TARGET CLAP)
+    target_link_libraries(appmokm_effector PRIVATE CLAP)
+    target_compile_definitions(appmokm_effector PRIVATE MOKM_ENABLE_CLAP=1)
+endif()
+
 
 # if(MOKM_ENABLE_NODES)
 #     file(GLOB_RECURSE NODE_SOURCES "src/nodes/*.cpp" "src/nodes/*.h")

@@ -2,6 +2,33 @@
 
 ## Phase 1 (Core Foundation MVP) — DONE
 
+## Phase 2 (Media & Startup) — DONE
+
+### Session 7 — ColorWheelItem, AppSettings, StartupConfig, ProjectProperties, CLAP/OpenFX
+
+#### Color Grading
+- **ColorWheelItem**: Hand-rolled QQuickPaintedItem (360 hue arcs, SV barycentric triangle) replacing Qt-Color-Widgets placeholder
+- **ColorGradingEditor.qml**: Wired ColorWheelItem to liftColor/gammaColor/gainColor (QColor Q_PROPERTYs on Layer)
+
+#### Preferences & Startup Overhaul
+- **AppSettings singleton** (`src/core/AppSettings.h/.cpp`): QSettings INI backed, 20+ settings across 6 categories (General/Project/Editing/Audio/Rendering/System)
+- **StartupConfig** (`src/core/StartupConfig.h/.cpp`): Context property for new/open project config; manages recent projects in QSettings (max 8)
+- **ProjectProperties.qml (rewrite)**: App entry point. Left: Recent Projects list + Open Other. Right: Create New form (name, location, resolution/fps/duration/color space presets, GPU/auto-save/proxy toggles). Loads Main.qml via Qt.createComponent
+- **PreferencesDialog.qml (rewrite)**: 680×440, 6-panel left-nav layout bound to AppSettings. Footer: Reset All / Cancel / OK
+- **Main.qml**: Project → context property (no inline). Removed demo Rectangle 1 auto-creation. Component.onCompleted reads _startupConfig. FPS display dynamic from composition.frameRate
+
+#### Critical Bugfixes
+- **VideoLayer::clone()**: Now calls setSource(m_source) so cloned layer has valid format context
+- **Viewport clip-relative frame**: renderVideoLayer passes m_currentFrame - layer->startFrame() to frameAt()
+- **createStripFromAsset auto-duration**: -1 → auto-detect from VideoLayer.frameCount() / AudioLayer.frameCount(); fallback 90
+- **AudioLayer frameCount**: Q_PROPERTY + WAV header parser (channels/sampleRate/bitsPerSample)
+
+#### CLAP + OpenFX Infrastructure
+- **CLAP**: git submodule at third_parties/clap-main (free-audio/clap). CMake INTERFACE target (headers), define MOKM_ENABLE_CLAP, linked to app
+- **OpenFX**: git submodule at third_parties/openfx-main (ASWF/OpenFX). Auto-detected → forces MOKM_ENABLE_INTEROP ON. OfxHost + OfxSupport static libs built and linked. OpenTimelineIO also auto-built
+- **ProjectBin binding loop fix**: Renamed local property `project` → `projectModel` to avoid shadowing the context property `project`. Was causing "Cannot read property 'activeComposition' of null" + binding loop on startup
+- **Build**: Zero errors, zero warnings — app runs with no QML console errors
+
 ### Completed (this session)
 - **createShapeLayer naming bug**: Fixed array length (added "Ellipse") to match enum
 - **Delete layer**: Made `Composition::removeLayer` Q_INVOKABLE, wired Edit > Delete in TopBar + Main.qml

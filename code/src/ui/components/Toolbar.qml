@@ -73,7 +73,10 @@ Rectangle {
         }
 
         Text {
-            text: "30 fps"
+            text: {
+                var fps = root.timelineModel?.composition?.frameRate;
+                return (fps ? fps.toFixed(0) : "30") + " fps";
+            }
             color: Theme.mutedForeground
             font.pixelSize: 10
         }

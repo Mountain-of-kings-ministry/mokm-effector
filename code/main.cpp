@@ -20,6 +20,8 @@
 #include "src/core/Track.h"
 #include "src/core/Strip.h"
 #include "src/core/TimelineLayer.h"
+#include "src/core/StartupConfig.h"
+#include "src/core/AppSettings.h"
 
 #ifdef MOKM_ENABLE_NODES
 #include "src/nodes/NodeGraph.h"
@@ -29,8 +31,6 @@
 
 int main(int argc, char *argv[])
 {
-
-
     QApplication app(argc, argv);
     app.setApplicationName("MOKM Effector");
     app.setOrganizationName("MOKM");
@@ -56,6 +56,11 @@ int main(int argc, char *argv[])
     qmlRegisterType<Strip>("mokm_effector", 1, 0, "Strip");
     qmlRegisterType<TimelineLayer>("mokm_effector", 1, 0, "TimelineLayer");
 
+    qmlRegisterSingletonType<AppSettings>("mokm_effector", 1, 0, "AppSettings",
+        [](QQmlEngine *, QJSEngine *) -> QObject * {
+            return new AppSettings();
+        });
+
 #ifdef MOKM_ENABLE_NODES
     qmlRegisterType<NodeGraph>("mokm_effector", 1, 0, "NodeGraph");
     qmlRegisterType<NodeStrip>("mokm_effector", 1, 0, "NodeStrip");
@@ -63,6 +68,14 @@ int main(int argc, char *argv[])
 #endif
 
     QQmlApplicationEngine engine;
+
+    // Shared context properties
+    auto *startupConfig = new StartupConfig(&engine);
+    engine.rootContext()->setContextProperty("_startupConfig", startupConfig);
+
+    auto *project = new Project(&engine);
+    engine.rootContext()->setContextProperty("project", project);
+
     QObject::connect(
         &engine,
         &QQmlApplicationEngine::objectCreationFailed,
@@ -70,7 +83,7 @@ int main(int argc, char *argv[])
         []()
         { QCoreApplication::exit(-1); },
         Qt::QueuedConnection);
-    engine.loadFromModule("mokm_effector", "SplashScreen");
+    engine.loadFromModule("mokm_effector", "ProjectProperties");
 
     return QCoreApplication::exec();
 }

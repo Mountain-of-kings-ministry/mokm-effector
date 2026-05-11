@@ -238,7 +238,12 @@ Layer* VideoLayer::clone(QObject *parent) const
     l->setScaleY(scaleY());
     l->setStartFrame(startFrame());
     l->setDuration(duration());
-    l->m_source = m_source;
+    l->setSource(m_source);
+    l->m_videoWidth = m_videoWidth;
+    l->m_videoHeight = m_videoHeight;
+    l->m_frameRate = m_frameRate;
+    l->m_frameCount = m_frameCount;
+    l->m_currentImage = m_currentImage;
     return l;
 }
 

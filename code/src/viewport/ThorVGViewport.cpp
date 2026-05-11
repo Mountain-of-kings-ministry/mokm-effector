@@ -355,7 +355,8 @@ void ThorVGViewport::renderImageLayer(QPainter *painter, ImageLayer *layer)
 void ThorVGViewport::renderVideoLayer(QPainter *painter, VideoLayer *layer)
 {
     if (!layer) return;
-    QImage img = layer->frameAt(m_currentFrame);
+    int clipFrame = m_currentFrame - layer->startFrame();
+    QImage img = layer->frameAt(clipFrame);
     if (img.isNull()) return;
     painter->drawImage(-img.width() / 2.0, -img.height() / 2.0, img);
 }
