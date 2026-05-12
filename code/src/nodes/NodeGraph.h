@@ -63,7 +63,7 @@ private:
     std::unique_ptr<QtNodes::DataFlowGraphModel> m_graphModel;
     std::unique_ptr<QtNodes::DataFlowGraphicsScene> m_scene;
 
-    unsigned int m_outputNodeId = 0;
+    int m_outputNodeId = -1;
     bool m_hasAutoOutput = false;
     int m_selectedNodeId = -1;
 };

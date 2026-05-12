@@ -41,8 +41,6 @@ signals:
     void nodeGraphChanged();
     void scaleChanged();
     void interactiveChanged();
-    void canvasRightClicked(qreal sceneX, qreal sceneY, qreal screenX, qreal screenY);
-    void nodeRightClicked(int nodeId, qreal screenX, qreal screenY);
 
 protected:
     void geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry) override;
@@ -57,12 +55,9 @@ protected:
 
 private:
     void ensureView();
-    void mapEvent(QMouseEvent *event, QMouseEvent &mapped);
 
     NodeGraph *m_nodeGraph = nullptr;
     QtNodes::GraphicsView *m_view = nullptr;
     qreal m_scale = 1.0;
     bool m_interactive = true;
-    bool m_isDragging = false;
-    QPointF m_lastMousePos;
 };

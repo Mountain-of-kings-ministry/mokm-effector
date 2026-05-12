@@ -4,25 +4,9 @@
 #include <QtNodes/GraphicsView>
 #include <QtNodes/DataFlowGraphicsScene>
 #include <QtNodes/BasicGraphicsScene>
-#include <QtNodes/NodeGraphicsObject>
 #include <QPainter>
 #include <QDebug>
 #include <QContextMenuEvent>
-#include <QGraphicsProxyWidget>
-
-// Helper: walk parent chain to find a NodeGraphicsObject
-static QtNodes::NodeGraphicsObject *findNodeItem(QGraphicsItem *item)
-{
-    if (!item) return nullptr;
-    auto *node = qgraphicsitem_cast<QtNodes::NodeGraphicsObject *>(item);
-    if (node) return node;
-    for (QGraphicsItem *p = item->parentItem(); p; p = p->parentItem())
-    {
-        node = qgraphicsitem_cast<QtNodes::NodeGraphicsObject *>(p);
-        if (node) return node;
-    }
-    return nullptr;
-}
 
 NodeGraphView::NodeGraphView(QQuickItem *parent)
     : QQuickPaintedItem(parent)
@@ -97,7 +81,6 @@ void NodeGraphView::ensureView()
 
     m_view = new QtNodes::GraphicsView();
     m_view->setScene(m_nodeGraph->graphicsScene());
-    m_view->setDragMode(QGraphicsView::NoDrag);
     m_view->setScaleRange(0.1, 10.0);
     m_view->setupScale(m_scale);
     m_view->centerScene();
@@ -161,66 +144,29 @@ void NodeGraphView::fitContent()
 }
 
 // ── Mouse event forwarding ──
-
-static const char *itemTypeName(QGraphicsItem *item)
-{
-    if (!item) return "nullptr";
-    if (qgraphicsitem_cast<QtNodes::NodeGraphicsObject *>(item)) return "NodeGraphicsObject";
-    if (item->type() == QGraphicsProxyWidget::Type) return "QGraphicsProxyWidget(embedded-widget)";
-    return "other";
-}
+// All events are forwarded to the hidden QtNodes::GraphicsView.
+// The GraphicsView's custom mouseMoveEvent handles the distinction between
+// node dragging (mouseGrabberItem() != nullptr) and canvas panning
+// (mouseGrabberItem() == nullptr → scene rect translation).
+// Right-click is forwarded as a context menu event to trigger QtNodes'
+// native createSceneMenu() / createStdMenu().
 
 void NodeGraphView::mousePressEvent(QMouseEvent *event)
 {
-    if (event->button() == Qt::RightButton)
-    {
-        if (m_view)
-        {
-            QPointF scenePos = m_view->mapToScene(event->position().toPoint());
-            QPointF winPos = event->scenePosition();
-            auto item = m_view->scene()->itemAt(scenePos, m_view->transform());
-
-            if (!item)
-            {
-                qDebug() << "[NODE] Right-click on EMPTY canvas — showing Add Node menu at winPos=" << winPos;
-                emit canvasRightClicked(scenePos.x(), scenePos.y(), winPos.x(), winPos.y());
-                return;
-            }
-
-            auto *nodeItem = findNodeItem(item);
-            if (nodeItem)
-            {
-                QtNodes::NodeId nid = nodeItem->nodeId();
-                qDebug() << "[NODE] Right-click on NODE id=" << nid << "(" << itemTypeName(item) << ") — showing node context menu at winPos=" << winPos;
-                emit nodeRightClicked(static_cast<int>(nid), winPos.x(), winPos.y());
-                return;
-            }
-
-            qDebug() << "[NODE] Right-click on non-node item" << item << " — showing canvas menu";
-            emit canvasRightClicked(scenePos.x(), scenePos.y(), winPos.x(), winPos.y());
-        }
-        return;
-    }
-
     if (m_interactive && m_view)
     {
-        QPointF scenePos = m_view->mapToScene(event->position().toPoint());
-        auto item = m_view->scene()->itemAt(scenePos, m_view->transform());
-
-        auto *nodeItem = findNodeItem(item);
-
-        if (nodeItem)
-            qDebug() << "[NODE] Left-click on NODE id=" << static_cast<int>(nodeItem->nodeId()) << " item=" << itemTypeName(item);
-        else
-            qDebug() << "[NODE] Left-click on EMPTY canvas — will pan on drag";
-
-        QPoint vpLocal = m_view->viewport()->mapFromGlobal(event->globalPosition().toPoint());
-        QPointF localF(vpLocal.x(), vpLocal.y());
-        QPointF windowF = event->globalPosition();
-        QMouseEvent viewEvent(event->type(), localF, windowF, event->globalPosition(),
+        QMouseEvent viewEvent(event->type(), event->position(), event->globalPosition(),
                               event->button(), event->buttons(), event->modifiers());
         QCoreApplication::sendEvent(m_view->viewport(), &viewEvent);
-        m_lastMousePos = event->position();
+
+        if (event->button() == Qt::RightButton)
+        {
+            QContextMenuEvent ctxEvent(QContextMenuEvent::Mouse,
+                                       event->position().toPoint(),
+                                       event->globalPosition().toPoint(),
+                                       event->modifiers());
+            QCoreApplication::sendEvent(m_view->viewport(), &ctxEvent);
+        }
     }
     update();
 }
@@ -229,29 +175,9 @@ void NodeGraphView::mouseMoveEvent(QMouseEvent *event)
 {
     if (m_interactive && m_view)
     {
-        bool wasDragging = m_isDragging;
-        m_isDragging = true;
-
-        QPointF scenePos = m_view->mapToScene(event->position().toPoint());
-        QPointF delta = event->position() - m_lastMousePos;
-
-        if (!wasDragging && delta.manhattanLength() > 4)
-        {
-            auto item = m_view->scene()->itemAt(scenePos, m_view->transform());
-            auto *nodeItem = findNodeItem(item);
-            if (nodeItem)
-                qDebug() << "[NODE] DRAG START — moving NODE id=" << static_cast<int>(nodeItem->nodeId());
-            else
-                qDebug() << "[NODE] DRAG START — panning canvas";
-        }
-
-        QPoint vpLocal = m_view->viewport()->mapFromGlobal(event->globalPosition().toPoint());
-        QPointF localF(vpLocal.x(), vpLocal.y());
-        QPointF windowF = event->globalPosition();
-        QMouseEvent viewEvent(event->type(), localF, windowF, event->globalPosition(),
+        QMouseEvent viewEvent(event->type(), event->position(), event->globalPosition(),
                               event->button(), event->buttons(), event->modifiers());
         QCoreApplication::sendEvent(m_view->viewport(), &viewEvent);
-        m_lastMousePos = event->position();
     }
     update();
 }
@@ -260,14 +186,7 @@ void NodeGraphView::mouseReleaseEvent(QMouseEvent *event)
 {
     if (m_interactive && m_view)
     {
-        if (m_isDragging)
-            qDebug() << "[NODE] DRAG END";
-        m_isDragging = false;
-
-        QPoint vpLocal = m_view->viewport()->mapFromGlobal(event->globalPosition().toPoint());
-        QPointF localF(vpLocal.x(), vpLocal.y());
-        QPointF windowF = event->globalPosition();
-        QMouseEvent viewEvent(event->type(), localF, windowF, event->globalPosition(),
+        QMouseEvent viewEvent(event->type(), event->position(), event->globalPosition(),
                               event->button(), event->buttons(), event->modifiers());
         QCoreApplication::sendEvent(m_view->viewport(), &viewEvent);
     }
@@ -320,35 +239,7 @@ void NodeGraphView::keyReleaseEvent(QKeyEvent *event)
     }
 }
 
-void NodeGraphView::hoverMoveEvent(QHoverEvent *event)
+void NodeGraphView::hoverMoveEvent(QHoverEvent *)
 {
-    if (m_interactive && m_view)
-    {
-        QPointF scenePos = m_view->mapToScene(event->position().toPoint());
-        auto item = m_view->scene()->itemAt(scenePos, m_view->transform());
-        auto *nodeItem = findNodeItem(item);
-
-        // Check if we're near a connection port
-        if (nodeItem)
-        {
-            QRectF nodeRect = nodeItem->boundingRect();
-            // Ports are typically at the left (input) and right (output) edges
-            qreal portThreshold = 16.0;
-            QPointF localPos = nodeItem->mapFromScene(scenePos);
-            bool nearLeftEdge = localPos.x() < portThreshold;
-            bool nearRightEdge = localPos.x() > nodeRect.width() - portThreshold;
-            bool nearPort = nearLeftEdge || nearRightEdge;
-
-            static bool prevNearPort = false;
-            if (nearPort && !prevNearPort)
-                qDebug() << "[NODE] HOVER — near connection PORT on node id=" << static_cast<int>(nodeItem->nodeId()) << (nearLeftEdge ? "INPUT" : "OUTPUT");
-            prevNearPort = nearPort;
-        }
-
-        if (item)
-            m_view->viewport()->setCursor(item->cursor());
-        else
-            m_view->viewport()->setCursor(Qt::ArrowCursor);
-    }
     update();
 }

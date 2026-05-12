@@ -29,7 +29,6 @@
 #include <QGraphicsScene>
 #include <QSize>
 #include <QPointF>
-#include <QTimer>
 #include <QDebug>
 
 NodeGraph::NodeGraph(QObject *parent)
@@ -89,13 +88,11 @@ NodeGraph::NodeGraph(QObject *parent)
     })");
 
     // Auto-create a non-removable Output node
-    m_outputNodeId = m_graphModel->addNode("Output");
+    QtNodes::NodeId outId = m_graphModel->addNode("Output");
+    m_outputNodeId = static_cast<int>(outId);
     m_hasAutoOutput = true;
-    // Make the auto-created output node compact so it doesn't dominate the canvas
-    QSize outputSize(120, 32);
-    m_graphModel->setNodeData(static_cast<QtNodes::NodeId>(m_outputNodeId), QtNodes::NodeRole::Size, outputSize);
-    // Place the output node at a visible canvas location so it's not hidden offscreen
-    m_graphModel->setNodeData(static_cast<QtNodes::NodeId>(m_outputNodeId), QtNodes::NodeRole::Position, QPointF(200, 200));
+    // Place the output node at a visible canvas location
+    m_graphModel->setNodeData(outId, QtNodes::NodeRole::Position, QPointF(200, 200));
     // Ensure the output node has a clear header style
     QVariantMap outStyle;
     QVariantMap outInner;
@@ -103,10 +100,7 @@ NodeGraph::NodeGraph(QObject *parent)
     outInner["GradientColor1"] = QVariant::fromValue(QList<int>({30, 30, 40}));
     outInner["FontColor"] = QString("white");
     outStyle["NodeStyle"] = outInner;
-    m_graphModel->setNodeData(static_cast<QtNodes::NodeId>(m_outputNodeId), QtNodes::NodeRole::Style, outStyle);
-    // Re-apply the compact size after construction (some delegates may override on creation)
-    QTimer::singleShot(150, this, [this]()
-                       { ensureOutputCompact(); });
+    m_graphModel->setNodeData(outId, QtNodes::NodeRole::Style, outStyle);
 }
 
 NodeGraph::~NodeGraph() = default;
@@ -235,24 +229,18 @@ int NodeGraph::addNode(const QString &type)
 int NodeGraph::addNodeAt(const QString &type, qreal x, qreal y)
 {
     int nodeId = addNode(type);
-
-    // Set requested scene position for the newly created node
-    m_graphModel->setNodeData(static_cast<QtNodes::NodeId>(nodeId), QtNodes::NodeRole::Position, QPointF(x, y));
-
-    emit graphChanged();
+    m_graphModel->setNodeData(static_cast<QtNodes::NodeId>(nodeId),
+                              QtNodes::NodeRole::Position, QPointF(x, y));
     return nodeId;
 }
 
 void NodeGraph::ensureOutputCompact()
 {
-    if (!m_hasAutoOutput)
+    if (!m_hasAutoOutput || !m_graphModel || m_outputNodeId < 0)
         return;
-    if (m_outputNodeId >= 0 && m_graphModel)
-    {
-        QSize outputSize(120, 32);
-        m_graphModel->setNodeData(static_cast<QtNodes::NodeId>(m_outputNodeId), QtNodes::NodeRole::Size, outputSize);
-        qDebug() << "ensureOutputCompact: enforced size on output node" << m_outputNodeId;
-    }
+    QSize outputSize(120, 32);
+    m_graphModel->setNodeData(static_cast<QtNodes::NodeId>(m_outputNodeId),
+                              QtNodes::NodeRole::Size, outputSize);
 }
 
 int NodeGraph::addNodeAutoConnectAt(const QString &type, qreal x, qreal y)
@@ -273,7 +261,7 @@ int NodeGraph::addNodeAutoConnectAt(const QString &type, qreal x, qreal y)
 
 void NodeGraph::removeNode(int nodeId)
 {
-    if (m_hasAutoOutput && static_cast<unsigned int>(nodeId) == m_outputNodeId)
+    if (m_hasAutoOutput && nodeId == m_outputNodeId)
         return;
     m_graphModel->deleteNode(static_cast<QtNodes::NodeId>(nodeId));
     emit graphChanged();
@@ -351,13 +339,7 @@ QStringList NodeGraph::nodeIds() const
 
 int NodeGraph::outputNodeId() const
 {
-    for (auto id : m_graphModel->allNodeIds())
-    {
-        QString caption = m_graphModel->nodeData(id, QtNodes::NodeRole::Caption).toString();
-        if (caption == "Output")
-            return static_cast<int>(id);
-    }
-    return -1;
+    return m_outputNodeId;
 }
 
 int NodeGraph::addNodeAutoConnect(const QString &type)
