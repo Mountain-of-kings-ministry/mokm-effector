@@ -160,7 +160,7 @@ qt_add_qml_module(appmokm_effector
         src/ui/SplashScreen.qml
         src/ui/ProjectProperties.qml
         src/ui/components/ProjectBin.qml
-        src/ui/components/PropertiesPanel.qml
+        src/ui/components/EffectorPropertiesPanel.qml
         src/ui/components/Toolbar.qml
         src/ui/components/TimeRuler.qml
         src/ui/components/Timeline.qml

@@ -118,7 +118,7 @@ Window {
                     }
                 }
 
-                PropertiesPanel {
+                EffectorPropertiesPanel {
                     SplitView.preferredWidth: 240
                     selectedObject: mainWindow.selectedObject
                     timelineModel: globalTimelineModel
