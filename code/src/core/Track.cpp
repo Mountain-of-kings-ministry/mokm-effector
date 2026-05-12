@@ -1,4 +1,5 @@
 #include "Track.h"
+#include "EffectChain.h"
 #include "Strip.h"
 #include "Layer.h"
 #include "ShapeLayer.h"
@@ -16,6 +17,7 @@ Track::Track(QObject *parent)
     : QObject(parent)
     , m_name("Track 1")
 {
+    m_effectChain = new EffectChain(this);
 }
 
 void Track::setTrackType(int type)

@@ -1,1 +1,44 @@
 V=Select, M=Move, T=Cycle trim, B=Blade, S=Toggle snap, Esc=Select, Ctrl+S=Split, Del=Delete, Shift+Del=Ripple Delete, Ctrl+D=Duplicate, Ctrl+C/V/X=Copy/Paste/Cut.
+
+
+
+let start rebuilding. the @code/src/ui/components/AudioEditor.qml i need you to rebuild the ui to
+   folow this specifications.
+
+   @audio_automation.md and intigrate it with the audio plugin manager
+   @code/src/core/AudioPluginManager.h the system is already working, your work here is to build the ui
+   fully and intigrate. you may need to see @code/main.cpp and @code/src/ui/Main.qml @code/CMakeLists.txt
+
+   make the ui clean and similar to other components so it dose not look strang. use
+   @code/src/ui/Theme.qml coloe style as other did. and dont forget to include the
+   @code/src/ui/components/Timeline.qml to study it and sync it with the audio work station so the system
+   stays consistent accross sections.
+
+   then you link the @third_parties/Qt-Node-editor/NodeEditor/  library properly it giving error in
+   @code/main.cpp make your plan so i can go through it a verify them.
+   @code/src/nodes/ contains some custom nodes for the project linkthe properly wth @code/main.cpp  you
+   can see examples here for the node editor
+
+
+   ╭─░▒▓ ~/Doc/proj/s/MOKM effector/third_parties/Qt-Node-editor  on main ▓▒░·····░▒▓ ✔  at 03:51:09 PM
+   ▓▒░─╮
+   ╰─ ls
+   ─╯
+   build  CMakeLists.txt  CMakePresets.json  documentation  examples  image.png  NodeEditor  README.md
+   tests
+   ╭─░▒▓ ~/Doc/proj/s/MOKM effector/third_parties/Qt-Node-editor  on main ▓▒░·····░▒▓ ✔  at 03:51:11 PM
+   ▓▒░─╮
+   ╰─ cd examples
+   ─╯
+   ╭─░▒▓ ~/Doc/proj/s/MOKM effector/t/Qt-Node-editor/examples  on main ▓▒░········░▒▓ ✔  at 03:51:16 PM
+   ▓▒░─╮
+   ╰─ ls
+   ─╯
+   Demo  electric-demo  key-press  led-matrix  script-demo  time-display
+   ╭─░▒▓ ~/Doc/proj/s/MOKM effector/t/Qt-Node-editor/examples  on main ▓▒░········░▒▓ ✔  at 03:51:18 PM
+   ▓▒░─╮
+   ╰─ pwd
+   ─╯
+     ─╯
+
+  i have done everything necessary for @code/CMakeLists.txt to work so dont touch it, make the plan

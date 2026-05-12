@@ -1,6 +1,8 @@
 #pragma once
 
 #include "NodeEditor/BaseNode.h"
+#include "NodeEditor/GraphModel.h"
+#include <QColor>
 
 namespace NodeEditor {
 
@@ -139,5 +141,34 @@ public:
     QString nodeSubCategory() const override { return "Blend"; }
     QString displayColor() const override { return "#FF9F43"; }
 };
+
+// ── Registration ──
+inline void registerMOKMNodeTypes(GraphModel *model)
+{
+    if (!model) return;
+
+    model->registerCategory({"MOKM", "MOKM", QColor("#636E72")});
+
+    auto registerMOKM = [&](const QString &type, auto *instance) {
+        using NodeClass = std::decay_t<decltype(*instance)>;
+        BaseNode::registerType(type, []() { return new NodeClass(); });
+
+        NodeTypeInfo info;
+        for (auto &p : instance->inputSpec())
+            info.inputs[p.name] = p;
+        for (auto &p : instance->outputSpec())
+            info.outputs[p.name] = p;
+        info.displayColor = instance->displayColor();
+        info.categoryId = instance->nodeCategory();
+        info.subCategory = instance->nodeSubCategory();
+        info.nodeName = instance->nodeName();
+        model->registerNodeType(type, info);
+    };
+
+    registerMOKM("mokm/input", new MOKMInputNode());
+    registerMOKM("mokm/output", new MOKMOutputNode());
+    registerMOKM("mokm/transform", new MOKMTransformNode());
+    registerMOKM("mokm/blend", new MOKMBlendNode());
+}
 
 } // namespace NodeEditor

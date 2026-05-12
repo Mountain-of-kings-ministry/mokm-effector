@@ -4,8 +4,9 @@
 #include <QObject>
 #include <QString>
 
+#include "Track.h"
+
 class Layer;
-class Track;
 class TimelineLayer;
 
 class Strip : public QObject
@@ -15,6 +16,7 @@ class Strip : public QObject
     Q_PROPERTY(int startFrame READ startFrame WRITE setStartFrame NOTIFY startFrameChanged)
     Q_PROPERTY(int duration READ duration WRITE setDuration NOTIFY durationChanged)
     Q_PROPERTY(Layer* element READ element WRITE setElement NOTIFY elementChanged)
+    Q_PROPERTY(Track* track READ track CONSTANT)
     Q_PROPERTY(int linkGroupId READ linkGroupId WRITE setLinkGroupId NOTIFY linkGroupIdChanged)
 public:
     explicit Strip(QObject *parent = nullptr);

@@ -28,6 +28,8 @@
 #include "src/core/OFXPluginManager.h"
 #include "src/core/OFXPlugin.h"
 #include "src/core/AudioPluginManager.h"
+#include "src/core/EffectInstance.h"
+#include "src/core/EffectChain.h"
 
 #ifdef MOKM_ENABLE_CLAP
 #include "src/core/CLAPPluginManager.h"
@@ -71,6 +73,8 @@ int main(int argc, char *argv[])
     qmlRegisterType<Track>("mokm_effector", 1, 0, "Track");
     qmlRegisterType<Strip>("mokm_effector", 1, 0, "Strip");
     qmlRegisterType<TimelineLayer>("mokm_effector", 1, 0, "TimelineLayer");
+    qmlRegisterType<EffectInstance>("mokm_effector", 1, 0, "EffectInstance");
+    qmlRegisterType<EffectChain>("mokm_effector", 1, 0, "EffectChain");
 
     qmlRegisterType<OFXPlugin>("mokm_effector", 1, 0, "OFXPlugin");
     qmlRegisterType<OFXPluginManager>("mokm_effector", 1, 0, "OFXPluginManager");

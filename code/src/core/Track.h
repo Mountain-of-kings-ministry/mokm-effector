@@ -6,6 +6,8 @@
 #include <QVector>
 #include <QQmlListProperty>
 
+#include "EffectChain.h"
+
 class Layer;
 class Strip;
 class TimelineLayer;
@@ -31,6 +33,7 @@ class Track : public QObject
     Q_PROPERTY(int priority READ priority WRITE setPriority NOTIFY priorityChanged)
     Q_PROPERTY(bool looping READ looping WRITE setLooping NOTIFY loopingChanged)
     Q_PROPERTY(int loopCount READ loopCount WRITE setLoopCount NOTIFY loopCountChanged)
+    Q_PROPERTY(EffectChain* effectChain READ effectChain CONSTANT)
 public:
     enum TrackType { Video = 0, Audio, Image };
     Q_ENUM(TrackType)
@@ -88,6 +91,8 @@ public:
     Q_INVOKABLE QString trackTypeName(int type) const;
     static QString trackTypeNameStatic(int type);
 
+    EffectChain* effectChain() const { return m_effectChain; }
+
 signals:
     void nameChanged();
     void stripsChanged();
@@ -119,6 +124,7 @@ private:
     int m_priority = 0;
     bool m_looping = false;
     int m_loopCount = 1;
+    EffectChain *m_effectChain = nullptr;
 };
 
 #endif

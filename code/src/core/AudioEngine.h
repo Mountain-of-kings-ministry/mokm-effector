@@ -18,6 +18,7 @@ class AudioEngine : public QObject
     Q_OBJECT
     Q_PROPERTY(TimelineModel* timelineModel READ timelineModel WRITE setTimelineModel NOTIFY timelineModelChanged)
     Q_PROPERTY(qreal masterVolume READ masterVolume WRITE setMasterVolume NOTIFY masterVolumeChanged)
+    Q_PROPERTY(qreal masterPan READ masterPan WRITE setMasterPan NOTIFY masterPanChanged)
     Q_PROPERTY(bool playing READ playing NOTIFY playingChanged)
 public:
     explicit AudioEngine(QObject *parent = nullptr);
@@ -28,6 +29,9 @@ public:
 
     qreal masterVolume() const { return m_masterVolume; }
     void setMasterVolume(qreal vol);
+
+    qreal masterPan() const { return m_masterPan; }
+    void setMasterPan(qreal pan);
 
     bool playing() const { return m_playing; }
 
@@ -40,6 +44,7 @@ public:
 signals:
     void timelineModelChanged();
     void masterVolumeChanged();
+    void masterPanChanged();
     void playingChanged();
 
 private slots:
@@ -53,12 +58,14 @@ private:
 
 private:
     void syncToTimeline();
+    void applyTrackVolume(int frame);
     AudioLayer* findAudioLayerAtFrame(int frame) const;
 
     TimelineModel *m_timeline = nullptr;
     QMediaPlayer *m_player = nullptr;
     QAudioOutput *m_audioOutput = nullptr;
     qreal m_masterVolume = 1.0;
+    qreal m_masterPan = 0.0;
     bool m_playing = false;
     bool m_seeking = false;
 };

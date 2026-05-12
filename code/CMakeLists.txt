@@ -66,12 +66,18 @@ add_library(MOKM_JUCE STATIC)
 target_include_directories(MOKM_JUCE PRIVATE
     ${JUCE_MODULES_PATH}
     ${VST3_SDK_ROOT}
+    ${VST3_SDK_ROOT}/public.sdk/source/vst
+    ${VST3_SDK_ROOT}/pluginterfaces/vst
+    ${VST3_SDK_ROOT}/pluginterfaces/base
+    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Headers
     ${FREETYPE_INCLUDE_DIRS}
 )
 
+
+
 target_compile_definitions(MOKM_JUCE PUBLIC
     JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1
-    JUCE_PLUGINHOST_VST3=1
+    JUCE_PLUGINHOST_VST3=0
     JUCE_STANDALONE_APPLICATION=1
     JUCE_USE_CURL=0
     JUCE_WEB_BROWSER=0
@@ -87,9 +93,34 @@ target_sources(MOKM_JUCE PRIVATE
     ${JUCE_MODULES_PATH}/juce_gui_basics/juce_gui_basics.cpp
     ${JUCE_MODULES_PATH}/juce_audio_basics/juce_audio_basics.cpp
     ${JUCE_MODULES_PATH}/juce_audio_processors/juce_audio_processors.cpp
+    ${JUCE_MODULES_PATH}/juce_audio_processors_headless/juce_audio_processors_headless.cpp
+    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/BidiChain.c
+    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/BidiTypeLookup.c
+    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/BracketQueue.c
+    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/GeneralCategoryLookup.c
+    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/IsolatingRun.c
+    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/LevelRun.c
+    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/Object.c
+    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/PairingLookup.c
+    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/RunQueue.c
+    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/SBAlgorithm.c
+    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/SBBase.c
+    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/SBCodepoint.c
+    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/SBCodepointSequence.c
+    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/SBLine.c
+    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/SBLog.c
+    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/SBMirrorLocator.c
+    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/SBParagraph.c
+    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/SBScriptLocator.c
+    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/ScriptLookup.c
+    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/ScriptStack.c
+    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/StatusStack.c
+    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/SheenBidi.c
 )
 
-target_link_libraries(MOKM_JUCE PRIVATE ${FREETYPE_LIBRARIES})
+pkg_check_modules(FONTCONFIG REQUIRED fontconfig)
+pkg_check_modules(HARFBUZZ REQUIRED harfbuzz)
+target_link_libraries(MOKM_JUCE PRIVATE ${FREETYPE_LIBRARIES} ${FONTCONFIG_LIBRARIES} ${HARFBUZZ_LIBRARIES} xcb)
 
 # === Important: Link and include for main target ===
 target_link_libraries(appmokm_effector PRIVATE MOKM_JUCE)
@@ -219,6 +250,9 @@ qt_add_qml_module(appmokm_effector
         src/ui/components/AudioEditor.qml
         src/ui/components/ColorGradingEditor.qml
         src/ui/components/PreferencesDialog.qml
+        src/ui/components/FaderSection.qml
+        src/ui/components/PluginRack.qml
+        src/ui/components/PluginManagerPopup.qml
     SOURCES ${CORE_SOURCES}
 )
 

@@ -62,6 +62,15 @@ void AudioEngine::setMasterVolume(qreal vol)
     }
 }
 
+void AudioEngine::setMasterPan(qreal pan)
+{
+    pan = qBound(-1.0, pan, 1.0);
+    if (!qFuzzyCompare(m_masterPan, pan)) {
+        m_masterPan = pan;
+        emit masterPanChanged();
+    }
+}
+
 void AudioEngine::play()
 {
     m_playing = true;
@@ -195,6 +204,38 @@ void AudioEngine::syncToTimeline()
     m_player->setPosition(posMs);
     m_player->play();
     m_seeking = false;
+
+    // Apply track volume to audio output
+    applyTrackVolume(frame);
+}
+
+void AudioEngine::applyTrackVolume(int frame)
+{
+    if (!m_timeline || !m_timeline->composition())
+        return;
+
+    auto *comp = m_timeline->composition();
+    for (int li = 0; li < comp->layerCount(); li++) {
+        auto *tl = comp->layerAt(li);
+        if (!tl) continue;
+        for (int ti = 0; ti < tl->trackCount(); ti++) {
+            auto *tr = tl->trackAt(ti);
+            if (!tr || tr->trackType() != Track::Audio || tr->mute())
+                continue;
+            for (int si = 0; si < tr->stripCount(); si++) {
+                auto *st = tr->stripAt(si);
+                if (!st) continue;
+                int start = st->startFrame();
+                int end = start + st->duration();
+                if (frame >= start && frame < end) {
+                    qreal trackVol = tr->opacity(); // Track opacity doubles as volume control
+                    if (m_audioOutput)
+                        m_audioOutput->setVolume(m_masterVolume * trackVol);
+                    return;
+                }
+            }
+        }
+    }
 }
 
 AudioLayer* AudioEngine::findAudioLayerAtFrame(int frame) const

@@ -47,15 +47,10 @@ Window {
             onImportVideoRequested: importVideoDialog.open()
             onExportVideoRequested: exportDialog.open()
             onExportImageSequenceRequested: exportImageSequenceDialog.open()
-            onPreferencesRequested: prefsDialog.open()
-
-            onNewFileRequested: newProject()
-            onOpenFileRequested: openDialog.open()
-            onSaveFileRequested: saveProject()
-            onSaveAsRequested: saveAsDialog.open()
-            onUndoRequested: project.undo()
-            onRedoRequested: project.redo()
+        onPreferencesRequested: prefsDialog.open()
         }
+
+    property bool animateFaders: false
 
         SplitView {
             Layout.fillWidth: true
@@ -168,6 +163,10 @@ Window {
                         if (stackView.currentItem && typeof stackView.currentItem.duplicateSelected === 'function')
                             stackView.currentItem.duplicateSelected();
                     }
+
+                    onAnimateFadersToggled: function(enabled) {
+                        mainWindow.animateFaders = enabled;
+                    }
                 }
 
                 Rectangle {
@@ -233,6 +232,7 @@ Window {
                     AudioEditor {
                         timelineModel: globalTimelineModel
                         selectedObject: mainWindow.selectedObject
+                        animateFaders: mainWindow.animateFaders
                     }
                 }
 

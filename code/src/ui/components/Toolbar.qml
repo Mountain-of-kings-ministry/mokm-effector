@@ -14,6 +14,7 @@ Rectangle {
     readonly property var currentElement: selectedObject && selectedObject.element !== undefined ? selectedObject.element : selectedObject
     property string currentTool: "select"
     property bool snapEnabled: true
+    property bool animateFaders: false
 
     signal toolChanged(string tool)
     signal snapToggled(bool enabled)
@@ -21,6 +22,7 @@ Rectangle {
     signal deleteSelected()
     signal rippleDeleteSelected()
     signal duplicateSelected()
+    signal animateFadersToggled(bool enabled)
 
     RowLayout {
         anchors.fill: parent
@@ -150,6 +152,16 @@ Rectangle {
             onClicked: {
                 if (!root.timelineModel) return;
                 root.timelineModel.autoKeyframeEnabled = !root.timelineModel.autoKeyframeEnabled;
+            }
+        }
+
+        ToolIconButton {
+            source: "qrc:/icons/outline/equal.svg"
+            tooltip: "Animate Faders"
+            accented: root.animateFaders
+            onClicked: {
+                root.animateFaders = !root.animateFaders;
+                root.animateFadersToggled(root.animateFaders);
             }
         }
 

@@ -55,6 +55,9 @@ public:
     Q_INVOKABLE void removeKeyframe(QObject *obj, const QString &property, int frame);
     Q_INVOKABLE void setKeyframeEasing(QObject *obj, const QString &property, int frame, int easing);
     Q_INVOKABLE QVariant getValueAt(QObject *obj, const QString &property, int frame) const;
+
+    // Helper: adds a keyframe at currentFrame only if autoKeyframeEnabled is true
+    Q_INVOKABLE bool tryAutoKeyframe(QObject *obj, const QString &property, const QVariant &value);
     Q_INVOKABLE bool hasKeyframe(QObject *obj, const QString &property, int frame) const;
     Q_INVOKABLE QVector<int> keyframeFrames(QObject *obj, const QString &property) const;
     Q_INVOKABLE QVariantList getKeyframeData(QObject *obj, const QString &property) const;

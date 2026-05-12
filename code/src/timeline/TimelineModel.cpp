@@ -138,6 +138,14 @@ void TimelineModel::addKeyframe(QObject *obj, const QString &property, int frame
     emit keyframesChanged();
 }
 
+bool TimelineModel::tryAutoKeyframe(QObject *obj, const QString &property, const QVariant &value)
+{
+    if (!m_autoKeyframeEnabled || !obj)
+        return false;
+    addKeyframe(obj, property, m_currentFrame, value);
+    return true;
+}
+
 void TimelineModel::removeKeyframe(QObject *obj, const QString &property, int frame)
 {
     if (!obj) return;

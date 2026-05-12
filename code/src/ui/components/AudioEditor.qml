@@ -11,6 +11,7 @@ Rectangle {
     property var timelineModel: null
     property var selectedObject: null
     property real pixelPerFrame: 8
+    property bool animateFaders: false
 
     // ── Target resolution ──
     readonly property var _target: {
@@ -22,6 +23,18 @@ Rectangle {
         if (selectedObject.tracks !== undefined)
             return selectedObject; // TimelineLayer
         return selectedObject;
+    }
+
+    // Effect chain from selected track
+    readonly property var _effectChain: {
+        if (!selectedObject) return null;
+        if (selectedObject.element !== undefined && selectedObject.track)
+            return selectedObject.track.effectChain;
+        if (selectedObject.strips !== undefined && selectedObject.tracks === undefined)
+            return selectedObject.effectChain;
+        if (selectedObject.tracks !== undefined)
+            return selectedObject.tracks > 0 ? selectedObject.trackAt(0).effectChain : null;
+        return null;
     }
 
     readonly property var _comp: timelineModel ? timelineModel.composition : null
@@ -81,14 +94,8 @@ Rectangle {
                 }
 
                 Item { Layout.fillWidth: true }
-
-                Button {
-                    text: "Effects"
-                    flat: true
-                    onClicked: effectsPopup.open()
-                }
             }
-            
+
             Rectangle {
                 anchors.bottom: parent.bottom
                 width: parent.width; height: 1; color: Theme.border
@@ -125,7 +132,7 @@ Rectangle {
 
                         var step = Math.max(1, Math.floor(data.length / w));
 
-                        ctx.strokeStyle = "#4ade80"; 
+                        ctx.strokeStyle = "#4ade80";
                         ctx.lineWidth = 1.5;
                         ctx.beginPath();
 
@@ -146,7 +153,7 @@ Rectangle {
                         ctx.lineTo(w, center);
                         ctx.stroke();
                     }
-                    
+
                     Connections {
                         target: root
                         function on_WaveformDataChanged() { waveform.requestPaint(); }
@@ -160,156 +167,38 @@ Rectangle {
                 }
             }
 
-            // 2. Mixer / Faders Area
-            Rectangle {
+            // 2. Faders + Plugin Rack (SplitView)
+            SplitView {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 280
-                color: Theme.secondary
-                border.color: Theme.border
-                
-                RowLayout {
-                    anchors.fill: parent
-                    anchors.margins: 20
-                    spacing: 30
+                orientation: Qt.Horizontal
 
-                    MixerFader {
-                        label: "VOLUME"
-                        value: _target ? _target.volume : 0.8
-                        onValueChanged: if (_target) _target.volume = value
-                        color: "#60a5fa"
+                handle: Rectangle {
+                    implicitWidth: 2
+                    color: SplitHandle.pressed ? Theme.accent : (SplitHandle.hovered ? Theme.input : Theme.border)
+                }
+
+                FaderSection {
+                    SplitView.preferredWidth: 280
+                    SplitView.minimumWidth: 200
+                    timelineModel: root.timelineModel
+                    target: _target
+                    animateFaders: root.animateFaders
+                    onShowAutomationToggled: {}
+                    onAnimateFadersToggled: {
+                        root.animateFaders = !root.animateFaders;
                     }
+                }
 
-                    MixerFader {
-                        label: "PAN"
-                        from: -1.0; to: 1.0; value: _target ? _target.pan : 0
-                        onValueChanged: if (_target) _target.pan = value
-                        color: "#fb923c"
-                    }
-
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        spacing: 10
-
-                        Text { text: "Automation"; color: Theme.mutedForeground; font.pixelSize: 11; font.bold: true }
-                        
-                        Rectangle {
-                            Layout.fillWidth: true; Layout.fillHeight: true
-                            color: Theme.background; radius: 4; border.color: Theme.border
-                            
-                            ColumnLayout {
-                                anchors.fill: parent; anchors.margins: 10; spacing: 5
-                                AutomationRow { label: "Volume"; value: _target ? _target.volume : 0; color: "#60a5fa" }
-                                AutomationRow { label: "Pan"; value: _target ? _target.pan : 0; color: "#fb923c" }
-                                Item { Layout.fillHeight: true }
-                            }
-                        }
-                    }
+                PluginRack {
+                    id: pluginRack
+                    SplitView.fillWidth: true
+                    SplitView.minimumWidth: 200
+                    timelineModel: root.timelineModel
+                    effectChain: root._effectChain
                 }
             }
         }
-    }
-
-    component MixerFader: ColumnLayout {
-        property string label: "Fader"
-        property real from: 0.0
-        property real to: 1.0
-        property real value: 0.5
-        property color color: Theme.accent
-
-        spacing: 8
-        Layout.preferredWidth: 80
-
-        Text {
-            text: parent.label
-            color: Theme.mutedForeground
-            font.pixelSize: 10
-            font.bold: true
-            Layout.alignment: Qt.AlignHCenter
-        }
-
-        Rectangle {
-            Layout.preferredWidth: 40
-            Layout.fillHeight: true
-            Layout.alignment: Qt.AlignHCenter
-            color: Theme.background
-            radius: 4
-            border.color: Theme.border
-
-            Slider {
-                id: slider
-                anchors.fill: parent
-                anchors.margins: 4
-                orientation: Qt.Vertical
-                from: parent.parent.from
-                to: parent.parent.to
-                value: parent.parent.value
-                onMoved: parent.parent.value = value
-                
-                background: Rectangle {
-                    x: slider.leftPadding + slider.availableWidth / 2 - width / 2
-                    y: slider.topPadding
-                    implicitWidth: 4
-                    implicitHeight: 200
-                    width: implicitWidth
-                    height: slider.availableHeight
-                    radius: 2
-                    color: Theme.border
-                    
-                    Rectangle {
-                        width: parent.width
-                        height: (1.0 - slider.visualPosition) * parent.height
-                        anchors.bottom: parent.bottom
-                        color: parent.parent.parent.parent.color
-                        radius: 2
-                    }
-                }
-            }
-        }
-
-        RowLayout {
-            Layout.alignment: Qt.AlignHCenter
-            spacing: 4
-            Text {
-                text: slider.value.toFixed(2)
-                color: Theme.foreground
-                font.pixelSize: 11
-                font.family: "Monospace"
-            }
-            Button {
-                text: "\u25C6"
-                flat: true; width: 20; height: 20; font.pixelSize: 10
-                onClicked: console.log("Keyframe added for " + parent.parent.parent.label)
-            }
-        }
-    }
-
-    component AutomationRow: RowLayout {
-        property string label: ""
-        property real value: 0
-        property color color: "white"
-        spacing: 10
-        Text { text: label; color: Theme.foreground; font.pixelSize: 11; Layout.preferredWidth: 60 }
-        Rectangle {
-            Layout.fillWidth: true; height: 20; color: Theme.secondaryHover; radius: 2
-            Rectangle {
-                width: parent.width * (value - 0) / 1.0 
-                height: parent.height; color: parent.parent.color; opacity: 0.4; radius: 2
-            }
-            Canvas {
-                anchors.fill: parent
-                onPaint: {
-                    var ctx = getContext("2d");
-                    ctx.clearRect(0,0,width,height);
-                    ctx.strokeStyle = parent.parent.color;
-                    ctx.beginPath();
-                    ctx.moveTo(0, height/2);
-                    ctx.lineTo(width, height/2);
-                    ctx.stroke();
-                }
-            }
-        }
-        Text { text: value.toFixed(2); color: Theme.mutedForeground; font.pixelSize: 10; Layout.preferredWidth: 30 }
     }
 
     Popup {
@@ -383,19 +272,6 @@ Rectangle {
                     }
                 }
             }
-        }
-    }
-
-    Popup {
-        id: effectsPopup
-        anchors.centerIn: parent
-        width: 400; height: 500
-        modal: true
-        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
-        
-        Rectangle {
-            anchors.fill: parent; color: Theme.background; border.color: Theme.border
-            Text { anchors.centerIn: parent; text: "Effects Chain (TBD)"; color: Theme.foreground }
         }
     }
 }
