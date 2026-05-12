@@ -6094,8 +6094,8 @@
         <file>icons/filled/zoom-question.svg</file>
         <file>icons/filled/zoom-scan.svg</file>
     </qresource>
-    <qresource prefix="/new/prefix">
-        <file>icons/outline/aerial-lift.svg</file>
+    <qresource prefix="/">
+        <file>circular-numb.svg</file>
+        <file>slide-nub.svg</file>
     </qresource>
-    <qresource prefix="/new/prefix1"/>
 </RCC>

@@ -183,7 +183,7 @@ Rectangle {
     component ToolIconButton : Rectangle {
         implicitWidth: 28
         implicitHeight: 28
-        color: accented ? Qt.alpha(Theme.accent, 0.18) : (ma.containsMouse ? Theme.secondaryHover : "transparent")
+        color: accented ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.18) : (ma.containsMouse ? Theme.secondaryHover : "transparent")
         radius: 4
 
         property string source: ""

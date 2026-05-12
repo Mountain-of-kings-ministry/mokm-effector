@@ -184,9 +184,9 @@ Rectangle {
                     timelineModel: root.timelineModel
                     target: _target
                     animateFaders: root.animateFaders
-                    onShowAutomationToggled: {}
-                    onAnimateFadersToggled: {
-                        root.animateFaders = !root.animateFaders;
+                    onShowAutomationChanged: {}
+                    onAnimateFadersChanged: {
+                        root.animateFaders = animateFaders;
                     }
                 }
 

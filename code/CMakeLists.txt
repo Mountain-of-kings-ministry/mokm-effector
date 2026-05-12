@@ -35,7 +35,7 @@ set(CMAKE_AUTOMOC ON)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-find_package(Qt6 REQUIRED COMPONENTS Quick Widgets OpenGL Multimedia QuickShapes)
+find_package(Qt6 REQUIRED COMPONENTS Quick Widgets OpenGL Multimedia QuickShapes QuickEffects)
 
 qt_standard_project_setup(REQUIRES 6.10)
 
@@ -243,6 +243,7 @@ target_link_libraries(appmokm_effector
     PRIVATE Qt6::Widgets
     PRIVATE Qt6::OpenGL
     PRIVATE Qt6::Multimedia
+    PRIVATE Qt6::QuickEffects
     PRIVATE ThorVG::ThorVG
     PRIVATE ${FFMPEG_LIBRARIES}
 )

@@ -26,7 +26,7 @@ Rectangle {
             x: index * root.pixelPerFrame
             width: 1
             height: parent.height
-            color: index % 10 === 0 ? Theme.muted : Qt.alpha(Theme.muted, 0.3)
+            color: index % 10 === 0 ? Theme.muted : Qt.rgba(Theme.muted.r, Theme.muted.g, Theme.muted.b, 0.3)
             visible: true
 
             Text {

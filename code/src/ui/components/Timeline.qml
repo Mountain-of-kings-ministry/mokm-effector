@@ -421,7 +421,7 @@ Rectangle {
                             Rectangle {
                                 width: parent.width
                                 height: root.rowHeight
-                                color: root.selectedObject === modelData ? Qt.alpha(Theme.accent, 0.25) : Theme.secondaryHover
+                                color: root.selectedObject === modelData ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.25) : Theme.secondaryHover
 
                                 RowLayout {
                                     anchors.fill: parent
@@ -478,7 +478,7 @@ Rectangle {
                             id: trackRow
                             width: parent.width
                             height: 38
-                            color: root.selectedObject === modelData ? Qt.alpha(Theme.accent, 0.15) : (index % 2 === 0 ? Theme.secondary : Qt.alpha(Theme.secondaryHover, 0.3))
+                            color: root.selectedObject === modelData ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.15) : (index % 2 === 0 ? Theme.secondary : Qt.rgba(Theme.secondaryHover.r, Theme.secondaryHover.g, Theme.secondaryHover.b, 0.3))
 
                             property var trackObj: null
                             property var layerObj: layerColumn.modelData
@@ -586,7 +586,10 @@ Rectangle {
                                         width: Math.max(50, modelData.duration * root.pixelPerFrame)
                                         height: 28
                                         radius: 5
-                                        color: Qt.alpha(root.stripColors[index % root.stripColors.length], 0.7)
+                                        color: {
+                                            var c = Qt.color(root.stripColors[index % root.stripColors.length]);
+                                            return Qt.rgba(c.r, c.g, c.b, 0.7);
+                                        }
                                         border.width: root.selectedObject === modelData ? 2.5 : 1.5
                                         border.color: root.selectedObject === modelData ? Theme.accent : Qt.lighter(color, 1.4)
 

@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtQuick.Drag
 import mokm_effector
 
 Rectangle {
@@ -150,7 +149,7 @@ Rectangle {
                             color: {
                                 var ef = effectChain ? effectChain.effectAt(index) : null;
                                 if (!ef) return "transparent";
-                                return ef.format === "CLAP" ? Qt.alpha("#22c55e", 0.2) : Qt.alpha("#3b82f6", 0.2);
+                                return ef.format === "CLAP" ? Qt.rgba(Qt.color("#22c55e").r, Qt.color("#22c55e").g, Qt.color("#22c55e").b, 0.2) : Qt.rgba(Qt.color("#3b82f6").r, Qt.color("#3b82f6").g, Qt.color("#3b82f6").b, 0.2);
                             }
                             Text {
                                 anchors.centerIn: parent
@@ -172,7 +171,7 @@ Rectangle {
                             width: 20; height: 20; radius: 4
                             color: {
                                 var ef = effectChain ? effectChain.effectAt(index) : null;
-                                return ef && !ef.bypassed ? Qt.alpha(Theme.accent, 0.2) : "transparent";
+                                return ef && !ef.bypassed ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.2) : "transparent";
                             }
                             Text {
                                 anchors.centerIn: parent
@@ -199,7 +198,7 @@ Rectangle {
                         // Expand
                         Rectangle {
                             width: 20; height: 20; radius: 4
-                            color: effectDelegate.expanded ? Qt.alpha(Theme.mutedForeground, 0.1) : "transparent"
+                            color: effectDelegate.expanded ? Qt.rgba(Theme.mutedForeground.r, Theme.mutedForeground.g, Theme.mutedForeground.b, 0.1) : "transparent"
                             Text {
                                 anchors.centerIn: parent
                                 text: effectDelegate.expanded ? "\u25BC" : "\u25B6"
@@ -215,7 +214,7 @@ Rectangle {
                         // Remove
                         Rectangle {
                             width: 20; height: 20; radius: 4
-                            color: maRemove.containsMouse ? Qt.alpha(Theme.error, 0.2) : "transparent"
+                            color: maRemove.containsMouse ? Qt.rgba(Theme.error.r, Theme.error.g, Theme.error.b, 0.2) : "transparent"
                             Text {
                                 anchors.centerIn: parent
                                 text: "\u00D7"

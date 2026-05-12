@@ -14,11 +14,6 @@ Rectangle {
     property bool showAutomation: true
     property bool animateFaders: false
 
-    signal masterVolumeChanged(var v)
-    signal masterPanChanged(var v)
-    signal showAutomationToggled()
-    signal animateFadersToggled()
-
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: 10
@@ -41,7 +36,7 @@ Rectangle {
             // Automation toggle
             Rectangle {
                 width: 28; height: 28; radius: 4
-                color: showAutomation ? Qt.alpha(Theme.accent, 0.2) : "transparent"
+                color: showAutomation ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.2) : "transparent"
                 border.color: showAutomation ? Theme.accent : "transparent"
 
                 Text {
@@ -55,7 +50,6 @@ Rectangle {
                     anchors.fill: parent
                     onClicked: {
                         showAutomation = !showAutomation;
-                        root.showAutomationToggled();
                     }
                     ToolTip {
                         text: "Toggle Automation View"
@@ -68,7 +62,7 @@ Rectangle {
             // Animate faders toggle
             Rectangle {
                 width: 28; height: 28; radius: 4
-                color: animateFaders ? Qt.alpha(Theme.accent, 0.2) : "transparent"
+                color: animateFaders ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.2) : "transparent"
                 border.color: animateFaders ? Theme.accent : "transparent"
 
                 Text {
@@ -82,7 +76,6 @@ Rectangle {
                     anchors.fill: parent
                     onClicked: {
                         animateFaders = !animateFaders;
-                        root.animateFadersToggled();
                     }
                     ToolTip {
                         text: "Animate Faders"
@@ -108,7 +101,7 @@ Rectangle {
             FaderUnit {
                 id: masterFader
                 Layout.fillWidth: true
-                Layout.preferredHeight: 100
+                Layout.preferredHeight: 120
                 label: "Vol"
                 value: root.masterVolume
                 from: 0; to: 1
@@ -161,7 +154,7 @@ Rectangle {
             FaderUnit {
                 id: trackFader
                 Layout.fillWidth: true
-                Layout.preferredHeight: 100
+                Layout.preferredHeight: 120
                 label: "Vol"
                 value: target ? target.opacity : 1.0
                 from: 0; to: 1
@@ -200,6 +193,7 @@ Rectangle {
     }
 
     component FaderUnit: ColumnLayout {
+        id: unitRoot
         property string label: ""
         property real from: 0
         property real to: 1
@@ -208,8 +202,6 @@ Rectangle {
         property bool animateValue: false
         property bool showAutomation: true
         property bool keyframeEnabled: false
-
-        signal valueChanged()
 
         spacing: 2
 
@@ -227,138 +219,106 @@ Rectangle {
 
                 ColumnLayout {
                     anchors.fill: parent
-                    anchors.margins: 3
-                    spacing: 0
+                    anchors.margins: 4
+                    spacing: 4
 
                     // Value label
                     Text {
                         text: label
                         color: Theme.mutedForeground
                         font.pixelSize: 9
+                        font.bold: true
                     }
 
-                    Item { Layout.fillHeight: true }
-
-                    // Slider area
-                    Rectangle {
+                    RowLayout {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: parent.height * 0.65
-                        Layout.maximumHeight: 80
-                        color: Theme.input
-                        radius: 3
+                        Layout.fillHeight: true
+                        spacing: 8
 
+                        // Level meter (thin line)
+                        Rectangle {
+                            width: 3
+                            Layout.fillHeight: true
+                            color: "#1a1a1a"
+                            radius: 1
+                            
+                            // Mock level fill
+                            Rectangle {
+                                anchors.bottom: parent.bottom
+                                width: parent.width
+                                height: parent.height * (unitRoot.animateValue ? (0.2 + Math.random() * 0.4) : 0.0)
+                                color: "#22c55e"
+                                radius: 1
+                                visible: unitRoot.animateValue
+                                
+                                Behavior on height {
+                                    NumberAnimation { duration: 100 }
+                                }
+                            }
+                        }
+
+                        // Slider area
                         Slider {
                             id: slider
-                            anchors.fill: parent
-                            anchors.margins: 2
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
                             orientation: Qt.Vertical
-                            from: parent.parent.parent.from
-                            to: parent.parent.parent.to
-                            value: parent.parent.parent.value
-                            // Animate when playing
-                            Behavior on value {
-                                enabled: animateValue
-                                NumberAnimation { duration: 100 }
-                            }
+                            from: unitRoot.from
+                            to: unitRoot.to
+                            value: unitRoot.value
+                            stepSize: 0.01
+
                             onMoved: {
-                                parent.parent.parent.value = value;
-                                parent.parent.parent.valueChanged();
+                                unitRoot.value = value;
                             }
 
+                            // Custom Track
                             background: Rectangle {
                                 x: slider.leftPadding + slider.availableWidth / 2 - width / 2
                                 y: slider.topPadding
-                                implicitWidth: 4
+                                implicitWidth: 6
                                 width: implicitWidth
                                 height: slider.availableHeight
-                                radius: 2
-                                color: Theme.border
+                                radius: 3
+                                color: "#1a1a1a"
 
+                                // Fader path indicator
                                 Rectangle {
                                     width: parent.width
-                                    height: {
-                                        var normalized = (slider.visualPosition - 0) / (1 - 0);
-                                        return normalized * parent.height;
-                                    }
+                                    height: (1.0 - slider.visualPosition) * parent.height
                                     anchors.bottom: parent.bottom
-                                    color: parent.parent.parent.parent.color
-                                    radius: 2
+                                    color: unitRoot.color
+                                    opacity: 0.2
+                                    radius: 3
+                                }
+                            }
+
+                            // Custom Handle (SVG Nub)
+                            handle: Item {
+                                x: slider.leftPadding + slider.availableWidth / 2 - width / 2
+                                y: slider.topPadding + slider.visualPosition * (slider.availableHeight - height)
+                                implicitWidth: 32
+                                implicitHeight: 18
+                                width: implicitWidth
+                                height: implicitHeight
+
+                                Image {
+                                    anchors.fill: parent
+                                    source: "qrc:/slide-nub.svg"
+                                    fillMode: Image.PreserveAspectFit
+                                    cache: true
                                 }
                             }
                         }
                     }
 
-                    // Value readout + keyframe
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: 2
-
-                        Text {
-                            text: slider.value.toFixed(2)
-                            color: Theme.foreground
-                            font.pixelSize: 9
-                            font.family: "Monospace"
-                        }
-
-                        Item { Layout.fillWidth: true }
-
-                        Button {
-                            id: kfBtn
-                            visible: keyframeEnabled
-                            width: 14; height: 14
-                            text: "\u25C6"
-                            flat: true
-                            font.pixelSize: 8
-                            contentItem: Text {
-                                text: parent.text
-                                color: hasKF ? Theme.accent : Theme.mutedForeground
-                                font.pixelSize: 8
-                            }
-                            background: Rectangle {
-                                color: "transparent"
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Automation lane (right side)
-            Rectangle {
-                visible: showAutomation
-                Layout.preferredWidth: 40
-                Layout.fillHeight: true
-                color: Theme.background
-                radius: 4
-                border.color: Theme.border
-
-                ColumnLayout {
-                    anchors.fill: parent
-                    anchors.margins: 4
-                    spacing: 2
-
+                    // Numeric value
                     Text {
-                        text: "A"
-                        color: Theme.mutedForeground
-                        font.pixelSize: 8
-                        font.bold: true
-                    }
-
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        color: Theme.input
-                        radius: 2
-
-                        Rectangle {
-                            width: parent.width
-                            height: parent.height * clamp((value - from) / (to - from), 0, 1)
-                            anchors.bottom: parent.bottom
-                            color: parent.parent.parent.parent.color
-                            opacity: 0.3
-                            radius: 2
-                        }
-
-                        function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+                        Layout.alignment: Qt.AlignHCenter
+                        text: unitRoot.value.toFixed(2)
+                        color: Theme.foreground
+                        font.pixelSize: 9
+                        font.family: "Monospace"
                     }
                 }
             }

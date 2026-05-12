@@ -219,7 +219,7 @@ Rectangle {
                                 return Theme.selected;
                             if (assetMouse.containsMouse)
                                 return Theme.secondaryHover;
-                            return index % 2 === 0 ? "transparent" : Qt.alpha(Theme.secondaryHover, 0.15);
+                            return index % 2 === 0 ? "transparent" : Qt.rgba(Theme.secondaryHover.r, Theme.secondaryHover.g, Theme.secondaryHover.b, 0.15);
                         }
 
                         RowLayout {

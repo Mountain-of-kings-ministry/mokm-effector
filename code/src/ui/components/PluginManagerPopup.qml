@@ -135,7 +135,7 @@ Popup {
                     width: ListView.view.width
                     height: 32
                     color: (selectedPluginIds[model.pluginId] || model._selected)
-                        ? Qt.alpha(Theme.accent, 0.15)
+                        ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.15)
                         : (ma.containsMouse ? Theme.secondaryHover : "transparent")
 
                     RowLayout {
@@ -162,7 +162,7 @@ Popup {
                             width: 40
                             height: 18
                             radius: 3
-                            color: model.format === "CLAP" ? Qt.alpha("#22c55e", 0.2) : Qt.alpha("#3b82f6", 0.2)
+                            color: model.format === "CLAP" ? Qt.rgba(Qt.color("#22c55e").r, Qt.color("#22c55e").g, Qt.color("#22c55e").b, 0.2) : Qt.rgba(Qt.color("#3b82f6").r, Qt.color("#3b82f6").g, Qt.color("#3b82f6").b, 0.2)
                             Text {
                                 anchors.centerIn: parent
                                 text: model.format
