@@ -1,44 +1,23 @@
 V=Select, M=Move, T=Cycle trim, B=Blade, S=Toggle snap, Esc=Select, Ctrl+S=Split, Del=Delete, Shift+Del=Ripple Delete, Ctrl+D=Duplicate, Ctrl+C/V/X=Copy/Paste/Cut.
 
+resources.qrc -> the resource file for the project, contains all the svg icons used in the ui
+code/resources/resources.qrc
 
+you can see all icons available, it from tabler icons github. repo download.
 
-let start rebuilding. the @code/src/ui/components/AudioEditor.qml i need you to rebuild the ui to
-   folow this specifications.
+what i need you to do is to complete the project with the editing funtionalities.
+toolList.md
 
-   @audio_automation.md and intigrate it with the audio plugin manager
-   @code/src/core/AudioPluginManager.h the system is already working, your work here is to build the ui
-   fully and intigrate. you may need to see @code/main.cpp and @code/src/ui/Main.qml @code/CMakeLists.txt
+rebuild the pre existing tools becuase they are not working, i need you to make a deep dive and apply this one time fix, no do overs just once. and make sure to add info on the tools so when i hover over them i can see what they do.
 
-   make the ui clean and similar to other components so it dose not look strang. use
-   @code/src/ui/Theme.qml coloe style as other did. and dont forget to include the
-   @code/src/ui/components/Timeline.qml to study it and sync it with the audio work station so the system
-   stays consistent accross sections.
+the strip right click context menu too, update it and make it work properly. it should not just display menu items it should actually be functional
 
-   then you link the @third_parties/Qt-Node-editor/NodeEditor/  library properly it giving error in
-   @code/main.cpp make your plan so i can go through it a verify them.
-   @code/src/nodes/ contains some custom nodes for the project linkthe properly wth @code/main.cpp  you
-   can see examples here for the node editor
+and add the features to disable track and layer any layer can be disabled any track can be disabled too.
 
+when the app starts up, it goas through a splash screen then project info is shown either to continue with an existing project or to create a new one. i need the selected settings to be global for that project so that the aspect ratio of the project will be accurate, and the project info is shown correctly when the app starts up. add more screen size to it so users can select the aspect ratio of their project. and even make it better by using social media names for them so it easy to select.
 
-   ╭─░▒▓ ~/Doc/proj/s/MOKM effector/third_parties/Qt-Node-editor  on main ▓▒░·····░▒▓ ✔  at 03:51:09 PM
-   ▓▒░─╮
-   ╰─ ls
-   ─╯
-   build  CMakeLists.txt  CMakePresets.json  documentation  examples  image.png  NodeEditor  README.md
-   tests
-   ╭─░▒▓ ~/Doc/proj/s/MOKM effector/third_parties/Qt-Node-editor  on main ▓▒░·····░▒▓ ✔  at 03:51:11 PM
-   ▓▒░─╮
-   ╰─ cd examples
-   ─╯
-   ╭─░▒▓ ~/Doc/proj/s/MOKM effector/t/Qt-Node-editor/examples  on main ▓▒░········░▒▓ ✔  at 03:51:16 PM
-   ▓▒░─╮
-   ╰─ ls
-   ─╯
-   Demo  electric-demo  key-press  led-matrix  script-demo  time-display
-   ╭─░▒▓ ~/Doc/proj/s/MOKM effector/t/Qt-Node-editor/examples  on main ▓▒░········░▒▓ ✔  at 03:51:18 PM
-   ▓▒░─╮
-   ╰─ pwd
-   ─╯
-     ─╯
+and the last, i need you to fix the thorvg elements not adding to an image track, becuase thorvg takes care of 2d graphisc it prebuilt graphics and image elements. the other qt and ffmpeg handdles.
 
-  i have done everything necessary for @code/CMakeLists.txt to work so dont touch it, make the plan
+layers and tracks should be reanrangable, i should be able to move one track up or down, and one layer up or down. the strips in tracks should be reanrangable too, i should be able to move them up or down. based on their type if it an audio, video, or image track, the strips should be reanrangable accordingly to their type on tracks.
+
+every part where yuo see the use of emogies use icons. i will really apprciate that.
