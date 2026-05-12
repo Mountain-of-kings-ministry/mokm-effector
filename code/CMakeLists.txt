@@ -55,7 +55,7 @@ qt_add_executable(appmokm_effector
 
 # ── JUCE ─────────────────────────────────────────────────────
 set(JUCE_MODULES_PATH "${CMAKE_SOURCE_DIR}/../third_parties/juce/modules")
-set(VST3_SDK_ROOT "${CMAKE_SOURCE_DIR}/../third_parties/vst3sdk-master")
+set(VST3_SDK_ROOT "${CMAKE_SOURCE_DIR}/../third_parties/vst3sdk")
 
 # Find FreeType
 find_package(PkgConfig REQUIRED)
