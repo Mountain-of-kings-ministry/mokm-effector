@@ -53,31 +53,79 @@ qt_add_executable(appmokm_effector
 
 # ── Local Third Party Libraries ──────────────────────────────
 
-# Qt-Node-editor
-# if(MOKM_ENABLE_NODES)
-#   target_link_directories(appmokm_effector PRIVATE ${CMAKE_SOURCE_DIR}/../third_parties/Qt-Node-editor/NodeEditor)
-#   message(STATUS "Qt-Node-editor included from local source")
-# endif()
+# ── JUCE ─────────────────────────────────────────────────────
+set(JUCE_MODULES_PATH "${CMAKE_SOURCE_DIR}/../third_parties/juce/modules")
+set(VST3_SDK_ROOT "${CMAKE_SOURCE_DIR}/../third_parties/vst3sdk-master")
+
+# Find FreeType
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(FREETYPE REQUIRED freetype2)
+
+add_library(MOKM_JUCE STATIC)
+
+target_include_directories(MOKM_JUCE PRIVATE
+    ${JUCE_MODULES_PATH}
+    ${VST3_SDK_ROOT}
+    ${FREETYPE_INCLUDE_DIRS}
+)
+
+target_compile_definitions(MOKM_JUCE PUBLIC
+    JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1
+    JUCE_PLUGINHOST_VST3=1
+    JUCE_STANDALONE_APPLICATION=1
+    JUCE_USE_CURL=0
+    JUCE_WEB_BROWSER=0
+    JUCE_VST3_CAN_REPLACE_VST2=0
+    JUCE_USE_FREETYPE=1
+)
+
+target_sources(MOKM_JUCE PRIVATE
+    ${JUCE_MODULES_PATH}/juce_core/juce_core.cpp
+    ${JUCE_MODULES_PATH}/juce_events/juce_events.cpp
+    ${JUCE_MODULES_PATH}/juce_graphics/juce_graphics.cpp
+    ${JUCE_MODULES_PATH}/juce_data_structures/juce_data_structures.cpp
+    ${JUCE_MODULES_PATH}/juce_gui_basics/juce_gui_basics.cpp
+    ${JUCE_MODULES_PATH}/juce_audio_basics/juce_audio_basics.cpp
+    ${JUCE_MODULES_PATH}/juce_audio_processors/juce_audio_processors.cpp
+)
+
+target_link_libraries(MOKM_JUCE PRIVATE ${FREETYPE_LIBRARIES})
+
+# === Important: Link and include for main target ===
+target_link_libraries(appmokm_effector PRIVATE MOKM_JUCE)
+target_include_directories(appmokm_effector PRIVATE ${JUCE_MODULES_PATH})
+
+# Linux dependencies
+pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
+pkg_check_modules(ALSA REQUIRED alsa)
+
+target_link_libraries(appmokm_effector PRIVATE
+    ${GTK3_LIBRARIES}
+    ${ALSA_LIBRARIES}
+    pthread
+    dl
+    X11
+)
 
 # Qt-Node-editor
 if(MOKM_ENABLE_NODES)
 
-    target_include_directories(appmokm_effector PRIVATE
+  target_include_directories(appmokm_effector PRIVATE
         ${CMAKE_SOURCE_DIR}/../third_parties/Qt-Node-editor
         ${CMAKE_SOURCE_DIR}/../third_parties/Qt-Node-editor/NodeEditor/include
     )
 
-    target_link_directories(appmokm_effector PRIVATE
+  target_link_directories(appmokm_effector PRIVATE
         ${CMAKE_SOURCE_DIR}/../third_parties/Qt-Node-editor/build/default/NodeEditor
     )
 
-    target_link_libraries(appmokm_effector PRIVATE
+  target_link_libraries(appmokm_effector PRIVATE
         NodeEditor
         NodeEditorCore
         Qt6::QuickShapes
     )
 
-    target_compile_definitions(appmokm_effector PRIVATE
+  target_compile_definitions(appmokm_effector PRIVATE
         MOKM_ENABLE_NODES
     )
 

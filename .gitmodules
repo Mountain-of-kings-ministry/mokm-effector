@@ -7,3 +7,12 @@
 [submodule "third_parties/Qt-Node-editor"]
 	path = third_parties/Qt-Node-editor
 	url = https://github.com/Mountain-of-kings-ministry/Qt-Node-editor.git
+[submodule "third_parties/juce"]
+	path = third_parties/juce
+	url = https://github.com/juce-framework/JUCE.git
+[submodule "third_parties/vst3sdk"]
+	path = third_parties/vst3sdk
+	url = https://github.com/steinbergmedia/vst3sdk.git
+[submodule "third_parties/lv2"]
+	path = third_parties/lv2
+	url = https://github.com/lv2/lv2.git

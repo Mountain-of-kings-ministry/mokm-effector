@@ -27,6 +27,7 @@
 #include "src/core/AudioEngine.h"
 #include "src/core/OFXPluginManager.h"
 #include "src/core/OFXPlugin.h"
+#include "src/core/AudioPluginManager.h"
 
 #ifdef MOKM_ENABLE_CLAP
 #include "src/core/CLAPPluginManager.h"
@@ -97,6 +98,9 @@ int main(int argc, char *argv[])
     // Plugin managers
     auto *ofxManager = new OFXPluginManager(&engine);
     engine.rootContext()->setContextProperty("_ofxPluginManager", ofxManager);
+    auto *pluginManager = new AudioPluginManager(&engine);
+    engine.rootContext()->setContextProperty("_audioPluginManager", pluginManager);
+
 
     // Audio engine
     auto *audioEngine = new AudioEngine(&engine);
@@ -112,20 +116,24 @@ int main(int argc, char *argv[])
     auto *undoManager = new NodeEditor::UndoManager(graphModel, &engine);
     auto *dataFlowEngine = new NodeEditor::DataFlowEngine(graphModel, &engine);
 
+    // === Proper Node Registration ===
     NodeEditor::registerDefaultNodeTypes(graphModel);
 
+    // Register MOKM-specific nodes (only once!)
+    NodeEditor::registerMOKMNodeTypes(graphModel);
+
+    // Optional: Register your own custom categories
     graphModel->registerCategory({"MOKM", "MOKM", QColor("#636E72")});
 
-    NodeEditor::registerNodeType<NodeEditor::MOKMInputNode>(graphModel, "MOKM");
-    NodeEditor::registerNodeType<NodeEditor::MOKMOutputNode>(graphModel, "MOKM");
-    NodeEditor::registerNodeType<NodeEditor::MOKMTransformNode>(graphModel, "MOKM");
-    NodeEditor::registerNodeType<NodeEditor::MOKMBlendNode>(graphModel, "MOKM");
+    // If you have more node sets in the future:
+    // NodeEditor::registerSomeOtherNodes(graphModel);
 
     qmlRegisterType<NodeStrip>("mokm_effector", 1, 0, "NodeStrip");
-    // #ifdef MOKM_ENABLE_NODES
+
     engine.addImportPath(
         QDir(QCoreApplication::applicationDirPath())
             .absoluteFilePath("../../third_parties/Qt-Node-editor/build/default"));
+
     engine.rootContext()->setContextProperty("_graphModel", graphModel);
     engine.rootContext()->setContextProperty("_undoManager", undoManager);
     engine.rootContext()->setContextProperty("_dataFlowEngine", dataFlowEngine);
