@@ -4,3 +4,6 @@
 [submodule "third_parties/openfx-main"]
 	path = third_parties/openfx-main
 	url = https://github.com/AcademySoftwareFoundation/OpenFX.git
+[submodule "third_parties/Qt-Node-editor"]
+	path = third_parties/Qt-Node-editor
+	url = https://github.com/Mountain-of-kings-ministry/Qt-Node-editor.git

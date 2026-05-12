@@ -155,6 +155,13 @@ Rectangle {
         return result;
     }
 
+    function _trackTypeForAsset(asset) {
+        if (!asset) return Track.Video;
+        if (asset.volume !== undefined) return Track.Audio;
+        if (asset.imageWidth !== undefined && asset.shapeType === undefined) return Track.Image;
+        return Track.Video;
+    }
+
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
@@ -372,6 +379,7 @@ Rectangle {
                     });
                     comp.addLayer(tl);
                     var track = tl.addTrack();
+                    track.trackType = _trackTypeForAsset(assetContextMenu.asset);
                     track.createStripFromAsset(assetContextMenu.asset, "", 0, -1);
                     if (bin.projectModel)
                         bin.projectModel.captureSnapshot();
@@ -405,6 +413,7 @@ Rectangle {
                 newTrackItem.triggered.connect(function() {
                     if (!assetContextMenu.asset || !layerObj) return;
                     var track = layerObj.addTrack();
+                    track.trackType = _trackTypeForAsset(assetContextMenu.asset);
                     track.createStripFromAsset(assetContextMenu.asset, "", 0, -1);
                     if (bin.projectModel)
                         bin.projectModel.captureSnapshot();
@@ -430,6 +439,7 @@ Rectangle {
             addTrackItem.triggered.connect(function() {
                 if (!assetContextMenu.asset || !layerObj) return;
                 var track = layerObj.addTrack();
+                track.trackType = _trackTypeForAsset(assetContextMenu.asset);
                 track.createStripFromAsset(assetContextMenu.asset, "", 0, -1);
                 if (bin.projectModel)
                     bin.projectModel.captureSnapshot();

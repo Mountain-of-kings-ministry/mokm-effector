@@ -19,12 +19,73 @@ Rectangle {
 
     readonly property var stripColors: ["#3b82f6", "#8b5cf6", "#ec4899", "#ef4444", "#f59e0b", "#22c55e", "#14b8a6", "#06b6d4", "#6366f1", "#d946ef"]
 
-    // ── Selection state ──
-    property var _selectedLayers: []
+    // ── Tool System ──
+    property string currentTool: "select"
+    property bool snapEnabled: true
+
     property var _clipboard: []
+    property var _dragState: ({}) // reusable drag state object
+    property var _selectedLayers: []
 
     function snapFrame(v) {
-        return Math.round(v);
+        if (!snapEnabled)
+            return Math.round(v);
+
+        var snapped = Math.round(v);
+        var bestSnap = snapped;
+        var bestDist = 6; // 6px snap threshold
+
+        // Snap to playhead
+        if (root.timelineModel) {
+            var playheadFrame = root.timelineModel.currentFrame;
+            var playheadSnap = snapPixel(Math.round(playheadFrame));
+            if (Math.abs(playheadSnap - v) < bestDist) {
+                bestSnap = playheadFrame;
+                bestDist = Math.abs(playheadSnap - v);
+            }
+        }
+
+        // Snap to strip edges in all tracks
+        if (root.timelineModel && root.timelineModel.composition) {
+            var comp = root.timelineModel.composition;
+            for (var li = 0; li < comp.layerCount(); li++) {
+                var tl = comp.layerAt(li);
+                if (!tl) continue;
+                for (var ti = 0; ti < tl.trackCount; ti++) {
+                    var tr = tl.trackAt(ti);
+                    if (!tr) continue;
+                    for (var si = 0; si < tr.stripCount; si++) {
+                        var st = tr.stripAt(si);
+                        if (!st) continue;
+                        var s = st.startFrame;
+                        var e = s + st.duration;
+                        // Snap to start
+                        var d = snapPixel(s) - v;
+                        if (Math.abs(d) < bestDist) { bestSnap = s; bestDist = Math.abs(d); }
+                        // Snap to end
+                        d = snapPixel(e) - v;
+                        if (Math.abs(d) < bestDist) { bestSnap = e; bestDist = Math.abs(d); }
+                    }
+                }
+            }
+        }
+
+        return bestSnap;
+    }
+
+    function snapPixel(frame) {
+        return frame * root.pixelPerFrame;
+    }
+
+    function toolName(t) {
+        var names = {
+            "select": "Select",
+            "move": "Move",
+            "trimLeft": "Trim Left",
+            "trimRight": "Trim Right",
+            "blade": "Blade"
+        };
+        return names[t] || t;
     }
 
     // ── RENAME DIALOG ──
@@ -158,7 +219,84 @@ Rectangle {
         _selectedLayers = [];
     }
 
-    // ── Keyboard shortcuts ──
+    function rippleDeleteSelected() {
+        if (!root.selectedObject || !_isStrip(root.selectedObject))
+            return;
+        var strip = root.selectedObject;
+        var track = strip.track;
+        if (!track) return;
+        var removedStart = strip.startFrame;
+        var removedDuration = strip.duration;
+        strip.deleteStrip();
+        // Shift following strips left by removed duration
+        for (var i = 0; i < track.stripCount; i++) {
+            var s = track.stripAt(i);
+            if (s && s.startFrame >= removedStart + removedDuration)
+                s.startFrame = s.startFrame - removedDuration;
+        }
+        root.selectedObject = null;
+        _selectedLayers = [];
+    }
+
+    // ── Track Type Creation Dialog ──
+    Dialog {
+        id: trackTypeDialog
+        title: "New Track"
+        standardButtons: Dialog.Cancel
+        modal: true
+        x: (parent.width - width) / 2
+        y: (parent.height - height) / 2
+
+        property var _targetLayer: null
+
+        ColumnLayout {
+            spacing: 8
+            Button {
+                text: "Video Track"
+                icon.source: "qrc:/icons/outline/video.svg"
+                Layout.fillWidth: true
+                onClicked: {
+                    createNewTrack(trackTypeDialog._targetLayer, Track.Video);
+                    trackTypeDialog.close();
+                }
+            }
+            Button {
+                text: "Audio Track"
+                icon.source: "qrc:/icons/outline/volume.svg"
+                Layout.fillWidth: true
+                onClicked: {
+                    createNewTrack(trackTypeDialog._targetLayer, Track.Audio);
+                    trackTypeDialog.close();
+                }
+            }
+            Button {
+                text: "Image Track"
+                icon.source: "qrc:/icons/outline/photo.svg"
+                Layout.fillWidth: true
+                onClicked: {
+                    createNewTrack(trackTypeDialog._targetLayer, Track.Image);
+                    trackTypeDialog.close();
+                }
+            }
+        }
+    }
+
+    function _trackTypeName(type) {
+        if (type === Track.Audio) return "Audio";
+        if (type === Track.Image) return "Image";
+        return "Video";
+    }
+
+    function createNewTrack(timelineLayer, trackType) {
+        if (!timelineLayer) return;
+        trackTypeDialog._targetLayer = null;
+        var track = Qt.createQmlObject('import mokm_effector; Track {}', timelineLayer, "dynamicTrack");
+        track.name = _trackTypeName(trackType) + " " + (timelineLayer.trackCount + 1);
+        track.trackType = trackType;
+        timelineLayer.addTrack(track);
+        if (timelineLayer.composition)
+            timelineLayer.composition.rebuildFlatLayers();
+    }
     focus: true
     Keys.onDeletePressed: deleteSelected()
     Keys.onPressed: function (event) {
@@ -174,9 +312,34 @@ Rectangle {
         } else if (event.key === Qt.Key_D && (event.modifiers & Qt.ControlModifier)) {
             duplicateSelected();
             event.accepted = true;
+        } else if (event.key === Qt.Key_S && !(event.modifiers & Qt.ControlModifier)) {
+            // S = Toggle snap (not Ctrl+S, which is split)
+            snapEnabled = !snapEnabled;
+            event.accepted = true;
         } else if (event.key === Qt.Key_S && (event.modifiers & Qt.ControlModifier)) {
             // Split at playhead: Ctrl+S
             splitAtPlayhead();
+            event.accepted = true;
+        } else if (event.key === Qt.Key_Delete && (event.modifiers & Qt.ShiftModifier)) {
+            rippleDeleteSelected();
+            event.accepted = true;
+        } else if (event.key === Qt.Key_V && !(event.modifiers & Qt.ControlModifier)) {
+            currentTool = "select";
+            event.accepted = true;
+        } else if (event.key === Qt.Key_M && !(event.modifiers & Qt.ControlModifier)) {
+            currentTool = "move";
+            event.accepted = true;
+        } else if (event.key === Qt.Key_T && !(event.modifiers & Qt.ControlModifier)) {
+            // Cycle trim modes: off → trimLeft → trimRight → off
+            if (currentTool === "trimLeft") currentTool = "trimRight";
+            else if (currentTool === "trimRight") currentTool = "select";
+            else currentTool = "trimLeft";
+            event.accepted = true;
+        } else if (event.key === Qt.Key_B && !(event.modifiers & Qt.ControlModifier)) {
+            currentTool = "blade";
+            event.accepted = true;
+        } else if (event.key === Qt.Key_Escape) {
+            currentTool = "select";
             event.accepted = true;
         }
     }
@@ -223,7 +386,9 @@ Rectangle {
                             return;
                         var tl = Qt.createQmlObject('import mokm_effector; TimelineLayer {}', comp, "dynamicLayer");
                         tl.name = "Layer " + (comp.layerCount() + 1);
-                        tl.addTrack();
+                        // Create first track with dialog
+                        trackTypeDialog._targetLayer = tl;
+                        trackTypeDialog.open();
                         comp.addLayer(tl);
                     }
                 }
@@ -296,10 +461,8 @@ Rectangle {
                                 MenuItem {
                                     text: "Add Track"
                                     onTriggered: {
-                                        var m = layerColumn.layerModel;
-                                        m.addTrack();
-                                        if (m.composition)
-                                            m.composition.rebuildFlatLayers();
+                                        trackTypeDialog._targetLayer = layerColumn.layerModel;
+                                        trackTypeDialog.open();
                                     }
                                 }
                                 MenuItem {
@@ -352,6 +515,19 @@ Rectangle {
 
                                 Menu {
                                     id: trackMenu
+                                    MenuItem {
+                                        text: "Select All Strips"
+                                        onTriggered: {
+                                            var t = trackObj;
+                                            if (!t) return;
+                                            _selectedLayers = [];
+                                            for (var i = 0; i < t.stripCount; i++)
+                                                _selectedLayers.push(t.stripAt(i));
+                                            if (_selectedLayers.length > 0)
+                                                root.selectedObject = _selectedLayers[0];
+                                        }
+                                    }
+                                    MenuSeparator {}
                                     MenuItem {
                                         text: "Rename Track"
                                         onTriggered: renameItem(trackObj)
@@ -443,28 +619,134 @@ Rectangle {
                                             elide: Text.ElideRight
                                         }
 
+                                        // Waveform overlay for audio strips
+                                        Canvas {
+                                            id: waveformCanvas
+                                            anchors.fill: parent
+                                            anchors.margins: 2
+                                            visible: stripObj.element && stripObj.element.waveformDataList !== undefined && stripObj.element.waveformDataList.length > 0
+                                            onPaint: {
+                                                var ctx = getContext("2d");
+                                                if (!ctx) return;
+                                                ctx.clearRect(0, 0, width, height);
+                                                var data = stripObj.element.waveformDataList;
+                                                if (!data || data.length === 0) return;
+                                                ctx.fillStyle = Qt.rgba(1, 1, 1, 0.2);
+                                                var midY = height / 2;
+                                                var xStep = width / data.length;
+                                                for (var i = 0; i < data.length; i++) {
+                                                    var x = i * xStep;
+                                                    var h = Math.abs(data[i]) * (midY - 1);
+                                                    ctx.fillRect(x, midY - h, Math.max(1, xStep + 0.5), Math.max(1, h * 2));
+                                                }
+                                            }
+                                            onWidthChanged: requestPaint()
+                                            onHeightChanged: requestPaint()
+                                        }
+
                                         // ── Move Drag ──
                                         MouseArea {
                                             id: stripDragArea
                                             anchors.fill: parent
-                                            anchors.leftMargin: 8
-                                            anchors.rightMargin: 8
-                                            cursorShape: pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor
-                                            drag.target: stripRect
+                                            anchors.leftMargin: root.currentTool === "trimLeft" ? 0 : 8
+                                            anchors.rightMargin: root.currentTool === "trimRight" ? 0 : 8
+                                            acceptedButtons: Qt.LeftButton
+                                            cursorShape: {
+                                                if (root.currentTool === "blade") return Qt.IBeamCursor;
+                                                if (root.currentTool === "trimLeft" || root.currentTool === "trimRight") return Qt.SizeHorCursor;
+                                                return pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor;
+                                            }
+                                            drag.target: (root.currentTool === "select" || root.currentTool === "move") ? stripRect : null
                                             drag.axis: Drag.XAxis
                                             drag.minimumX: 0
 
+                                            property real _pressX: 0
+                                            property int _pressFrame: 0
+
                                             onPressed: function (mouse) {
+                                                if (root.currentTool === "blade") {
+                                                    // Split at click position
+                                                    var clickFrame = Math.round((stripRect.x + mouse.x) / root.pixelPerFrame);
+                                                    var stripStart = stripObj.startFrame;
+                                                    var stripEnd = stripStart + stripObj.duration;
+                                                    if (clickFrame > stripStart && clickFrame < stripEnd && stripObj.track) {
+                                                        var track = stripObj.track;
+                                                        var newStrip = stripObj.clone(track);
+                                                        newStrip.startFrame = clickFrame;
+                                                        newStrip.duration = stripEnd - clickFrame;
+                                                        stripObj.duration = clickFrame - stripStart;
+                                                        track.addStrip(newStrip);
+                                                    }
+                                                    return;
+                                                }
+
+                                                if (root.currentTool === "trimLeft") {
+                                                    _pressX = mouse.x;
+                                                    _pressFrame = stripObj.startFrame;
+                                                    return;
+                                                }
+
+                                                if (root.currentTool === "trimRight") {
+                                                    _pressX = mouse.x;
+                                                    _pressFrame = stripObj.duration;
+                                                    return;
+                                                }
+
+                                                // select/move
                                                 stripRect.Drag.active = true;
                                                 stripRect.Drag.keys = ["strip"];
                                                 root.select(stripObj);
                                             }
 
+                                            onPositionChanged: function (mouse) {
+                                                if (!(mouse.buttons & Qt.LeftButton)) return;
+
+                                                if (root.currentTool === "trimLeft") {
+                                                    var dx = mouse.x - _pressX;
+                                                    var deltaFrames = Math.round(dx / root.pixelPerFrame);
+                                                    var oldStart = stripObj.startFrame;
+                                                    var oldDuration = stripObj.duration;
+                                                    var newStart = Math.max(0, _pressFrame + deltaFrames);
+                                                    var newDuration = Math.max(5, oldDuration - (newStart - oldStart));
+                                                    if (newDuration < 5) {
+                                                        newDuration = 5;
+                                                        newStart = oldStart + oldDuration - 5;
+                                                    }
+                                                    stripObj.startFrame = newStart;
+                                                    stripObj.duration = newDuration;
+                                                    stripRect.x = newStart * root.pixelPerFrame;
+                                                    stripRect.width = newDuration * root.pixelPerFrame;
+                                                    return;
+                                                }
+
+                                                if (root.currentTool === "trimRight") {
+                                                    var dx2 = mouse.x - _pressX;
+                                                    var newDuration = Math.max(5, Math.round(_pressFrame + dx2 / root.pixelPerFrame));
+                                                    stripObj.duration = newDuration;
+                                                    stripRect.width = Math.max(50, newDuration * root.pixelPerFrame);
+                                                    return;
+                                                }
+                                            }
+
                                             onReleased: function (mouse) {
+                                                if (root.currentTool === "trimLeft" || root.currentTool === "trimRight") {
+                                                    var snapped = root.snapFrame(stripObj.startFrame);
+                                                    var durSnapped = root.snapFrame(stripObj.startFrame + stripObj.duration);
+                                                    stripObj.startFrame = snapped;
+                                                    stripObj.duration = durSnapped - snapped;
+                                                    stripRect.x = snapped * root.pixelPerFrame;
+                                                    stripRect.width = Math.max(50, durSnapped - snapped) * root.pixelPerFrame;
+                                                    root.select(stripObj);
+                                                    return;
+                                                }
+
+                                                if (root.currentTool !== "select" && root.currentTool !== "move")
+                                                    return;
+
                                                 stripRect.Drag.active = false;
-                                                let newStart = Math.max(0, stripRect.x / root.pixelPerFrame);
-                                                stripObj.startFrame = snapFrame(newStart);
-                                                stripRect.x = stripObj.startFrame * root.pixelPerFrame;
+                                                var newStart = root.snapFrame(Math.max(0, stripRect.x / root.pixelPerFrame));
+                                                stripObj.startFrame = newStart;
+                                                stripRect.x = newStart * root.pixelPerFrame;
                                             }
                                         }
 
@@ -475,6 +757,7 @@ Rectangle {
                                             anchors.bottom: parent.bottom
                                             width: 10
                                             cursorShape: Qt.SizeHorCursor
+                                            acceptedButtons: Qt.LeftButton
 
                                             property real startX: 0
                                             property int startDuration: 0
@@ -512,6 +795,7 @@ Rectangle {
                                                 anchors.fill: parent
                                                 anchors.leftMargin: -4
                                                 cursorShape: Qt.SizeHorCursor
+                                                acceptedButtons: Qt.LeftButton
 
                                                 property int startX: 0
                                                 property int startFrame: 0
@@ -551,6 +835,7 @@ Rectangle {
                                         MouseArea {
                                             anchors.fill: parent
                                             acceptedButtons: Qt.RightButton
+                                            z: 2
                                             onClicked: function (mouse) {
                                                 root.select(stripObj);
                                                 stripMenu.popup();
@@ -587,14 +872,21 @@ Rectangle {
                                                 text: "Rename Strip"
                                                 onTriggered: renameItem(stripObj)
                                             }
-                                            MenuItem {
-                                                text: "Delete Strip"
-                                                onTriggered: {
-                                                    stripObj.deleteStrip();
-                                                    root.selectedObject = null;
-                                                    _selectedLayers = [];
-                                                }
+                                        MenuItem {
+                                            text: "Delete Strip"
+                                            onTriggered: {
+                                                stripObj.deleteStrip();
+                                                root.selectedObject = null;
+                                                _selectedLayers = [];
                                             }
+                                        }
+                                        MenuItem {
+                                            text: "Ripple Delete"
+                                            onTriggered: {
+                                                root.selectedObject = stripObj;
+                                                rippleDeleteSelected();
+                                            }
+                                        }
                                         }
 
                                         Drag.active: stripDragArea.drag.active

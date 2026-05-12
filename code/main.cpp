@@ -3,6 +3,8 @@
 #include <QQmlContext>
 #include <QQuickWindow>
 #include <QSurfaceFormat>
+#include <QColor>
+#include <QDir>
 
 #include "src/core/Layer.h"
 #include "src/core/ShapeLayer.h"
@@ -22,6 +24,7 @@
 #include "src/core/TimelineLayer.h"
 #include "src/core/StartupConfig.h"
 #include "src/core/AppSettings.h"
+#include "src/core/AudioEngine.h"
 #include "src/core/OFXPluginManager.h"
 #include "src/core/OFXPlugin.h"
 
@@ -32,9 +35,13 @@
 #endif
 
 #ifdef MOKM_ENABLE_NODES
-#include "src/nodes/NodeGraph.h"
+#include "NodeEditor/GraphModel.h"
+#include "NodeEditor/DataFlowEngine.h"
+#include "NodeEditor/UndoManager.h"
+#include "NodeEditor/BaseNode.h"
+#include "NodeEditor/DefaultNodes.h"
+#include "src/nodes/MOKMNodes.h"
 #include "src/nodes/NodeStrip.h"
-#include "src/nodes/NodeGraphView.h"
 #endif
 
 int main(int argc, char *argv[])
@@ -73,15 +80,10 @@ int main(int argc, char *argv[])
 #endif
 
     qmlRegisterSingletonType<AppSettings>("mokm_effector", 1, 0, "AppSettings",
-        [](QQmlEngine *, QJSEngine *) -> QObject * {
-            return new AppSettings();
-        });
-
-#ifdef MOKM_ENABLE_NODES
-    qmlRegisterType<NodeGraph>("mokm_effector", 1, 0, "NodeGraph");
-    qmlRegisterType<NodeStrip>("mokm_effector", 1, 0, "NodeStrip");
-    qmlRegisterType<NodeGraphView>("mokm_effector", 1, 0, "NodeGraphView");
-#endif
+                                          [](QQmlEngine *, QJSEngine *) -> QObject *
+                                          {
+                                              return new AppSettings();
+                                          });
 
     QQmlApplicationEngine engine;
 
@@ -96,9 +98,37 @@ int main(int argc, char *argv[])
     auto *ofxManager = new OFXPluginManager(&engine);
     engine.rootContext()->setContextProperty("_ofxPluginManager", ofxManager);
 
+    // Audio engine
+    auto *audioEngine = new AudioEngine(&engine);
+    engine.rootContext()->setContextProperty("_audioEngine", audioEngine);
+
 #ifdef MOKM_ENABLE_CLAP
     auto *clapManager = new CLAPPluginManager(&engine);
     engine.rootContext()->setContextProperty("_clapPluginManager", clapManager);
+#endif
+
+#ifdef MOKM_ENABLE_NODES
+    auto *graphModel = new NodeEditor::GraphModel(&engine);
+    auto *undoManager = new NodeEditor::UndoManager(graphModel, &engine);
+    auto *dataFlowEngine = new NodeEditor::DataFlowEngine(graphModel, &engine);
+
+    NodeEditor::registerDefaultNodeTypes(graphModel);
+
+    graphModel->registerCategory({"MOKM", "MOKM", QColor("#636E72")});
+
+    NodeEditor::registerNodeType<NodeEditor::MOKMInputNode>(graphModel, "MOKM");
+    NodeEditor::registerNodeType<NodeEditor::MOKMOutputNode>(graphModel, "MOKM");
+    NodeEditor::registerNodeType<NodeEditor::MOKMTransformNode>(graphModel, "MOKM");
+    NodeEditor::registerNodeType<NodeEditor::MOKMBlendNode>(graphModel, "MOKM");
+
+    qmlRegisterType<NodeStrip>("mokm_effector", 1, 0, "NodeStrip");
+    // #ifdef MOKM_ENABLE_NODES
+    engine.addImportPath(
+        QDir(QCoreApplication::applicationDirPath())
+            .absoluteFilePath("../../third_parties/Qt-Node-editor/build/default"));
+    engine.rootContext()->setContextProperty("_graphModel", graphModel);
+    engine.rootContext()->setContextProperty("_undoManager", undoManager);
+    engine.rootContext()->setContextProperty("_dataFlowEngine", dataFlowEngine);
 #endif
 
     QObject::connect(
@@ -108,7 +138,7 @@ int main(int argc, char *argv[])
         []()
         { QCoreApplication::exit(-1); },
         Qt::QueuedConnection);
-    engine.loadFromModule("mokm_effector", "ProjectProperties");
+    engine.loadFromModule("mokm_effector", "SplashScreen");
 
     return QCoreApplication::exec();
 }

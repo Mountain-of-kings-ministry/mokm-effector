@@ -5,6 +5,8 @@
 #include <QUrl>
 #include <QVector>
 
+struct AVFormatContext;
+
 class AudioLayer : public Layer
 {
     Q_OBJECT
@@ -14,6 +16,8 @@ class AudioLayer : public Layer
     Q_PROPERTY(bool mute READ mute WRITE setMute NOTIFY muteChanged)
     Q_PROPERTY(bool solo READ solo WRITE setSolo NOTIFY soloChanged)
     Q_PROPERTY(int frameCount READ frameCount NOTIFY frameCountChanged)
+    Q_PROPERTY(qreal compositionFrameRate READ compositionFrameRate WRITE setCompositionFrameRate NOTIFY frameCountChanged)
+    Q_PROPERTY(QVariantList waveformDataList READ waveformDataList NOTIFY sourceChanged)
 public:
     explicit AudioLayer(QObject *parent = nullptr);
     ~AudioLayer() override = default;
@@ -22,6 +26,9 @@ public:
     void setSource(const QUrl &url);
 
     int frameCount() const { return m_frameCount; }
+
+    qreal compositionFrameRate() const { return m_compositionFrameRate; }
+    void setCompositionFrameRate(qreal fps);
 
     qreal volume() const { return m_volume; }
     void setVolume(qreal v);
@@ -36,10 +43,15 @@ public:
     void setSolo(bool v);
 
     const QVector<float>& waveformData() const { return m_waveformData; }
+    QVariantList waveformDataList() const;
 
     Layer* clone(QObject *parent = nullptr) const override;
     QJsonObject toJson() const override;
     void fromJson(const QJsonObject &obj) override;
+
+    // Non-WAV duration via FFmpeg
+    static double ffmpegAudioDuration(const QString &path);
+    static QVector<float> ffmpegWaveform(const QString &path, int targetSamples);
 
 signals:
     void sourceChanged();
@@ -53,6 +65,7 @@ private:
     void loadWaveform();
 
     QUrl m_source;
+    qreal m_compositionFrameRate = 30.0;
     qreal m_volume = 1.0;
     qreal m_pan = 0.0;
     bool m_mute = false;

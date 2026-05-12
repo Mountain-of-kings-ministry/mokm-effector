@@ -5,18 +5,40 @@
 #include "TextLayer.h"
 #include "VideoLayer.h"
 #include "AudioLayer.h"
+#include "ImageLayer.h"
 #include "TimelineLayer.h"
 
 #ifdef MOKM_ENABLE_NODES
 #include "../nodes/NodeStrip.h"
-#include "../nodes/NodeGraph.h"
-#include "../nodes/nodes/generators/RectangleNode.h"
 #endif
 
 Track::Track(QObject *parent)
     : QObject(parent)
     , m_name("Track 1")
 {
+}
+
+void Track::setTrackType(int type)
+{
+    if (m_trackType != type) {
+        m_trackType = type;
+        emit trackTypeChanged();
+    }
+}
+
+QString Track::trackTypeName(int type) const
+{
+    return trackTypeNameStatic(type);
+}
+
+QString Track::trackTypeNameStatic(int type)
+{
+    switch (type) {
+    case Audio: return QStringLiteral("Audio");
+    case Image: return QStringLiteral("Image");
+    case Video:
+    default:    return QStringLiteral("Video");
+    }
 }
 
 Track::~Track()
@@ -93,6 +115,25 @@ Strip* Track::createStripFromAsset(Layer *asset, const QString &stripName, int s
     if (!asset)
         return nullptr;
 
+    // Validate asset type matches track type
+    bool typeOk = false;
+    switch (m_trackType) {
+    case Video:
+        typeOk = (qobject_cast<VideoLayer*>(asset) != nullptr)
+              || (qobject_cast<ShapeLayer*>(asset) != nullptr)
+              || (qobject_cast<TextLayer*>(asset) != nullptr)
+              || (qobject_cast<ImageLayer*>(asset) != nullptr);
+        break;
+    case Audio:
+        typeOk = (qobject_cast<AudioLayer*>(asset) != nullptr);
+        break;
+    case Image:
+        typeOk = (qobject_cast<ImageLayer*>(asset) != nullptr);
+        break;
+    }
+    if (!typeOk)
+        return nullptr;
+
     int actualDuration = duration;
     if (actualDuration <= 0) {
         if (auto *vl = qobject_cast<VideoLayer*>(asset)) {
@@ -112,30 +153,7 @@ Strip* Track::createStripFromAsset(Layer *asset, const QString &stripName, int s
     strip->setStartFrame(startFrame);
     strip->setDuration(actualDuration);
 
-    // Create a NodeGraph with a generator node matching the asset type
-    auto *graph = new NodeGraph(strip);
-    QString nodeType = "Rectangle"; // Default fallback
-
-    // Determine node type from asset
-    if (auto *shape = qobject_cast<ShapeLayer*>(asset)) {
-        static const char* shapeNames[] = {
-            "Rectangle", "Ellipse", "Circle", "Triangle",
-            "Polygon", "Star", "Line", "Arrow", "RoundedRect",
-            "Arc", "Grid", "Spiral"
-        };
-        int st = shape->shapeType();
-        if (st >= 0 && st < 12)
-            nodeType = QString::fromLatin1(shapeNames[st]);
-    } else if (qobject_cast<TextLayer*>(asset)) {
-        nodeType = "Text";
-    }
-
-    int nodeId = graph->addNodeAutoConnect(nodeType);
-    Q_UNUSED(nodeId)
-
-    strip->setNodeGraph(graph);
-
-    // Clone the asset element for backward compat
+    // Clone the asset element
     auto *element = asset->clone(strip);
     strip->setElement(element);
 

@@ -8,8 +8,8 @@
 #include <QPair>
 
 #include "../core/Keyframe.h"
+#include "../core/Composition.h"
 
-class Composition;
 class Layer;
 
 class TimelineModel : public QObject

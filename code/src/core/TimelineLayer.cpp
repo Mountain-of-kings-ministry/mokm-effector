@@ -48,6 +48,21 @@ Track* TimelineLayer::addTrack(const QString &name)
     return track;
 }
 
+void TimelineLayer::addTrack(Track *track)
+{
+    if (!track || m_tracks.contains(track))
+        return;
+    track->setParent(this);
+    track->setLayer(this);
+    if (!track->name().isEmpty() && track->name() == "Track 1") {
+        track->setName(QString("Track %1").arg(m_tracks.size() + 1));
+    }
+    m_tracks.append(track);
+    if (m_composition)
+        connect(track, &Track::stripsChanged, m_composition, &Composition::rebuildFlatLayers);
+    emit tracksChanged();
+}
+
 void TimelineLayer::removeTrack(Track *track)
 {
     if (!track || m_tracks.size() <= 1)

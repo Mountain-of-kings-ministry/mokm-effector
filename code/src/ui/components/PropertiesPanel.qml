@@ -15,7 +15,7 @@ Rectangle {
     function _isLayer(obj) { return obj && (obj.deleteLayer !== undefined || obj.tracks !== undefined); }
     function _isTrack(obj) { return obj && (obj.deleteTrack !== undefined || (obj.strips !== undefined && obj.tracks === undefined)); }
     function _isStrip(obj) { return obj && (obj.deleteStrip !== undefined || obj.element !== undefined); }
-    function _isNodeStrip(obj) { return obj && obj.nodeGraph !== undefined; }
+    function _isNodeStrip(obj) { return obj && obj.nodeGraphJson !== undefined; }
     function _isRawElement(obj) { return obj && obj.opacity !== undefined && !_isLayer(obj) && !_isTrack(obj) && !_isStrip(obj); }
 
     function updateProperty(propName, val) {
@@ -97,53 +97,9 @@ Rectangle {
                     }
 
                     Text {
-                        text: qsTr("Node Graph: " + (root.selectedObject && root.selectedObject.nodeGraph ? root.selectedObject.nodeGraph.nodeCount + " nodes" : "empty"))
+                        text: qsTr("Node Graph: " + (root.selectedObject && root.selectedObject.nodeGraphJson && root.selectedObject.nodeGraphJson.length > 0 ? "has graph data" : "empty"))
                         color: Theme.mutedForeground
                         font.pixelSize: 10
-                    }
-
-                    // ==================== SELECTED NODE PARAMETERS ====================
-                    ColumnLayout {
-                        id: nodeParamsSection
-                        visible: root.selectedObject != null && root.selectedObject.nodeGraph != null
-                                 && root.selectedObject.nodeGraph.selectedNodeId >= 0
-                        spacing: 4
-
-                        Text {
-                            text: qsTr("Selected Node Parameters")
-                            color: Theme.mutedForeground
-                            font.pixelSize: 10
-                            font.bold: true
-                            visible: nodeParamsSection.visible
-                        }
-
-                        Repeater {
-                            id: paramRepeater
-                            model: nodeParamsSection.visible ? root.selectedObject.nodeGraph.nodeParameterNames(
-                                root.selectedObject.nodeGraph.selectedNodeId) : []
-
-                            EditablePropertyRow {
-                                required property string modelData
-                                label: modelData
-                                value: {
-                                    if (!root.selectedObject || !root.selectedObject.nodeGraph) return "";
-                                    var val = root.selectedObject.nodeGraph.nodeParameter(
-                                        root.selectedObject.nodeGraph.selectedNodeId, modelData);
-                                    if (val === undefined || val === null) return "";
-                                    if (typeof val === "number") return val.toFixed(typeof val === "number" && Number.isInteger(val) ? 0 : 2);
-                                    return String(val);
-                                }
-                                onEditingFinished: function(v) {
-                                    if (root.selectedObject && root.selectedObject.nodeGraph) {
-                                        var nid = root.selectedObject.nodeGraph.selectedNodeId;
-                                        var old = root.selectedObject.nodeGraph.nodeParameter(nid, modelData);
-                                        var newVal = v;
-                                        if (typeof old === "number") newVal = parseFloat(v) || 0;
-                                        root.selectedObject.nodeGraph.setNodeParameter(nid, modelData, newVal);
-                                    }
-                                }
-                            }
-                        }
                     }
 
                     Button {

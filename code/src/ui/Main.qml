@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import QtQuick.Controls
 import QtQuick.Dialogs
 import mokm_effector
+import NodeEditor
 
 Window {
     id: mainWindow
@@ -135,6 +136,38 @@ Window {
 
                     timelineModel: globalTimelineModel
                     selectedObject: selectedObject
+                    currentTool: (stackView.currentItem && stackView.currentItem.currentTool !== undefined) ? stackView.currentItem.currentTool : "select"
+                    snapEnabled: (stackView.currentItem && stackView.currentItem.snapEnabled !== undefined) ? stackView.currentItem.snapEnabled : true
+
+                    onToolChanged: function(tool) {
+                        if (stackView.currentItem && stackView.currentItem.currentTool !== undefined)
+                            stackView.currentItem.currentTool = tool;
+                    }
+
+                    onSnapToggled: function(enabled) {
+                        if (stackView.currentItem && stackView.currentItem.snapEnabled !== undefined)
+                            stackView.currentItem.snapEnabled = enabled;
+                    }
+
+                    onSplitAtPlayhead: {
+                        if (stackView.currentItem && typeof stackView.currentItem.splitAtPlayhead === 'function')
+                            stackView.currentItem.splitAtPlayhead();
+                    }
+
+                    onDeleteSelected: {
+                        if (stackView.currentItem && typeof stackView.currentItem.deleteSelected === 'function')
+                            stackView.currentItem.deleteSelected();
+                    }
+
+                    onRippleDeleteSelected: {
+                        if (stackView.currentItem && typeof stackView.currentItem.rippleDeleteSelected === 'function')
+                            stackView.currentItem.rippleDeleteSelected();
+                    }
+
+                    onDuplicateSelected: {
+                        if (stackView.currentItem && typeof stackView.currentItem.duplicateSelected === 'function')
+                            stackView.currentItem.duplicateSelected();
+                    }
                 }
 
                 Rectangle {
@@ -216,7 +249,7 @@ Window {
                     id: nodeEditorPage
 
                     NodeEditor {
-                        nodeGraph: selectedObject && selectedObject.nodeGraph ? selectedObject.nodeGraph : null
+                        selectedObject: mainWindow.selectedObject
                     }
                 }
 
@@ -621,6 +654,7 @@ Window {
             comp.duration = cfg.duration || 150;
             var tl = comp.ensureDefaultLayer();
             var track = tl.trackAt(0);
+            track.trackType = Track.Video;
             comp.rebuildFlatLayers();
             globalTimelineModel.composition = comp;
         } else if (cfg && cfg.mode === "open") {
@@ -639,9 +673,14 @@ Window {
             }
             var tl = comp.ensureDefaultLayer();
             var track = tl.trackAt(0);
+            track.trackType = Track.Video;
             comp.rebuildFlatLayers();
             globalTimelineModel.composition = comp;
         }
+        // Wire audio engine to timeline
+        if (typeof _audioEngine !== "undefined")
+            _audioEngine.timelineModel = globalTimelineModel;
+
         // Window title
         mainWindow.title = "MOKM Effector — " + (project.name || "Untitled");
         project.nameChanged.connect(function() {

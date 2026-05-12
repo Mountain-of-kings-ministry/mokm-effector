@@ -1,1 +1,0 @@
-# Rendering Node Category\n\nFinal output pipeline.\n\nIntended nodes:\n- Render Layer\n- Render Pass\n- Viewport\n- Composite\n- Depth Pass\n- Normal Pass\n- AO Pass\n- Reflection Pass\n- Shadow Pass\n- Multi Render

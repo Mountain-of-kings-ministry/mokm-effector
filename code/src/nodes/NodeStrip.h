@@ -2,19 +2,16 @@
 
 #include "../core/Strip.h"
 
-class NodeGraph;
-class Layer;
-
 class NodeStrip : public Strip
 {
     Q_OBJECT
-    Q_PROPERTY(NodeGraph* nodeGraph READ nodeGraph WRITE setNodeGraph NOTIFY nodeGraphChanged)
+    Q_PROPERTY(QString nodeGraphJson READ nodeGraphJson WRITE setNodeGraphJson NOTIFY nodeGraphJsonChanged)
 public:
     explicit NodeStrip(QObject *parent = nullptr);
     ~NodeStrip() override;
 
-    NodeGraph* nodeGraph() const { return m_nodeGraph; }
-    void setNodeGraph(NodeGraph *graph);
+    QString nodeGraphJson() const { return m_nodeGraphJson; }
+    void setNodeGraphJson(const QString &json);
 
     Q_INVOKABLE void cook();
     Q_INVOKABLE Strip* clone(QObject *parent = nullptr) const override;
@@ -24,8 +21,8 @@ public:
     void fromJson(const QJsonObject &obj);
 
 signals:
-    void nodeGraphChanged();
+    void nodeGraphJsonChanged();
 
 private:
-    NodeGraph *m_nodeGraph = nullptr;
+    QString m_nodeGraphJson;
 };

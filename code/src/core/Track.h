@@ -17,6 +17,9 @@ class Track : public QObject
     Q_PROPERTY(QQmlListProperty<Strip> strips READ strips NOTIFY stripsChanged)
     Q_PROPERTY(int stripCount READ stripCount NOTIFY stripsChanged)
 
+    // Track type
+    Q_PROPERTY(int trackType READ trackType WRITE setTrackType NOTIFY trackTypeChanged)
+
     // Track properties
     Q_PROPERTY(bool enabled READ enabled WRITE setEnabled NOTIFY enabledChanged)
     Q_PROPERTY(bool mute READ mute WRITE setMute NOTIFY muteChanged)
@@ -29,11 +32,17 @@ class Track : public QObject
     Q_PROPERTY(bool looping READ looping WRITE setLooping NOTIFY loopingChanged)
     Q_PROPERTY(int loopCount READ loopCount WRITE setLoopCount NOTIFY loopCountChanged)
 public:
+    enum TrackType { Video = 0, Audio, Image };
+    Q_ENUM(TrackType)
+
     explicit Track(QObject *parent = nullptr);
     ~Track() override;
 
     QString name() const { return m_name; }
     void setName(const QString &name);
+
+    int trackType() const { return m_trackType; }
+    void setTrackType(int type);
 
     QQmlListProperty<Strip> strips();
     int stripCount() const { return m_strips.size(); }
@@ -45,7 +54,7 @@ public:
     Q_INVOKABLE void moveStrip(int fromIndex, int toIndex);
     Q_INVOKABLE int indexOf(Strip *strip) const;
 
-    Q_INVOKABLE Strip* createStripFromAsset(Layer *asset, const QString &stripName = QString(), int startFrame = 0, int duration = 90);
+    Q_INVOKABLE Strip* createStripFromAsset(Layer *asset, const QString &stripName = QString(), int startFrame = 0, int duration = -1);
 
     Q_INVOKABLE void deleteTrack();
 
@@ -76,9 +85,13 @@ public:
     int loopCount() const { return m_loopCount; }
     void setLoopCount(int v);
 
+    Q_INVOKABLE QString trackTypeName(int type) const;
+    static QString trackTypeNameStatic(int type);
+
 signals:
     void nameChanged();
     void stripsChanged();
+    void trackTypeChanged();
     void enabledChanged();
     void muteChanged();
     void soloChanged();
@@ -92,6 +105,7 @@ signals:
 
 private:
     QString m_name;
+    int m_trackType = Video;
     TimelineLayer *m_layer = nullptr;
     QVector<Strip*> m_strips;
 

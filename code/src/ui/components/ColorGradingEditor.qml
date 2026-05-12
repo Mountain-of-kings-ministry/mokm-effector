@@ -125,19 +125,33 @@ Rectangle {
                 RowLayout {
                     anchors.fill: parent; spacing: 0
 
-                    Rectangle { Layout.fillWidth: true; Layout.fillHeight: true; color: "#1a1a1a"; visible: root.showSplitView
-                        Text { anchors.centerIn: parent; text: "ORIGINAL"; color: "#888"; font.pixelSize: 11 } }
-                    Rectangle { Layout.fillWidth: true; Layout.fillHeight: true; color: "#1a1a1a"
-                        Text { anchors.centerIn: parent; text: "GRADED"; color: Theme.accent; font.pixelSize: 11 } }
+                    Rectangle { 
+                        Layout.fillWidth: true; Layout.fillHeight: true; color: "#1a1a1a"; visible: root.showSplitView
+                        Text { anchors.centerIn: parent; text: "ORIGINAL\n(No FX)"; color: "#888"; font.pixelSize: 11; horizontalAlignment: Text.AlignHCenter } 
+                    }
+                    
+                    Rectangle {
+                        Layout.fillWidth: true; Layout.fillHeight: true; color: "#000000"
+                        ThorVGViewport {
+                            anchors.fill: parent
+                            composition: _comp
+                            currentFrame: timelineModel ? timelineModel.currentFrame : 0
+                        }
+                        Text { 
+                            anchors.top: parent.top; anchors.right: parent.right; anchors.margins: 10
+                            text: "GRADED"; color: Theme.accent; font.pixelSize: 10; font.bold: true 
+                        }
+                    }
                 }
 
-                // Scopes
+                // Scopes (Simulated)
                 Row {
-                    anchors.bottom: parent.bottom; anchors.left: parent.left; anchors.right: parent.right; height: 90; spacing: 1
-                    Rectangle { width: parent.width / 2; height: parent.height; color: Qt.alpha(Theme.secondary, 0.9)
-                        Text { anchors.centerIn: parent; text: "Histogram\n[Placeholder]"; color: Theme.mutedForeground; horizontalAlignment: Text.AlignHCenter } }
-                    Rectangle { width: parent.width / 2; height: parent.height; color: Qt.alpha(Theme.secondary, 0.9)
-                        Text { anchors.centerIn: parent; text: "Waveform\n[Placeholder]"; color: Theme.mutedForeground; horizontalAlignment: Text.AlignHCenter } }
+                    anchors.bottom: parent.bottom; anchors.left: parent.left; anchors.right: parent.right; height: 100; spacing: 1
+                    opacity: 0.8
+                    Rectangle { width: parent.width / 2; height: parent.height; color: "#151515"; border.color: "#333"
+                        Text { anchors.centerIn: parent; text: "Histogram"; color: Theme.mutedForeground; font.pixelSize: 9 } }
+                    Rectangle { width: parent.width / 2; height: parent.height; color: "#151515"; border.color: "#333"
+                        Text { anchors.centerIn: parent; text: "Waveform"; color: Theme.mutedForeground; font.pixelSize: 9 } }
                 }
             }
 

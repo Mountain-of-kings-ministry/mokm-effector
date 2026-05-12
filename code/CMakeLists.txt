@@ -9,7 +9,7 @@ endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # ── Project Options ──────────────────────────────────────────
-option(MOKM_ENABLE_NODES     "Node graph editor (QtNodes)"       ON)
+option(MOKM_ENABLE_NODES     "Node graph editor (Qt-Node-editor)" ON)
 option(MOKM_ENABLE_SCRIPTING "QuickJS scripting engine"          OFF)
 option(MOKM_ENABLE_INTEROP   "OTIO + OpenFX interoperability"    OFF)
 option(MOKM_ENABLE_ALL       "Enable all optional components"    OFF)
@@ -35,7 +35,7 @@ set(CMAKE_AUTOMOC ON)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-find_package(Qt6 REQUIRED COMPONENTS Quick Widgets OpenGL)
+find_package(Qt6 REQUIRED COMPONENTS Quick Widgets OpenGL Multimedia QuickShapes)
 
 qt_standard_project_setup(REQUIRES 6.10)
 
@@ -43,17 +43,46 @@ qt_standard_project_setup(REQUIRES 6.10)
 find_package(ThorVG REQUIRED)
 find_package(FFMPEG REQUIRED)
 
+# ── Executable + QML Module ─────────────────────────────────
+qt_add_executable(appmokm_effector
+    main.cpp
+    resources/resources.qrc
+    resources/color_widgets.qrc
+)
+
+
 # ── Local Third Party Libraries ──────────────────────────────
 
-# QtNodes (nodeeditor)
+# Qt-Node-editor
+# if(MOKM_ENABLE_NODES)
+#   target_link_directories(appmokm_effector PRIVATE ${CMAKE_SOURCE_DIR}/../third_parties/Qt-Node-editor/NodeEditor)
+#   message(STATUS "Qt-Node-editor included from local source")
+# endif()
+
+# Qt-Node-editor
 if(MOKM_ENABLE_NODES)
-  set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-  set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
-  set(BUILD_DOCS OFF CACHE BOOL "" FORCE)
-  set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
-  add_subdirectory(third_parties/nodeeditor-master EXCLUDE_FROM_ALL)
-  message(STATUS "QtNodes included from local source (static)")
+
+    target_include_directories(appmokm_effector PRIVATE
+        ${CMAKE_SOURCE_DIR}/../third_parties/Qt-Node-editor
+        ${CMAKE_SOURCE_DIR}/../third_parties/Qt-Node-editor/NodeEditor/include
+    )
+
+    target_link_directories(appmokm_effector PRIVATE
+        ${CMAKE_SOURCE_DIR}/../third_parties/Qt-Node-editor/build/default/NodeEditor
+    )
+
+    target_link_libraries(appmokm_effector PRIVATE
+        NodeEditor
+        NodeEditorCore
+        Qt6::QuickShapes
+    )
+
+    target_compile_definitions(appmokm_effector PRIVATE
+        MOKM_ENABLE_NODES
+    )
+
 endif()
+
 
 # QuickJS
 if(MOKM_ENABLE_SCRIPTING)
@@ -106,21 +135,15 @@ endif()
 
 # ── CLAP Audio Plugin Support ────────────────────────────────
 if(EXISTS "${CMAKE_SOURCE_DIR}/../third_parties/clap-main/include/clap/clap.h")
-    add_library(CLAP INTERFACE)
-    target_include_directories(CLAP INTERFACE
+  add_library(CLAP INTERFACE)
+  target_include_directories(CLAP INTERFACE
         "${CMAKE_SOURCE_DIR}/../third_parties/clap-main/include")
-    message(STATUS "CLAP headers found at third_parties/clap-main")
+  message(STATUS "CLAP headers found at third_parties/clap-main")
 else()
-    message(STATUS "CLAP headers NOT found — audio plugin support disabled")
+  message(STATUS "CLAP headers NOT found — audio plugin support disabled")
 endif()
 
-# ── Executable + QML Module ─────────────────────────────────
-qt_add_executable(appmokm_effector
-    main.cpp
-    resources/resources.qrc
-    resources/qtnodes_resources.qrc
-    resources/color_widgets.qrc
-)
+
 
 add_subdirectory(src)
 
@@ -156,66 +179,41 @@ target_link_libraries(appmokm_effector
     PRIVATE Qt6::Quick
     PRIVATE Qt6::Widgets
     PRIVATE Qt6::OpenGL
+    PRIVATE Qt6::Multimedia
     PRIVATE ThorVG::ThorVG
     PRIVATE ${FFMPEG_LIBRARIES}
 )
 
 if(TARGET CLAP)
-    target_link_libraries(appmokm_effector PRIVATE CLAP)
-    target_compile_definitions(appmokm_effector PRIVATE MOKM_ENABLE_CLAP=1)
+  target_link_libraries(appmokm_effector PRIVATE CLAP)
+  target_compile_definitions(appmokm_effector PRIVATE MOKM_ENABLE_CLAP=1)
 endif()
 
 
-# if(MOKM_ENABLE_NODES)
-#     file(GLOB_RECURSE NODE_SOURCES "src/nodes/*.cpp" "src/nodes/*.h")
-#     target_sources(appmokm_effector PRIVATE ${NODE_SOURCES})
-#     target_include_directories(appmokm_effector PRIVATE
-#         ${CMAKE_CURRENT_SOURCE_DIR}/src/nodes
-#         ${CMAKE_CURRENT_SOURCE_DIR}/src/nodes/nodes
-#     )
-#     target_link_libraries(appmokm_effector PRIVATE QtNodes::QtNodes)
-#     target_compile_definitions(appmokm_effector PRIVATE MOKM_ENABLE_NODES)
-# endif()
-
 if(MOKM_ENABLE_NODES)
-
   file(GLOB_RECURSE NODE_SOURCES
         CONFIGURE_DEPENDS
         "src/nodes/*.cpp"
         "src/nodes/*.h"
     )
 
-  # Auto-detect all subdirectories inside src/nodes/nodes
-  file(GLOB NODE_SUBDIRS
-        CONFIGURE_DEPENDS
-        LIST_DIRECTORIES true
-        "${CMAKE_CURRENT_SOURCE_DIR}/src/nodes/nodes/*"
-    )
-
-  set(NODE_INCLUDE_DIRS "")
-  foreach(dir ${NODE_SUBDIRS})
-    if(IS_DIRECTORY ${dir})
-      list(APPEND NODE_INCLUDE_DIRS ${dir})
-    endif()
-  endforeach()
-
   target_sources(appmokm_effector PRIVATE ${NODE_SOURCES})
 
   target_include_directories(appmokm_effector PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/nodes
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/nodes/nodes
-        ${NODE_INCLUDE_DIRS}
-        ${CMAKE_CURRENT_SOURCE_DIR}/third_parties/nodeeditor-master/include/QtNodes/internal
     )
 
   target_link_libraries(appmokm_effector PRIVATE
-        QtNodes::QtNodes
+        NodeEditor NodeEditorCore Qt6::QuickShapes
     )
 
   target_compile_definitions(appmokm_effector PRIVATE
         MOKM_ENABLE_NODES
     )
 
+  set_property(TARGET appmokm_effector APPEND PROPERTY
+      QT_QML_IMPORT_PATH "${CMAKE_SOURCE_DIR}/../third_parties/Qt-Node-editor/NodeEditor"
+  )
 endif()
 
 if(MOKM_ENABLE_SCRIPTING)

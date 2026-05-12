@@ -1,1 +1,0 @@
-# 3D Node Category\n\nModern motion graphics requires this.\nUses Filament and qrhiimgui2.\n\nIntended nodes:\n- Mesh\n- Cube\n- Sphere\n- Plane\n- Import Model\n- Skeleton\n- Skin\n- Instancer\n- Geometry Cache\n- USD Scene

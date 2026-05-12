@@ -64,7 +64,7 @@ Window {
         interval: 1000
         running: true
         repeat: false
-        onTriggered: mainLoader.source = "Main.qml"
+        onTriggered: mainLoader.source = "ProjectProperties.qml"
     }
 
     Loader {

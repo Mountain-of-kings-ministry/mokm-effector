@@ -40,6 +40,7 @@ public:
 
     Q_INVOKABLE Track* trackAt(int index) const;
     Q_INVOKABLE Track* addTrack(const QString &name = QString());
+    Q_INVOKABLE void addTrack(Track *track);
     Q_INVOKABLE void removeTrack(Track *track);
     Q_INVOKABLE int trackIndex(Track *track) const;
     Q_INVOKABLE void moveTrack(int fromIndex, int toIndex);
