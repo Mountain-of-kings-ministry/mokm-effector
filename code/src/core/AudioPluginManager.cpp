@@ -40,11 +40,10 @@ void AudioPluginManager::scanPlugins()
     }
 
     // Populate your QML list
-    for (int i = 0; i < m_knownPluginList.getNumTypes(); ++i)
+    auto allTypes = m_knownPluginList.getTypes();
+    for (const auto& desc : allTypes)
     {
-        const juce::PluginDescription* desc = m_knownPluginList.getType(i);
-        if (desc)
-            m_plugins.append(new AudioPlugin(*desc, this));
+        m_plugins.append(new AudioPlugin(desc, this));
     }
 
     emit pluginsChanged();

@@ -25,7 +25,7 @@ endif()
 # or temporarily disabled to ensure build success with standalone sources.
 set(VCPKG_MANIFEST_FEATURES "")
 
-project(mokm_effector VERSION 0.1 LANGUAGES CXX)
+project(mokm_effector VERSION 0.1 LANGUAGES C CXX)
 
 # ── Standard Setup ───────────────────────────────────────────
 set(CMAKE_CXX_STANDARD 20)
@@ -62,6 +62,7 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(FREETYPE REQUIRED freetype2)
 
 add_library(MOKM_JUCE STATIC)
+set_target_properties(MOKM_JUCE PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 target_include_directories(MOKM_JUCE PRIVATE
     ${JUCE_MODULES_PATH}
@@ -87,35 +88,15 @@ target_compile_definitions(MOKM_JUCE PUBLIC
 
 target_sources(MOKM_JUCE PRIVATE
     ${JUCE_MODULES_PATH}/juce_core/juce_core.cpp
+    ${JUCE_MODULES_PATH}/juce_core/juce_core_CompilationTime.cpp
     ${JUCE_MODULES_PATH}/juce_events/juce_events.cpp
     ${JUCE_MODULES_PATH}/juce_graphics/juce_graphics.cpp
+    ${JUCE_MODULES_PATH}/juce_graphics/juce_graphics_Sheenbidi.c
     ${JUCE_MODULES_PATH}/juce_data_structures/juce_data_structures.cpp
     ${JUCE_MODULES_PATH}/juce_gui_basics/juce_gui_basics.cpp
     ${JUCE_MODULES_PATH}/juce_audio_basics/juce_audio_basics.cpp
     ${JUCE_MODULES_PATH}/juce_audio_processors/juce_audio_processors.cpp
     ${JUCE_MODULES_PATH}/juce_audio_processors_headless/juce_audio_processors_headless.cpp
-    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/BidiChain.c
-    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/BidiTypeLookup.c
-    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/BracketQueue.c
-    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/GeneralCategoryLookup.c
-    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/IsolatingRun.c
-    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/LevelRun.c
-    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/Object.c
-    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/PairingLookup.c
-    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/RunQueue.c
-    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/SBAlgorithm.c
-    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/SBBase.c
-    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/SBCodepoint.c
-    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/SBCodepointSequence.c
-    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/SBLine.c
-    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/SBLog.c
-    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/SBMirrorLocator.c
-    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/SBParagraph.c
-    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/SBScriptLocator.c
-    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/ScriptLookup.c
-    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/ScriptStack.c
-    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/StatusStack.c
-    ${JUCE_MODULES_PATH}/juce_graphics/unicode/sheenbidi/Source/SheenBidi.c
 )
 
 pkg_check_modules(FONTCONFIG REQUIRED fontconfig)
