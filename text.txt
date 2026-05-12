@@ -8,16 +8,30 @@ you can see all icons available, it from tabler icons github. repo download.
 what i need you to do is to complete the project with the editing funtionalities.
 toolList.md
 
-rebuild the pre existing tools becuase they are not working, i need you to make a deep dive and apply this one time fix, no do overs just once. and make sure to add info on the tools so when i hover over them i can see what they do.
+rebuild the pre existing tools becuase they are not working, some works but not properly, i need you to make a deep dive and apply this one time fix, no do overs just once. and make sure to add info on the tools so when i hover over them i can see what they do.
 
 the strip right click context menu too, update it and make it work properly. it should not just display menu items it should actually be functional
 
 and add the features to disable track and layer any layer can be disabled any track can be disabled too.
 
-when the app starts up, it goas through a splash screen then project info is shown either to continue with an existing project or to create a new one. i need the selected settings to be global for that project so that the aspect ratio of the project will be accurate, and the project info is shown correctly when the app starts up. add more screen size to it so users can select the aspect ratio of their project. and even make it better by using social media names for them so it easy to select.
+i need you to make the system very optimized for performance and memory usage. because of playback for compositions, the system should be able to handle large compositions without crashing or slowing down. majourly for lowend deviced as thats the aim of the project. thorvg will handle it own 2delements and image, while qt and ffmpeg will handle the playback and rendering of audio and video.
+
+when the app starts up, it goas through a splash screen then project info is shown either to continue with an existing project or to create a new one. i need the selected settings to be global for that project so that the aspect ratio of the project will be accurate, and the project info is shown correctly when the app starts up. add more screen size to it so users can select the aspect ratio of their project. and even make it better by using social media names for them so it easy to select. and custom ratios should be allowed too.
 
 and the last, i need you to fix the thorvg elements not adding to an image track, becuase thorvg takes care of 2d graphisc it prebuilt graphics and image elements. the other qt and ffmpeg handdles.
 
-layers and tracks should be reanrangable, i should be able to move one track up or down, and one layer up or down. the strips in tracks should be reanrangable too, i should be able to move them up or down. based on their type if it an audio, video, or image track, the strips should be reanrangable accordingly to their type on tracks.
+layers and tracks should be reanrangable, i should be able to move one track up or down, and one layer up or down. the strips in tracks should be reanrangable too, i should be able to move them up or down. based on their type if it an audio, video, or image track, the strips should be reanrangable accordingly to their type on tracks. and the index should change in view port too, and i need you to add color to the track based on type, video tracks should be blue, audio tracks should be green, and image tracks should be red, all in deep color similar to the color scheme of the rest of the application. when creating a new track, the color should be based on the type of the track, and the index should be set to the correct position in the view port. the name should be based on type, video tracks should be named "Video", audio tracks should be named "Audio", and image tracks should be named "Image".
+
+and the properties that belongs to layers and tracks should be editable in the properties panel. and functional like the opacity etc.
 
 every part where yuo see the use of emogies use icons. i will really apprciate that.
+
+the faders in the audio editor shoudl be Rowlayout similar to daws so the controls/sliders can be biger and easy to intaract with, more height so they are abit taller and easier to see.
+increase the svg size so they are more visible and easier to see.
+
+error to fix
+qrc:/qt/qml/mokm_effector/src/ui/components/PluginManagerPopup.qml:231: ReferenceError: selectedPluginIds is not defined
+qrc:/qt/qml/mokm_effector/src/ui/Main.qml:235:25: Unable to assign [undefined] to bool
+and the system on start should look for audio plugins and load them automatically, you can add statuse to the splashscreen so the text chage as the system loads plugins. from their default location or user specified location by users, you will need to add it to setttings [ preferencedialog ] so it posible to do.
+
+and the timeline should scroll with the play head as it moves. add optiions to tool bar so the user can control the timeline. as stated in toolList.md and make sure it same accross areas where the timeline is used. so it stays professional and consistent.

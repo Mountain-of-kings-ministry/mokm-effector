@@ -23,6 +23,7 @@ Popup {
     property var _clapPlugins: []
     property var _vst3Plugins: []
     property var _selectedPlugins: ({})
+    property var selectedPluginIds: ({})
 
     function gatherPlugins() {
         _clapPlugins = [];
@@ -193,8 +194,6 @@ Popup {
                     }
                 }
             }
-
-            property var selectedPluginIds: ({})
 
             function getSelectedList() {
                 var list = [];

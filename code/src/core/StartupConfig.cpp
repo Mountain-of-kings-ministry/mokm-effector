@@ -11,6 +11,11 @@ void StartupConfig::setMode(const QString &v)
     if (m_mode != v) { m_mode = v; emit changed(); }
 }
 
+void StartupConfig::setStatus(const QString &v)
+{
+    if (m_status != v) { m_status = v; emit statusChanged(); }
+}
+
 void StartupConfig::setProjectName(const QString &v)
 {
     if (m_projectName != v) { m_projectName = v; emit changed(); }

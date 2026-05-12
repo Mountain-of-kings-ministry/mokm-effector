@@ -13,15 +13,15 @@ Window {
     color: Theme.background
     flags: Qt.FramelessWindowHint
 
-    opacity: 1
-
-    NumberAnimation on opacity {
-        id: fadeOut
-        from: 1
-        to: 0
-        duration: 300
-        running: false
-        onFinished: splash.visible = false
+    // Triggers plugin scanning
+    Component.onCompleted: {
+        _startupConfig.status = "Loading Audio Plugins...";
+        // Call C++ plugin scanning
+        if (typeof _audioPluginManager !== "undefined") {
+            _audioPluginManager.scanPlugins();
+        }
+        _startupConfig.status = "Ready";
+        loadTimer.start();
     }
 
     ColumnLayout {
@@ -53,7 +53,7 @@ Window {
         }
 
         Text {
-            text: qsTr("Loading…")
+            text: _startupConfig ? _startupConfig.status : ""
             color: Theme.mutedForeground
             font.pixelSize: 12
             horizontalAlignment: Text.AlignHCenter
@@ -61,15 +61,19 @@ Window {
     }
 
     Timer {
-        interval: 1000
-        running: true
+        id: loadTimer
+        interval: 500
+        running: false
         repeat: false
-        onTriggered: mainLoader.source = "ProjectProperties.qml"
-    }
-
-    Loader {
-        id: mainLoader
-        asynchronous: false
-        onLoaded: fadeOut.start()
+        onTriggered: {
+            var component = Qt.createComponent("ProjectProperties.qml");
+            if (component.status === Component.Ready) {
+                var win = component.createObject(null);
+                win.show();
+                splash.close();
+            } else {
+                console.error("Failed to load ProjectProperties.qml");
+            }
+        }
     }
 }

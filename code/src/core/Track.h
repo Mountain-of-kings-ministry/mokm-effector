@@ -5,6 +5,7 @@
 #include <QString>
 #include <QVector>
 #include <QQmlListProperty>
+#include <QColor>
 
 #include "EffectChain.h"
 
@@ -21,6 +22,7 @@ class Track : public QObject
 
     // Track type
     Q_PROPERTY(int trackType READ trackType WRITE setTrackType NOTIFY trackTypeChanged)
+    Q_PROPERTY(QColor color READ color WRITE setColor NOTIFY colorChanged)
 
     // Track properties
     Q_PROPERTY(bool enabled READ enabled WRITE setEnabled NOTIFY enabledChanged)
@@ -46,6 +48,9 @@ public:
 
     int trackType() const { return m_trackType; }
     void setTrackType(int type);
+
+    QColor color() const { return m_color; }
+    void setColor(const QColor &c);
 
     QQmlListProperty<Strip> strips();
     int stripCount() const { return m_strips.size(); }
@@ -97,6 +102,7 @@ signals:
     void nameChanged();
     void stripsChanged();
     void trackTypeChanged();
+    void colorChanged();
     void enabledChanged();
     void muteChanged();
     void soloChanged();
@@ -111,6 +117,7 @@ signals:
 private:
     QString m_name;
     int m_trackType = Video;
+    QColor m_color = QColor("#3b82f6");
     TimelineLayer *m_layer = nullptr;
     QVector<Strip*> m_strips;
 

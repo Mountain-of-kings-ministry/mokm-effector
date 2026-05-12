@@ -1,15 +1,15 @@
 #include "AudioPluginManager.h"
 #include <juce_audio_processors/juce_audio_processors.h>
+#include <QDir>
+#include <QSettings>
 
-// AudioPluginManager::AudioPluginManager(QObject *parent) : QObject(parent)
-// {
-//     m_formatManager.addDefaultFormats();
-// }
-//
 AudioPluginManager::AudioPluginManager(QObject *parent)
     : QObject(parent)
 {
     juce::addHeadlessDefaultFormatsToManager(m_formatManager);
+    
+    // Auto-scan on initialization
+    scanPlugins();
 }
 
 void AudioPluginManager::scanPlugins()
@@ -17,29 +17,28 @@ void AudioPluginManager::scanPlugins()
     m_knownPluginList.clear();
     m_plugins.clear();
 
-    auto formats = m_formatManager.getFormats();   // Array<AudioPluginFormat*>
+    auto formats = m_formatManager.getFormats();
 
     for (juce::AudioPluginFormat* format : formats)
     {
         if (format == nullptr)
             continue;
 
+        // Optionally add user-defined paths from settings here if available
+        juce::FileSearchPath searchPaths = format->getDefaultLocationsToSearch();
+        
         juce::PluginDirectoryScanner scanner(
             m_knownPluginList,
-            *format,                                      // single format
-            format->getDefaultLocationsToSearch(),        // better than hard-coded path
-            true,                                         // recursive
-            juce::File()                                  // dead man's pedal
+            *format,
+            searchPaths,
+            true,
+            juce::File()
         );
 
         juce::String name;
-        while (scanner.scanNextFile(true, name))
-        {
-            // You can log progress here if you want: qDebug() << "Scanning:" << name;
-        }
+        while (scanner.scanNextFile(true, name)) { }
     }
 
-    // Populate your QML list
     auto allTypes = m_knownPluginList.getTypes();
     for (const auto& desc : allTypes)
     {
@@ -60,3 +59,4 @@ QQmlListProperty<AudioPlugin> AudioPluginManager::plugins()
 {
     return QQmlListProperty<AudioPlugin>(this, &m_plugins, &countPlugins, &atPlugin);
 }
+// ... rest of implementation unchanged

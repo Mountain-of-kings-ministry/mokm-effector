@@ -6,11 +6,14 @@
 #include "../core/ImageLayer.h"
 #include "../core/VideoLayer.h"
 #include "../core/Track.h"
+#include "../core/Strip.h"
+#include "../core/TimelineLayer.h"
 
 #include <QPainter>
 #include <QFontMetrics>
 #include <QMouseEvent>
 #include <QCursor>
+#include <cmath>
 
 ThorVGViewport::ThorVGViewport(QQuickItem *parent)
     : QQuickPaintedItem(parent)
@@ -59,12 +62,30 @@ void ThorVGViewport::reconnectLayerSignals()
     for (int i = 0; i < m_composition->flatLayerCount(); ++i) {
         auto *layer = m_composition->flatLayerAt(i);
         if (!layer) continue;
+        
+        // Connect to layer's own signals
         connect(layer, &Layer::transformChanged, this, [this]{ update(); });
         connect(layer, &Layer::opacityChanged, this, [this]{ update(); });
         connect(layer, &Layer::visibleChanged, this, [this]{ update(); });
         connect(layer, &Layer::enabledChanged, this, [this]{ update(); });
         connect(layer, &Layer::startFrameChanged, this, [this]{ update(); });
         connect(layer, &Layer::durationChanged, this, [this]{ update(); });
+        
+        // Connect to parent signals if available
+        if (auto *strip = qobject_cast<Strip*>(layer->parent())) {
+            if (auto *track = strip->track()) {
+                connect(track, &Track::enabledChanged, this, [this]{ update(); });
+                connect(track, &Track::muteChanged, this, [this]{ update(); });
+                connect(track, &Track::opacityChanged, this, [this]{ update(); });
+                
+                if (auto *tl = track->layer()) {
+                    connect(tl, &TimelineLayer::enabledChanged, this, [this]{ update(); });
+                    connect(tl, &TimelineLayer::visibleChanged, this, [this]{ update(); });
+                    connect(tl, &TimelineLayer::opacityChanged, this, [this]{ update(); });
+                }
+            }
+        }
+        
         m_connectedLayers.append(layer);
     }
 }
@@ -128,13 +149,32 @@ void ThorVGViewport::paint(QPainter *painter)
     // Render layers bottom-to-top with selection outlines
     for (int i = 0; i < m_composition->flatLayerCount(); ++i) {
         auto *layer = m_composition->flatLayerAt(i);
-        if (!layer || !layer->enabled() || !layer->visible())
+        if (!layer) continue;
+
+        // Check overall visibility: Layer -> Track -> TimelineLayer
+        bool visible = layer->enabled() && layer->visible();
+        qreal opacity = layer->opacity();
+
+        if (auto *strip = qobject_cast<Strip*>(layer->parent())) {
+            if (auto *track = strip->track()) {
+                visible = visible && track->enabled() && !track->mute();
+                opacity *= track->opacity();
+                
+                if (auto *tl = track->layer()) {
+                    visible = visible && tl->enabled() && tl->visible() && !tl->mute();
+                    opacity *= tl->opacity();
+                }
+            }
+        }
+
+        if (!visible || opacity <= 0)
             continue;
+
         if (m_currentFrame < layer->startFrame() || m_currentFrame >= layer->startFrame() + layer->duration())
             continue;
 
         painter->save();
-        painter->setOpacity(layer->opacity());
+        painter->setOpacity(opacity);
         painter->translate(layer->x(), layer->y());
         painter->translate(compW / 2.0, compH / 2.0);
         painter->rotate(layer->rotation());

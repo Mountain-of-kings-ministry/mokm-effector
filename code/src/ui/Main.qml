@@ -12,6 +12,7 @@ Window {
     visible: true
     title: qsTr("MOKM Effector — Untitled")
     color: Theme.background
+    property bool animateFaders: false
 
     // frameless window with topbar
     flags: Qt.FramelessWindowHint
@@ -47,10 +48,8 @@ Window {
             onImportVideoRequested: importVideoDialog.open()
             onExportVideoRequested: exportDialog.open()
             onExportImageSequenceRequested: exportImageSequenceDialog.open()
-        onPreferencesRequested: prefsDialog.open()
+            onPreferencesRequested: prefsDialog.open()
         }
-
-    property bool animateFaders: false
 
         SplitView {
             Layout.fillWidth: true
@@ -277,6 +276,57 @@ Window {
         id: exportController
         onExportFinished: function (success, message) {
             console.log("Export " + (success ? "succeeded" : "failed") + ": " + message);
+        }
+    }
+
+    FileDialog {
+        id: importImageDialog
+        title: qsTr("Import Image")
+        nameFilters: ["Images (*.png *.jpg *.jpeg *.gif *.bmp *.webp)", "All Files (*)"]
+        onAccepted: {
+            if (!importImageDialog.selectedFile) return;
+            var url = importImageDialog.selectedFile;
+            var layer = imageLayerComponent.createObject(project, {
+                name: "Image " + (project.assets.length + 1),
+                source: url
+            });
+            project.addAsset(layer);
+            selectedObject = layer;
+            project.captureSnapshot();
+        }
+    }
+
+    FileDialog {
+        id: importAudioDialog
+        title: qsTr("Import Audio")
+        nameFilters: ["Audio (*.wav *.mp3 *.ogg *.flac *.aac *.m4a)", "All Files (*)"]
+        onAccepted: {
+            if (!importAudioDialog.selectedFile) return;
+            var layer = audioLayerComponent.createObject(project, {
+                name: "Audio " + (project.assets.length + 1),
+                source: importAudioDialog.selectedFile
+            });
+            project.addAsset(layer);
+            selectedObject = layer;
+            project.captureSnapshot();
+        }
+    }
+
+    FileDialog {
+        id: importVideoDialog
+        title: qsTr("Import Video")
+        nameFilters: ["Video (*.mp4 *.mov *.avi *.mkv *.webm *.m4v *.ts)", "All Files (*)"]
+        onAccepted: {
+            if (!importVideoDialog.selectedFile) return;
+            var url = importVideoDialog.selectedFile;
+            var name = "Video " + (project.assets.length + 1);
+            var layer = videoLayerComponent.createObject(project, {
+                name: name,
+                source: url
+            });
+            project.addAsset(layer);
+            selectedObject = layer;
+            project.captureSnapshot();
         }
     }
 
@@ -550,91 +600,6 @@ Window {
         edgeRight: 1
         edgeBottom: 1
         cursorShape: Qt.SizeFDiagCursor
-    }
-
-    // ── Media Import Dialogs ──
-    FileDialog {
-        id: importImageDialog
-        title: qsTr("Import Image")
-        nameFilters: ["Images (*.png *.jpg *.jpeg *.gif *.bmp *.webp)", "All Files (*)"]
-        onAccepted: {
-            if (!importImageDialog.selectedFile) return;
-            var url = importImageDialog.selectedFile;
-            var layer = imageLayerComponent.createObject(project, {
-                name: "Image " + (project.assets.length + 1),
-                source: url
-            });
-            var comp = project.activeComposition;
-            if (comp && layer.imageWidth > 0 && layer.imageHeight > 0) {
-                var cw = comp.width;
-                var ch = comp.height;
-                var iw = layer.imageWidth;
-                var ih = layer.imageHeight;
-                var s = Math.min(cw / iw, ch / ih) * 0.8;
-                layer.x = cw / 2;
-                layer.y = ch / 2;
-                layer.scaleX = s;
-                layer.scaleY = s;
-            }
-            project.addAsset(layer);
-            selectedObject = layer;
-            project.captureSnapshot();
-        }
-    }
-
-    FileDialog {
-        id: importAudioDialog
-        title: qsTr("Import Audio")
-        nameFilters: ["Audio (*.wav *.mp3 *.ogg *.flac *.aac *.m4a)", "All Files (*)"]
-        onAccepted: {
-            if (!importAudioDialog.selectedFile) return;
-            var layer = audioLayerComponent.createObject(project, {
-                name: "Audio " + (project.assets.length + 1),
-                source: importAudioDialog.selectedFile
-            });
-            project.addAsset(layer);
-            selectedObject = layer;
-            project.captureSnapshot();
-        }
-    }
-
-    FileDialog {
-        id: importVideoDialog
-        title: qsTr("Import Video")
-        nameFilters: ["Video (*.mp4 *.mov *.avi *.mkv *.webm *.m4v *.ts)", "All Files (*)"]
-        onAccepted: {
-            if (!importVideoDialog.selectedFile) return;
-            var url = importVideoDialog.selectedFile;
-            var name = "Video " + (project.assets.length + 1);
-            var layer = videoLayerComponent.createObject(project, {
-                name: name,
-                source: url
-            });
-            var comp = project.activeComposition;
-            if (comp && layer.videoWidth > 0 && layer.videoHeight > 0) {
-                var cw = comp.width;
-                var ch = comp.height;
-                var iw = layer.videoWidth;
-                var ih = layer.videoHeight;
-                var s = Math.min(cw / iw, ch / ih) * 0.8;
-                layer.x = cw / 2;
-                layer.y = ch / 2;
-                layer.scaleX = s;
-                layer.scaleY = s;
-            }
-            project.addAsset(layer);
-            selectedObject = layer;
-            var audioUrl = project.extractAudioFromVideo(url, name + " Audio");
-            if (audioUrl) {
-                var audioLayer = audioLayerComponent.createObject(project, {
-                    name: name + " Audio",
-                    source: audioUrl
-                });
-                audioLayer.duration = layer.frameCount;
-            project.addAsset(audioLayer);
-            }
-            project.captureSnapshot();
-        }
     }
 
     Component.onCompleted: {

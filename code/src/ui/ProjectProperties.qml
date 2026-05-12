@@ -174,10 +174,52 @@ Window {
                                 Text { text: "Resolution"; color: Theme.foreground; font.pixelSize: 12 }
                                 ComboBox {
                                     id: resCombo; Layout.fillWidth: true
+                                    // model: [
+                                    //     { label: "Instagram Square (1080x1080)", w: 1080, h: 1080 },
+                                    //     { label: "Instagram Story / TikTok (1080x1920)", w: 1080, h: 1920 },
+                                    //     { label: "YouTube / Cinematic (1920x1080)", w: 1920, h: 1080 },
+                                    //     { label: "Twitter / X (1200x675)", w: 1200, h: 675 },
+                                    //     { label: "Facebook Post (1200x630)", w: 1200, h: 630 },
+                                    //     { label: "Custom", w: 0, h: 0 }
+                                    // ]
+                                    //
                                     model: [
-                                        { label: "1920×1080 (Full HD)", w: 1920, h: 1080 },
-                                        { label: "2560×1440 (2K)", w: 2560, h: 1440 },
-                                        { label: "3840×2160 (4K UHD)", w: 3840, h: 2160 },
+                                        // Social Media
+                                        { label: "Instagram Square (1080x1080)", w: 1080, h: 1080 },
+                                        { label: "Instagram Portrait (1080x1350)", w: 1080, h: 1350 },
+                                        { label: "Instagram Story / TikTok (1080x1920)", w: 1080, h: 1920 },
+                                        { label: "Facebook Post (1200x630)", w: 1200, h: 630 },
+                                        { label: "Twitter / X (1200x675)", w: 1200, h: 675 },
+                                        { label: "LinkedIn Post (1200x627)", w: 1200, h: 627 },
+                                        { label: "Pinterest Pin (1000x1500)", w: 1000, h: 1500 },
+
+                                        // Video & Streaming
+                                        { label: "YouTube Thumbnail (1280x720)", w: 1280, h: 720 },
+                                        { label: "YouTube / Cinematic (1920x1080)", w: 1920, h: 1080 },
+                                        { label: "4K UHD (3840x2160)", w: 3840, h: 2160 },
+                                        { label: "Vertical Video HD (720x1280)", w: 720, h: 1280 },
+
+                                        // Desktop / Web
+                                        { label: "HD Ready (1366x768)", w: 1366, h: 768 },
+                                        { label: "Full HD (1920x1080)", w: 1920, h: 1080 },
+                                        { label: "2K QHD (2560x1440)", w: 2560, h: 1440 },
+                                        { label: "UltraWide (3440x1440)", w: 3440, h: 1440 },
+
+                                        // Mobile Devices
+                                        { label: "iPhone 14 Pro (1179x2556)", w: 1179, h: 2556 },
+                                        { label: "iPhone 15 Pro Max (1290x2796)", w: 1290, h: 2796 },
+                                        { label: "Android Portrait (1080x2400)", w: 1080, h: 2400 },
+
+                                        // Tablet
+                                        { label: "iPad Air (1640x2360)", w: 1640, h: 2360 },
+                                        { label: "Tablet Landscape (2560x1600)", w: 2560, h: 1600 },
+
+                                        // Print
+                                        { label: "A4 Portrait (2480x3508)", w: 2480, h: 3508 },
+                                        { label: "A4 Landscape (3508x2480)", w: 3508, h: 2480 },
+                                        { label: "Poster Large (5000x7000)", w: 5000, h: 7000 },
+
+                                        // Custom
                                         { label: "Custom", w: 0, h: 0 }
                                     ]
                                     textRole: "label"

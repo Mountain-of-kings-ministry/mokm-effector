@@ -64,12 +64,12 @@ Dialog {
 
                 Repeater {
                     model: [
-                        { icon: "⚙",   label: "General" },
-                        { icon: "📁",  label: "Project" },
-                        { icon: "✂",   label: "Editing" },
-                        { icon: "🔊",  label: "Audio" },
-                        { icon: "🎬",  label: "Rendering" },
-                        { icon: "🖥",  label: "System" }
+                        { icon: "qrc:/icons/outline/settings.svg", label: "General" },
+                        { icon: "qrc:/icons/outline/folder.svg", label: "Project" },
+                        { icon: "qrc:/icons/outline/scissors.svg", label: "Editing" },
+                        { icon: "qrc:/icons/outline/volume.svg", label: "Audio" },
+                        { icon: "qrc:/icons/outline/movie.svg", label: "Rendering" },
+                        { icon: "qrc:/icons/outline/device-desktop.svg", label: "System" }
                     ]
 
                     delegate: Rectangle {
@@ -84,7 +84,7 @@ Dialog {
                             anchors.fill: parent
                             anchors.leftMargin: 8
                             spacing: 8
-                            Text { text: modelData.icon; font.pixelSize: 12 }
+                            Image { source: modelData.icon; width: 14; height: 14; sourceSize: Qt.size(14, 14) }
                             Text {
                                 text: modelData.label
                                 color: navList.currentIndex === index ? Theme.accent : Theme.foreground

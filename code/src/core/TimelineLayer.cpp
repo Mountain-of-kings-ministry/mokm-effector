@@ -115,6 +115,14 @@ void TimelineLayer::setVisible(bool v)
     }
 }
 
+void TimelineLayer::setEnabled(bool v)
+{
+    if (m_enabled != v) {
+        m_enabled = v;
+        emit enabledChanged();
+    }
+}
+
 void TimelineLayer::setMute(bool v)
 {
     if (m_mute != v) {

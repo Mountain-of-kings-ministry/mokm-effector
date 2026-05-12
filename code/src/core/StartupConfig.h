@@ -18,12 +18,16 @@ class StartupConfig : public QObject
     Q_PROPERTY(int duration READ duration WRITE setDuration NOTIFY changed)
     Q_PROPERTY(bool gpuRendering READ gpuRendering WRITE setGpuRendering NOTIFY changed)
     Q_PROPERTY(QString colorSpace READ colorSpace WRITE setColorSpace NOTIFY changed)
+    Q_PROPERTY(QString status READ status WRITE setStatus NOTIFY statusChanged)
     Q_PROPERTY(QStringList recentProjects READ recentProjects NOTIFY recentProjectsChanged)
 public:
     explicit StartupConfig(QObject *parent = nullptr);
 
     QString mode() const { return m_mode; }
     void setMode(const QString &v);
+
+    QString status() const { return m_status; }
+    void setStatus(const QString &v);
 
     QString projectName() const { return m_projectName; }
     void setProjectName(const QString &v);
@@ -54,6 +58,7 @@ public:
 
 signals:
     void changed();
+    void statusChanged();
     void recentProjectsChanged();
 
 private:
@@ -61,6 +66,7 @@ private:
     void saveRecent();
 
     QString m_mode = "new";
+    QString m_status = "Initializing...";
     QString m_projectName = "Untitled";
     QUrl m_filePath;
     int m_width = 1920;

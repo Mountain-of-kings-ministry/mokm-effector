@@ -24,7 +24,34 @@ void Track::setTrackType(int type)
 {
     if (m_trackType != type) {
         m_trackType = type;
+        
+        // Update default name and color based on type
+        switch (type) {
+        case Video:
+            m_name = QStringLiteral("Video");
+            m_color = QColor("#1e3a8a"); // Deep Blue
+            break;
+        case Audio:
+            m_name = QStringLiteral("Audio");
+            m_color = QColor("#064e3b"); // Deep Green
+            break;
+        case Image:
+            m_name = QStringLiteral("Image");
+            m_color = QColor("#7f1d1d"); // Deep Red
+            break;
+        }
+        
         emit trackTypeChanged();
+        emit nameChanged();
+        emit colorChanged();
+    }
+}
+
+void Track::setColor(const QColor &c)
+{
+    if (m_color != c) {
+        m_color = c;
+        emit colorChanged();
     }
 }
 
@@ -130,7 +157,9 @@ Strip* Track::createStripFromAsset(Layer *asset, const QString &stripName, int s
         typeOk = (qobject_cast<AudioLayer*>(asset) != nullptr);
         break;
     case Image:
-        typeOk = (qobject_cast<ImageLayer*>(asset) != nullptr);
+        typeOk = (qobject_cast<ImageLayer*>(asset) != nullptr)
+              || (qobject_cast<ShapeLayer*>(asset) != nullptr)
+              || (qobject_cast<TextLayer*>(asset) != nullptr);
         break;
     }
     if (!typeOk)

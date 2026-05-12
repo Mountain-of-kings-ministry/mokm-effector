@@ -56,6 +56,8 @@ public:
     void setOpacity(qreal v);
     bool visible() const { return m_visible; }
     void setVisible(bool v);
+    bool enabled() const { return m_enabled; }
+    void setEnabled(bool v);
     bool mute() const { return m_mute; }
     void setMute(bool v);
     bool solo() const { return m_solo; }
@@ -80,6 +82,7 @@ signals:
     void tracksChanged();
     void opacityChanged();
     void visibleChanged();
+    void enabledChanged();
     void muteChanged();
     void soloChanged();
     void offsetXChanged();
@@ -98,6 +101,7 @@ private:
 
     qreal m_opacity = 1.0;
     bool m_visible = true;
+    bool m_enabled = true;
     bool m_mute = false;
     bool m_solo = false;
     qreal m_offsetX = 0.0;
