@@ -120,32 +120,33 @@ Rectangle {
             rotation: pan * 45
             MouseArea {
                 anchors.fill: parent
-                onPositionChanged: {
+                onPositionChanged: function(mouse) {
                     var delta = (mouse.y - height/2) / height;
-                    colRoot.panChanged(qBound(-1, pan - delta, 1));
+                    colRoot.pan = Math.max(-1, Math.min(1, pan - delta));
                 }
             }
         }
 
         // Fader
         Slider {
+            id: faderSlider
             Layout.fillHeight: true
             Layout.alignment: Qt.AlignHCenter
             orientation: Qt.Vertical
             from: 0; to: 1
             value: vol
-            onMoved: colRoot.volChanged(value)
+            onMoved: colRoot.vol = value
             
             background: Rectangle {
-                x: leftPadding + availableWidth / 2 - width / 2
+                x: faderSlider.leftPadding + faderSlider.availableWidth / 2 - width / 2
                 implicitWidth: 10
-                height: availableHeight
+                height: faderSlider.availableHeight
                 radius: 5
                 color: "#1a1a1a"
                 Rectangle {
                     anchors.bottom: parent.bottom
                     width: parent.width
-                    height: parent.height * slider.visualPosition
+                    height: parent.height * faderSlider.visualPosition
                     color: colRoot.color
                     opacity: 0.3
                     radius: 5
@@ -153,8 +154,8 @@ Rectangle {
             }
 
             handle: Image {
-                x: slider.leftPadding + slider.availableWidth / 2 - width / 2
-                y: slider.topPadding + slider.visualPosition * (slider.availableHeight - height)
+                x: faderSlider.leftPadding + faderSlider.availableWidth / 2 - width / 2
+                y: faderSlider.topPadding + faderSlider.visualPosition * (faderSlider.availableHeight - height)
                 width: 48; height: 24
                 source: "qrc:/slide-nub.svg"
             }
