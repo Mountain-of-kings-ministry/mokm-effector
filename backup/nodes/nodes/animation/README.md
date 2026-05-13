@@ -1,1 +1,0 @@
-# Animation Node Category\n\nTimeline-independent animation.\n\nIntended nodes:\n- Keyframe\n- Animation Clip\n- Curve\n- Easing\n- Spring\n- Bounce\n- Oscillator\n- Wiggle\n- Delay\n- Time Offset\n- Loop\n- Ping Pong\n- Time Stretch\n- Retime\n- Motion Clip

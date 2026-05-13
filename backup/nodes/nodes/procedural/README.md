@@ -1,1 +1,0 @@
-# Procedural Node Category\n\nCavalry/Houdini-inspired systems.\n\nIntended nodes:\n- Noise\n- Curl Noise\n- Random\n- Fractal\n- Voronoi\n- Perlin\n- Turbulence\n- Attractor\n- Data Mapper\n- Range Mapper\n- Expression\n- Formula\n- Function\n- Script

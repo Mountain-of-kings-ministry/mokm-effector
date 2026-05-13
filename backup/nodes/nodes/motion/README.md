@@ -1,1 +1,0 @@
-# Motion Node Category\n\nMotion graphics focused.\n\nIntended nodes:\n- Duplicate\n- Cloner\n- Radial Clone\n- Grid Clone\n- Spiral Clone\n- Follow Path\n- Look At\n- Align\n- Distribute\n- Random Transform\n- Stagger\n- Trail\n- Echo\n- Motion Trails

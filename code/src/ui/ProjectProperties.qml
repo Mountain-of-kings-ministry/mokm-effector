@@ -1,19 +1,18 @@
 import QtQuick
-import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
+import QtQuick.Controls
 import mokm_effector
 
 Window {
     id: root
-    width: 820
-    height: 540
+    width: 860
+    height: 580
     visible: true
-    title: qsTr("MOKM Effector")
-
+    title: qsTr("MOKM Effector - New Project")
     color: Theme.background
     flags: Qt.FramelessWindowHint
-    opacity: 0
+
 
     property bool _loading: false
 
@@ -28,251 +27,434 @@ Window {
 
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 24
-            spacing: 20
+            anchors.margins: 28
+            spacing: 24
 
             // Header
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 16
+
                 Rectangle {
-                    width: 36; height: 36; radius: 6; color: Theme.primary
-                    Text { anchors.centerIn: parent; text: "M"; color: Theme.foreground; font.bold: true; font.pixelSize: 18 }
+                    width: 42; height: 42; radius: 8
+                    color: Theme.primary
+                    Text {
+                        anchors.centerIn: parent
+                        text: "M"
+                        color: Theme.foreground
+                        font.pixelSize: 22
+                        font.bold: true
+                    }
                 }
+
                 ColumnLayout {
                     spacing: 2
-                    Text { text: "MOKM Effector"; font.pixelSize: 20; font.bold: true; color: Theme.foreground }
-                    Text { text: "Video Composer & Motion Graphics"; font.pixelSize: 12; color: Theme.mutedForeground }
+                    Text {
+                        text: "MOKM Effector"
+                        font.pixelSize: 22
+                        font.bold: true
+                        color: Theme.foreground
+                    }
+                    Text {
+                        text: "Create New Project"
+                        font.pixelSize: 13
+                        color: Theme.mutedForeground
+                    }
                 }
+
                 Item { Layout.fillWidth: true }
             }
 
-            // Main content
+            // Main Content
             RowLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                spacing: 20
+                spacing: 24
 
-                // ── LEFT: Recent Projects ──
+                // LEFT: Recent Projects
                 Rectangle {
                     Layout.fillHeight: true
-                    Layout.preferredWidth: 340
-                    radius: 10
-                    color: "#161616"
-                    border.color: "#2C2C2C"
+                    Layout.preferredWidth: 360
+                    radius: 12
+                    color: Theme.secondary
+                    border.color: Theme.border
 
                     ColumnLayout {
                         anchors.fill: parent
-                        anchors.margins: 16
-                        spacing: 12
+                        anchors.margins: 20
+                        spacing: 16
 
-                        Text { text: "Recent Projects"; font.pixelSize: 14; font.bold: true; color: Theme.foreground }
+                        Text {
+                            text: "Recent Projects"
+                            font.pixelSize: 15
+                            font.bold: true
+                            color: Theme.foreground
+                        }
 
                         ListView {
                             id: recentList
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             clip: true
-                            spacing: 4
+                            spacing: 6
                             model: _startupConfig.recentProjects
+
                             delegate: Rectangle {
-                                width: recentList.width
-                                height: 48
-                                radius: 6
+                                width: ListView.view.width
+                                height: 52
+                                radius: 8
                                 color: ma.containsMouse ? Theme.secondaryHover : "transparent"
-                                border.color: ma.containsMouse ? Theme.border : "transparent"
 
                                 RowLayout {
                                     anchors.fill: parent
-                                    anchors.margins: 10
-                                    spacing: 10
+                                    anchors.margins: 12
+                                    spacing: 12
+
                                     ColumnLayout {
                                         Layout.fillWidth: true
-                                        spacing: 2
+                                        spacing: 1
                                         Text {
                                             text: {
-                                                var parts = modelData.split("/");
-                                                return parts[parts.length - 1].replace(".mokm", "");
+                                                var parts = modelData.split("/")
+                                                return parts[parts.length - 1].replace(".mokm", "")
                                             }
-                                            color: Theme.foreground; font.pixelSize: 12; font.bold: true
-                                            elide: Text.ElideRight; Layout.fillWidth: true
+                                            color: Theme.foreground
+                                            font.pixelSize: 13
+                                            font.bold: true
+                                            elide: Text.ElideRight
                                         }
-                                        Text { text: modelData; color: Theme.mutedForeground; font.pixelSize: 10; elide: Text.ElideRight; Layout.fillWidth: true }
+                                        Text {
+                                            text: modelData
+                                            color: Theme.mutedForeground
+                                            font.pixelSize: 10
+                                            elide: Text.ElideRight
+                                        }
                                     }
-                                    Button {
-                                        text: "×"; flat: true; implicitWidth: 24; implicitHeight: 24
-                                        onClicked: { _startupConfig.removeRecentProject(modelData); }
+
+                                    MouseArea {
+                                        id: rmBtn
+                                        width: 28; height: 28
+                                        hoverEnabled: true
+                                        onClicked: _startupConfig.removeRecentProject(modelData)
+
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: "×"
+                                            color: rmBtn.containsMouse ? Theme.error : Theme.mutedForeground
+                                            font.pixelSize: 16
+                                        }
                                     }
                                 }
 
                                 MouseArea {
-                                    id: ma; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                                    id: ma
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
                                     onClicked: openProject(modelData)
                                 }
                             }
 
                             Text {
                                 anchors.centerIn: parent
-                                text: "No recent projects"
-                                color: Theme.mutedForeground; font.pixelSize: 12
+                                text: "No recent projects yet"
+                                color: Theme.mutedForeground
+                                font.pixelSize: 13
                                 visible: recentList.count === 0
                             }
                         }
 
                         Button {
+                            text: "Open Other Project..."
                             Layout.fillWidth: true
-                            text: "Open Other…"
+                            height: 38
                             onClicked: openFileDialog.open()
                         }
                     }
                 }
 
-                // ── RIGHT: Create New Project ──
+                // RIGHT: Create New Project Form
                 Rectangle {
                     Layout.fillHeight: true
                     Layout.fillWidth: true
-                    radius: 10
-                    color: "#161616"
-                    border.color: "#2C2C2C"
+                    radius: 12
+                    color: Theme.secondary
+                    border.color: Theme.border
 
-                    ScrollView {
+                    Flickable {
                         anchors.fill: parent
+                        anchors.margins: 20
                         clip: true
-                        padding: 16
+                        contentHeight: formColumn.height
 
                         ColumnLayout {
+                            id: formColumn
                             width: parent.width
-                            spacing: 14
+                            spacing: 18
 
-                            Text { text: "Create New Project"; font.pixelSize: 14; font.bold: true; color: Theme.foreground }
+                            Text {
+                                text: "Project Settings"
+                                font.pixelSize: 15
+                                font.bold: true
+                                color: Theme.foreground
+                            }
 
                             // Project Name
-                            ColumnLayout { spacing: 4
-                                Text { text: "Project Name"; color: Theme.foreground; font.pixelSize: 12 }
+                            ColumnLayout {
+                                spacing: 6
+                                Text { text: "Project Name"; color: Theme.foreground; font.pixelSize: 13 }
                                 TextField {
-                                    id: nameField; Layout.fillWidth: true
-                                    placeholderText: "My Project"
-                                    text: "Untitled"
+                                    id: nameField
+                                    Layout.fillWidth: true
+                                    height: 42
+                                    text: "Untitled Project"
+                                    font.pixelSize: 13
+                                    color: Theme.foreground
+                                    background: Rectangle {
+                                        radius: 8
+                                        color: Theme.input
+                                        border.color: Theme.border
+                                    }
                                 }
                             }
 
                             // Save Location
-                            ColumnLayout { spacing: 4
-                                Text { text: "Save Location"; color: Theme.foreground; font.pixelSize: 12 }
-                                RowLayout { Layout.fillWidth: true; spacing: 8
+                            ColumnLayout {
+                                spacing: 6
+                                Text { text: "Save Location"; color: Theme.foreground; font.pixelSize: 13 }
+                                RowLayout {
+                                    spacing: 10
                                     TextField {
-                                        id: locationField; Layout.fillWidth: true
-                                        placeholderText: "/home/user/projects"
-                                        text: ""
+                                        id: locationField
+                                        Layout.fillWidth: true
+                                        height: 42
+                                        placeholderText: "~/Projects"
+                                        font.pixelSize: 13
+                                        color: Theme.foreground
+                                        background: Rectangle {
+                                            radius: 8
+                                            color: Theme.input
+                                            border.color: Theme.border
+                                        }
                                     }
-                                    Button { text: "Browse"; onClicked: folderDialog.open() }
+                                    Button {
+                                        text: "Browse"
+                                        height: 42
+                                        onClicked: folderDialog.open()
+                                    }
                                 }
                             }
 
-                            // Resolution preset
-                            ColumnLayout { spacing: 4
-                                Text { text: "Resolution"; color: Theme.foreground; font.pixelSize: 12 }
+                            // Resolution
+                            ColumnLayout {
+                                spacing: 6
+                                Text { text: "Resolution Preset"; color: Theme.foreground; font.pixelSize: 13 }
+
                                 ComboBox {
-                                    id: resCombo; Layout.fillWidth: true
-                                    // model: [
-                                    //     { label: "Instagram Square (1080x1080)", w: 1080, h: 1080 },
-                                    //     { label: "Instagram Story / TikTok (1080x1920)", w: 1080, h: 1920 },
-                                    //     { label: "YouTube / Cinematic (1920x1080)", w: 1920, h: 1080 },
-                                    //     { label: "Twitter / X (1200x675)", w: 1200, h: 675 },
-                                    //     { label: "Facebook Post (1200x630)", w: 1200, h: 630 },
-                                    //     { label: "Custom", w: 0, h: 0 }
-                                    // ]
-                                    //
+                                    id: resCombo
+                                    Layout.fillWidth: true
+                                    height: 42
+                                    font.pixelSize: 13
                                     model: [
-                                        // Social Media
-                                        { label: "Instagram Square (1080x1080)", w: 1080, h: 1080 },
-                                        { label: "Instagram Portrait (1080x1350)", w: 1080, h: 1350 },
-                                        { label: "Instagram Story / TikTok (1080x1920)", w: 1080, h: 1920 },
-                                        { label: "Facebook Post (1200x630)", w: 1200, h: 630 },
-                                        { label: "Twitter / X (1200x675)", w: 1200, h: 675 },
-                                        { label: "LinkedIn Post (1200x627)", w: 1200, h: 627 },
-                                        { label: "Pinterest Pin (1000x1500)", w: 1000, h: 1500 },
-
-                                        // Video & Streaming
-                                        { label: "YouTube Thumbnail (1280x720)", w: 1280, h: 720 },
-                                        { label: "YouTube / Cinematic (1920x1080)", w: 1920, h: 1080 },
-                                        { label: "4K UHD (3840x2160)", w: 3840, h: 2160 },
-                                        { label: "Vertical Video HD (720x1280)", w: 720, h: 1280 },
-
-                                        // Desktop / Web
-                                        { label: "HD Ready (1366x768)", w: 1366, h: 768 },
-                                        { label: "Full HD (1920x1080)", w: 1920, h: 1080 },
-                                        { label: "2K QHD (2560x1440)", w: 2560, h: 1440 },
-                                        { label: "UltraWide (3440x1440)", w: 3440, h: 1440 },
-
-                                        // Mobile Devices
-                                        { label: "iPhone 14 Pro (1179x2556)", w: 1179, h: 2556 },
-                                        { label: "iPhone 15 Pro Max (1290x2796)", w: 1290, h: 2796 },
-                                        { label: "Android Portrait (1080x2400)", w: 1080, h: 2400 },
-
-                                        // Tablet
-                                        { label: "iPad Air (1640x2360)", w: 1640, h: 2360 },
-                                        { label: "Tablet Landscape (2560x1600)", w: 2560, h: 1600 },
-
-                                        // Print
-                                        { label: "A4 Portrait (2480x3508)", w: 2480, h: 3508 },
-                                        { label: "A4 Landscape (3508x2480)", w: 3508, h: 2480 },
-                                        { label: "Poster Large (5000x7000)", w: 5000, h: 7000 },
-
-                                        // Custom
-                                        { label: "Custom", w: 0, h: 0 }
+                                        "Instagram Square (1080×1080)",
+                                        "Instagram Portrait (1080×1350)",
+                                        "Instagram Story / TikTok (1080×1920)",
+                                        "YouTube Thumbnail (1280×720)",
+                                        "Full HD (1920×1080)",
+                                        "Vertical Full HD (1080×1920)",
+                                        "2K QHD (2560×1440)",
+                                        "UltraWide (3440×1440)",
+                                        "4K UHD (3840×2160)",
+                                        "iPhone 15 Pro Max (1290×2796)",
+                                        "Android Portrait (1080×2400)",
+                                        "A4 Portrait (2480×3508)",
+                                        "A4 Landscape (3508×2480)",
+                                        "Poster (5000×7000)",
+                                        "Custom"
                                     ]
-                                    textRole: "label"
+
                                     onCurrentIndexChanged: {
-                                        var item = model[currentIndex];
-                                        if (item.w > 0) { resW.value = item.w; resH.value = item.h; }
+                                        // You can add logic here to auto-fill width/height if needed
                                     }
                                 }
-                                RowLayout { spacing: 8
-                                    SpinBox { id: resW; from: 1; to: 7680; value: 1920; Layout.fillWidth: true }
-                                    Text { text: "×"; color: Theme.mutedForeground }
-                                    SpinBox { id: resH; from: 1; to: 4320; value: 1080; Layout.fillWidth: true }
+
+                                RowLayout {
+                                    spacing: 12
+                                    TextField {
+                                        id: resW
+                                        Layout.fillWidth: true
+                                        height: 42
+                                        text: "1920"
+                                        horizontalAlignment: TextInput.AlignHCenter
+                                        validator: IntValidator { bottom: 1; top: 7680 }
+                                        background: Rectangle { radius: 8; color: Theme.input; border.color: Theme.border }
+                                    }
+                                    Text { text: "×"; color: Theme.mutedForeground; font.pixelSize: 18; Layout.alignment: Qt.AlignVCenter }
+                                    TextField {
+                                        id: resH
+                                        Layout.fillWidth: true
+                                        height: 42
+                                        text: "1080"
+                                        horizontalAlignment: TextInput.AlignHCenter
+                                        validator: IntValidator { bottom: 1; top: 4320 }
+                                        background: Rectangle { radius: 8; color: Theme.input; border.color: Theme.border }
+                                    }
                                 }
                             }
 
-                            // Frame Rate + Duration
-                            RowLayout { spacing: 16
-                                ColumnLayout { Layout.fillWidth: true; spacing: 4
-                                    Text { text: "Frame Rate (FPS)"; color: Theme.foreground; font.pixelSize: 12 }
-                                    SpinBox { id: fpsSpin; from: 1; to: 240; value: 30; editable: true; Layout.fillWidth: true }
+                            // Frame Rate & Duration
+                            RowLayout {
+                                spacing: 20
+                                ColumnLayout {
+                                    spacing: 6
+                                    Text { text: "Frame Rate (FPS)"; color: Theme.foreground; font.pixelSize: 13 }
+                                    TextField {
+                                        id: fpsSpin
+                                        Layout.fillWidth: true
+                                        height: 42
+                                        text: "30"
+                                        horizontalAlignment: TextInput.AlignHCenter
+                                        validator: IntValidator { bottom: 1; top: 240 }
+                                        background: Rectangle { radius: 8; color: Theme.input; border.color: Theme.border }
+                                    }
                                 }
-                                ColumnLayout { Layout.fillWidth: true; spacing: 4
-                                    Text { text: "Duration (seconds)"; color: Theme.foreground; font.pixelSize: 12 }
-                                    SpinBox { id: durSpin; from: 1; to: 600; value: 30; editable: true; Layout.fillWidth: true }
+                                ColumnLayout {
+                                    spacing: 6
+                                    Text { text: "Duration (seconds)"; color: Theme.foreground; font.pixelSize: 13 }
+                                    TextField {
+                                        id: durSpin
+                                        Layout.fillWidth: true
+                                        height: 42
+                                        text: "60"
+                                        horizontalAlignment: TextInput.AlignHCenter
+                                        validator: IntValidator { bottom: 1; top: 1800 }
+                                        background: Rectangle { radius: 8; color: Theme.input; border.color: Theme.border }
+                                    }
                                 }
                             }
 
+                            // // Color Space
+                            // ColumnLayout {
+                            //     spacing: 6
+                            //     Text { text: "Color Space"; color: Theme.foreground; font.pixelSize: 13 }
+                            //     ComboBox {
+                            //         id: colorCombo
+                            //         Layout.fillWidth: true
+                            //         height: 42
+                            //         font.pixelSize: 13
+                            //         model: ["sRGB", "Rec.709", "DCI-P3", "Rec.2020"]
+                            //     }
+                            // }
                             // Color Space
-                            ColumnLayout { spacing: 4
-                                Text { text: "Color Space"; color: Theme.foreground; font.pixelSize: 12 }
+                            ColumnLayout {
+                                spacing: 6
+                                Text {
+                                    text: "Color Space";
+                                    color: Theme.foreground;
+                                    font.pixelSize: 13
+                                }
+
                                 ComboBox {
-                                    id: colorCombo; Layout.fillWidth: true
-                                    model: ["sRGB", "Rec.709", "DCI-P3"]
+                                    id: colorCombo
+                                    Layout.fillWidth: true
+                                    height: 42
+                                    font.pixelSize: 13
+                                    model: ["sRGB", "Rec.709", "DCI-P3", "Rec.2020"]
+
+                                    background: Rectangle {
+                                        radius: 8
+                                        color: Theme.input
+                                        border.color: Theme.border
+                                    }
+
+                                    contentItem: Text {
+                                        leftPadding: 12
+                                        verticalAlignment: Text.AlignVCenter
+                                        text: colorCombo.currentText
+                                        color: Theme.foreground
+                                        font: colorCombo.font
+                                    }
+
+                                    popup: Popup {
+                                        y: colorCombo.height + 4
+                                        width: colorCombo.width
+                                        implicitHeight: contentItem.implicitHeight
+                                        padding: 1
+
+                                        contentItem: ListView {
+                                            clip: true
+                                            implicitHeight: contentHeight
+                                            model: colorCombo.popup.visible ? colorCombo.model : null
+                                            currentIndex: colorCombo.highlightedIndex
+
+                                            delegate: Rectangle {
+                                                width: ListView.view.width
+                                                height: 38
+                                                color: mouseArea.containsMouse ? Theme.secondaryHover : Theme.secondary
+
+                                                Text {
+                                                    anchors.left: parent.left
+                                                    anchors.leftMargin: 12
+                                                    anchors.verticalCenter: parent.verticalCenter
+                                                    text: modelData
+                                                    color: Theme.foreground
+                                                }
+
+                                                MouseArea {
+                                                    id: mouseArea
+                                                    anchors.fill: parent
+                                                    hoverEnabled: true
+                                                    onClicked: {
+                                                        colorCombo.currentIndex = index
+                                                        colorCombo.popup.close()
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        background: Rectangle {
+                                            color: Theme.secondary
+                                            border.color: Theme.border
+                                            radius: 8
+                                        }
+                                    }
                                 }
                             }
 
-                            // Checkboxes
-                            RowLayout { spacing: 16
-                                CheckBox { id: gpuCheck; text: "GPU Rendering"; checked: true }
-                                CheckBox { id: autoSaveCheck; text: "Auto Save"; checked: true }
-                                CheckBox { id: proxyCheck; text: "Proxy Media" }
+                            // Options
+                            RowLayout {
+                                spacing: 24
+                                CheckBox { id: gpuCheck; text: "GPU Accelerated Rendering"; checked: true }
+                                CheckBox { id: autoSaveCheck; text: "Enable Auto Save"; checked: true }
+                                CheckBox { id: proxyCheck; text: "Create Proxy Media"; checked: false }
                             }
 
-                            // Spacer
                             Item { Layout.fillHeight: true }
 
-                            // Create button
+                            // Create Button
                             Button {
                                 Layout.fillWidth: true
+                                height: 48
                                 text: "Create Project"
-                                height: 40
-                                highlighted: true
+                                font.pixelSize: 14
+                                font.bold: true
                                 enabled: nameField.text.trim().length > 0
+
+                                background: Rectangle {
+                                    radius: 10
+                                    color: parent.enabled ?
+                                           (parent.down ? Theme.primaryHover : Theme.primary) :
+                                           Theme.muted
+                                }
+
+                                contentItem: Text {
+                                    text: parent.text
+                                    color: parent.enabled ? Theme.foreground : Theme.mutedForeground
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                    font: parent.font
+                                }
+
                                 onClicked: createProject()
                             }
                         }
@@ -280,40 +462,42 @@ Window {
                 }
             }
 
-            // Bottom actions
+            // Bottom Bar
             RowLayout {
                 Layout.fillWidth: true
                 Item { Layout.fillWidth: true }
-                Button { text: "Preferences"; onClicked: prefsDialog.open() }
-                Button { text: "Quit"; onClicked: Qt.quit() }
+
+                Button {
+                    text: "Preferences"
+                    height: 36
+                    onClicked: prefsDialog.open()
+                }
+                Button {
+                    text: "Quit"
+                    height: 36
+                    onClicked: Qt.quit()
+                }
             }
         }
     }
 
-    // ── Dialogs ──
+    // Dialogs
     FolderDialog {
         id: folderDialog
-        title: "Choose Project Location"
-        onAccepted: {
-            if (folderDialog.selectedFolder)
-                locationField.text = folderDialog.selectedFolder.toString().replace("file://", "");
-        }
+        onAccepted: locationField.text = selectedFolder.toString().replace("file://", "")
     }
 
     FileDialog {
         id: openFileDialog
-        title: "Open Project"
         nameFilters: ["MOKM Project (*.mokm)", "All Files (*)"]
-        onAccepted: {
-            if (openFileDialog.selectedFile)
-                openProject(openFileDialog.selectedFile);
-        }
+        onAccepted: openProject(selectedFile)
     }
 
     PreferencesDialog {
         id: prefsDialog
         project: null
     }
+
 
     // ── Functions ──
     function openProject(url) {
@@ -330,12 +514,12 @@ Window {
         root._loading = true;
         _startupConfig.mode = "new";
         _startupConfig.projectName = nameField.text;
-        _startupConfig.width = resW.value;
-        _startupConfig.height = resH.value;
-        _startupConfig.fps = fpsSpin.value;
-        _startupConfig.duration = durSpin.value * fpsSpin.value;
-        _startupConfig.gpuRendering = gpuCheck.checked;
-        _startupConfig.colorSpace = colorCombo.currentText;
+        _startupConfig.width = parseInt(resW.text) || 1920;
+        _startupConfig.height = parseInt(resH.text) || 1080;
+        _startupConfig.fps = parseInt(fpsSpin.text) || 30;
+        _startupConfig.duration = (parseInt(durSpin.text) || 30) * (parseInt(fpsSpin.text) || 30);
+        _startupConfig.gpuRendering = true; // simplified
+        _startupConfig.colorSpace = colorCombo.items[colorCombo.currentIndex];
         loadMain();
     }
 
@@ -350,14 +534,11 @@ Window {
                 } else {
                     console.error("Failed to create Main window:", comp.errorString());
                 }
-            } else {
+            } else if (comp.status === Component.Error) {
                 console.error("Failed to load Main.qml:", comp.errorString());
+            } else {
+                comp.statusChanged.connect(finish);
             }
-        }
-        if (comp.status === Component.Ready || comp.status === Component.Error) {
-            finish();
-        } else {
-            comp.statusChanged.connect(finish);
         }
     }
 }

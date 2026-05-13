@@ -1,1 +1,0 @@
-# Utility Node Category\n\nEssential glue nodes.\n\nIntended nodes:\n- Clamp\n- Remap\n- Lerp\n- Mix\n- Switch\n- Compare\n- Math\n- Vector Math\n- Float\n- Integer\n- Boolean\n- Color\n- Vector\n- Timer\n- Counter

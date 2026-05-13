@@ -12,6 +12,7 @@ Window {
     visible: true
     title: qsTr("MOKM Effector — Untitled")
     color: Theme.background
+
     property bool animateFaders: false
 
     // frameless window with topbar

@@ -1,1 +1,0 @@
-# Effects Node Category\n\nVery important effect processing category.\n\nIntended nodes:\n- Blur\n- Directional Blur\n- Motion Blur\n- Glow\n- Bloom\n- Shadow\n- Outline\n- Edge Detect\n- Chromatic Aberration\n- Distortion\n- Pixelate\n- Sharpen\n- Lens Distortion\n- VHS\n- Glitch\n- Film Grain\n- Color Correction\n- Curves\n- Levels\n- LUT\n- Keyer\n- Matte
