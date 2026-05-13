@@ -31,30 +31,9 @@ Window {
         }
         _startupConfig.status = "Ready";
 
-        // Load ProjectProperties using module URI
-        loadProjectProperties();
-    }
-
-    function loadProjectProperties() {
-        var comp = Qt.createComponent("ProjectProperties.qml");
-
-        function finishLoading() {
-            if (comp.status === Component.Ready) {
-                var win = comp.createObject(null);
-                if (win) {
-                    win.show();
-                    splash.close();
-                }
-            } else if (comp.status === Component.Error) {
-                console.error("Failed to load ProjectProperties.qml:", comp.errorString());
-            }
-        }
-
-        if (comp.status === Component.Ready || comp.status === Component.Error) {
-            finishLoading();
-        } else {
-            comp.statusChanged.connect(finishLoading);
-        }
+        loadTimer.start();
+        // Load ProjectProperties
+        // loadProjectProperties();
     }
 
     ColumnLayout {
@@ -93,20 +72,44 @@ Window {
         }
     }
 
-    // Timer {
-    //     id: loadTimer
-    //     interval: 500
-    //     running: false
-    //     repeat: false
-    //     onTriggered: {
-    //         var component = Qt.createComponent("mokm_effector/ProjectProperties.qml");
-    //         if (component.status === Component.Ready) {
-    //             var win = component.createObject(null);
-    //             win.show();
-    //             splash.close();
-    //         } else {
-    //             console.error("Failed to load ProjectProperties.qml");
-    //         }
-    //     }
-    // }
+    Timer {
+        id: loadTimer
+        interval: 500
+        running: false
+        repeat: false
+        onTriggered: {
+            // var component = Qt.createComponent("mokm_effector/ProjectProperties.qml");
+            // if (component.status === Component.Ready) {
+            //     var win = component.createObject(null);
+            //     win.show();
+            //     splash.close();
+            // } else {
+            //     console.error("Failed to load ProjectProperties.qml");
+            // }
+            //
+
+            // function loadProjectProperties() {
+                var comp = Qt.createComponent("ProjectProperties.qml");
+
+                function finishLoading() {
+                    if (comp.status === Component.Ready) {
+                        var win = comp.createObject(null);
+                        if (win) {
+                            win.show();
+                            splash.close();
+                        }
+                    } else if (comp.status === Component.Error) {
+                        console.error("Failed to load ProjectProperties.qml:", comp.errorString());
+                    }
+                }
+
+                if (comp.status === Component.Ready || comp.status === Component.Error) {
+                    finishLoading();
+                } else {
+                    comp.statusChanged.connect(finishLoading);
+                }
+            // }
+
+        }
+    }
 }
