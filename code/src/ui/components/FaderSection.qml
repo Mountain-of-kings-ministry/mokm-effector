@@ -99,8 +99,6 @@ Rectangle {
         property real pan: 0.0
         property color color: Theme.accent
         property bool animateValue: false
-        signal volChanged(real vol)
-        signal panChanged(real pan)
         
         spacing: 8
         Layout.fillHeight: true
