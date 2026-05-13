@@ -519,7 +519,7 @@ Window {
         _startupConfig.fps = parseInt(fpsSpin.text) || 30;
         _startupConfig.duration = (parseInt(durSpin.text) || 30) * (parseInt(fpsSpin.text) || 30);
         _startupConfig.gpuRendering = true; // simplified
-        _startupConfig.colorSpace = colorCombo.items[colorCombo.currentIndex];
+        _startupConfig.colorSpace = colorCombo.currentText;
         loadMain();
     }
 
@@ -539,6 +539,11 @@ Window {
             } else {
                 comp.statusChanged.connect(finish);
             }
+        }
+        if (comp.status === Component.Ready || comp.status === Component.Error) {
+            finish();
+        } else {
+            comp.statusChanged.connect(finish);
         }
     }
 }
