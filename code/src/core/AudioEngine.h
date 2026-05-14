@@ -67,8 +67,6 @@ signals:
 private slots:
     void onTimelinePlay();
     void onTimelinePause();
-    void onMediaPositionChanged(qint64 position);
-    void onMediaStateChanged();
 
 private:
     void onTimelineFrameChanged(int frame);

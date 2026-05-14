@@ -160,6 +160,16 @@ target_link_libraries(appmokm_effector
 )
 
 if(TARGET sdk)
+    # Add platform-specific hosting implementation which is often missing from sdk_hosting
+    if(UNIX AND NOT APPLE)
+        target_sources(appmokm_effector PRIVATE "${VST3_SDK_ROOT}/public.sdk/source/vst/hosting/module_linux.cpp")
+        target_link_libraries(appmokm_effector PRIVATE stdc++fs)
+    elseif(WIN32)
+        target_sources(appmokm_effector PRIVATE "${VST3_SDK_ROOT}/public.sdk/source/vst/hosting/module_win32.cpp")
+    elseif(APPLE)
+        target_sources(appmokm_effector PRIVATE "${VST3_SDK_ROOT}/public.sdk/source/vst/hosting/module_mac.mm")
+    endif()
+
     target_link_libraries(appmokm_effector PRIVATE sdk sdk_hosting)
     target_compile_definitions(appmokm_effector PRIVATE MOKM_ENABLE_VST3=1)
 endif()

@@ -7,10 +7,11 @@
 #include <memory>
 
 #include "pluginterfaces/vst/ivstcomponent.h"
+#include "pluginterfaces/vst/ivstaudioprocessor.h"
 #include "pluginterfaces/vst/ivsteditcontroller.h"
 #include "public.sdk/source/vst/hosting/module.h"
 
-namespace Steinberg { namespace Vst { class IComponent; class IEditController; }}
+namespace Steinberg { namespace Vst { class IComponent; class IAudioProcessor; class IEditController; }}
 
 class VST3Instance : public QObject
 {
@@ -50,6 +51,7 @@ private:
 
     VST3::Hosting::Module::Ptr m_module;
     Steinberg::IPtr<Steinberg::Vst::IComponent> m_component;
+    Steinberg::IPtr<Steinberg::Vst::IAudioProcessor> m_audioProcessor;
     Steinberg::IPtr<Steinberg::Vst::IEditController> m_editController;
 
     QVariantMap m_parameters;

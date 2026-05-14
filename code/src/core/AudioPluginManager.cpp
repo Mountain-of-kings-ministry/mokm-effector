@@ -45,7 +45,9 @@ void AudioPluginManager::scanVST3()
             QString path = it.next();
             
             // Try to load as a VST3 module to get metadata
-            auto module = VST3::Hosting::Module::create(path.toStdString(), nullptr);
+            std::string pathStr = path.toStdString();
+            std::string error;
+            auto module = VST3::Hosting::Module::create(pathStr, error);
             if (!module) continue;
 
             auto factory = module->getFactory();

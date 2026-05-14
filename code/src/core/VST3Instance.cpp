@@ -2,6 +2,9 @@
 #include <QDebug>
 #include "public.sdk/source/vst/hosting/hostclasses.h"
 #include "pluginterfaces/base/ustring.h"
+#include "pluginterfaces/vst/ivstcomponent.h"
+#include "pluginterfaces/vst/ivstaudioprocessor.h"
+#include "pluginterfaces/vst/ivsteditcontroller.h"
 
 using namespace Steinberg;
 using namespace Steinberg::Vst;
@@ -40,9 +43,11 @@ bool VST3Instance::load()
 {
     if (m_component) return true;
 
-    m_module = VST3::Hosting::Module::create(m_pluginPath.toStdString(), nullptr);
+    std::string pathStr = m_pluginPath.toStdString();
+    std::string error;
+    m_module = VST3::Hosting::Module::create(pathStr, error);
     if (!m_module) {
-        qWarning() << "Failed to load VST3 module:" << m_pluginPath;
+        qWarning() << "Failed to load VST3 module:" << m_pluginPath << "Error:" << QString::fromStdString(error);
         return false;
     }
 
@@ -53,8 +58,16 @@ bool VST3Instance::load()
         return false;
     }
 
-    if (factory.createInstance(tuid, IComponent::iid, (void**)&m_component) != kResultOk) {
+    m_component = factory.createInstance<IComponent>(VST3::UID(tuid));
+    if (!m_component) {
         qWarning() << "Failed to create VST3 component instance";
+        return false;
+    }
+
+    // Query IAudioProcessor interface
+    m_component->queryInterface(IAudioProcessor::iid, (void**)&m_audioProcessor);
+    if (!m_audioProcessor) {
+        qWarning() << "VST3 component does not implement IAudioProcessor";
         return false;
     }
 
@@ -65,7 +78,7 @@ bool VST3Instance::load()
     // Try to get edit controller
     TUID controllerId;
     if (m_component->getControllerClassId(controllerId) == kResultOk) {
-        factory.createInstance(controllerId, IEditController::iid, (void**)&m_editController);
+        m_editController = factory.createInstance<IEditController>(VST3::UID(controllerId));
     } else {
         // Many plugins implement both interfaces in the same class
         m_component->queryInterface(IEditController::iid, (void**)&m_editController);
@@ -115,6 +128,10 @@ void VST3Instance::unload()
         m_editController = nullptr;
     }
 
+    if (m_audioProcessor) {
+        m_audioProcessor = nullptr;
+    }
+
     m_component->terminate();
     m_component = nullptr;
     m_module = nullptr;
@@ -125,7 +142,7 @@ void VST3Instance::unload()
 
 bool VST3Instance::activate(double sampleRate, int maxFrames)
 {
-    if (!m_component) return false;
+    if (!m_audioProcessor) return false;
 
     ProcessSetup setup;
     setup.processMode = kRealtime;
@@ -133,7 +150,7 @@ bool VST3Instance::activate(double sampleRate, int maxFrames)
     setup.maxSamplesPerBlock = maxFrames;
     setup.sampleRate = sampleRate;
 
-    if (m_component->setupProcessing(setup) != kResultOk)
+    if (m_audioProcessor->setupProcessing(setup) != kResultOk)
         return false;
 
     return m_component->setActive(true) == kResultOk;
@@ -173,7 +190,7 @@ double VST3Instance::getParameter(const QString &paramId) const
 
 bool VST3Instance::process(float **inputs, float **outputs, int nChannels, int nFrames)
 {
-    if (!m_component || !m_active) return false;
+    if (!m_audioProcessor || !m_active) return false;
 
     ProcessData data;
     data.processMode = kRealtime;
@@ -193,5 +210,5 @@ bool VST3Instance::process(float **inputs, float **outputs, int nChannels, int n
     data.numOutputs = 1;
     data.outputs = &outBus;
 
-    return m_component->process(data) == kResultOk;
+    return m_audioProcessor->process(data) == kResultOk;
 }
