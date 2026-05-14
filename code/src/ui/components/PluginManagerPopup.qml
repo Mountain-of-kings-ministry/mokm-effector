@@ -171,15 +171,18 @@ Popup {
                         hoverEnabled: true
                         onClicked: {
                             var id = model.pluginId;
-                            if (selectedPluginIds[id]) {
-                                delete selectedPluginIds[id];
+                            var temp = selectedPluginIds;
+                            if (temp[id]) {
+                                delete temp[id];
                             } else {
-                                selectedPluginIds[id] = {
+                                temp[id] = {
                                     name: model.name,
                                     pluginId: model.pluginId,
                                     format: model.format
                                 };
                             }
+                            selectedPluginIds = ({}); // Clear to break binding
+                            selectedPluginIds = temp; // Re-assign to trigger
                             filterModel.setProperty(index, "_selected", !!selectedPluginIds[id]);
                         }
                     }

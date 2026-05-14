@@ -82,6 +82,7 @@ private:
     AudioEngineDevice *m_audioDevice = nullptr;
     qreal m_masterVolume = 1.0;
     qreal m_masterPan = 0.0;
+    double m_currentPositionSamples = 0;
     bool m_playing = false;
     bool m_seeking = false;
 };
