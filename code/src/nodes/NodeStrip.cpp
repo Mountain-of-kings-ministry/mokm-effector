@@ -37,6 +37,8 @@ NodeStrip* NodeStrip::cloneNodeStrip(QObject *parent) const
     s->setStartFrame(startFrame());
     s->setDuration(duration());
     s->setNodeGraphJson(m_nodeGraphJson);
+    if (element())
+        s->setElement(element()->clone(s));
     return s;
 }
 

@@ -19,6 +19,7 @@ class TimelineLayer : public QObject
     // Layer compositing properties
     Q_PROPERTY(qreal opacity READ opacity WRITE setOpacity NOTIFY opacityChanged)
     Q_PROPERTY(bool visible READ visible WRITE setVisible NOTIFY visibleChanged)
+    Q_PROPERTY(bool locked READ locked WRITE setLocked NOTIFY lockedChanged)
     Q_PROPERTY(bool mute READ mute WRITE setMute NOTIFY muteChanged)
     Q_PROPERTY(bool solo READ solo WRITE setSolo NOTIFY soloChanged)
     Q_PROPERTY(qreal offsetX READ offsetX WRITE setOffsetX NOTIFY offsetXChanged)
@@ -56,6 +57,8 @@ public:
     void setOpacity(qreal v);
     bool visible() const { return m_visible; }
     void setVisible(bool v);
+    bool locked() const { return m_locked; }
+    void setLocked(bool v);
     bool enabled() const { return m_enabled; }
     void setEnabled(bool v);
     bool mute() const { return m_mute; }
@@ -82,6 +85,7 @@ signals:
     void tracksChanged();
     void opacityChanged();
     void visibleChanged();
+    void lockedChanged();
     void enabledChanged();
     void muteChanged();
     void soloChanged();
@@ -101,6 +105,7 @@ private:
 
     qreal m_opacity = 1.0;
     bool m_visible = true;
+    bool m_locked = false;
     bool m_enabled = true;
     bool m_mute = false;
     bool m_solo = false;

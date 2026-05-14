@@ -115,6 +115,14 @@ void TimelineLayer::setVisible(bool v)
     }
 }
 
+void TimelineLayer::setLocked(bool v)
+{
+    if (m_locked != v) {
+        m_locked = v;
+        emit lockedChanged();
+    }
+}
+
 void TimelineLayer::setEnabled(bool v)
 {
     if (m_enabled != v) {

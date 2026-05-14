@@ -171,8 +171,12 @@ Layer* Composition::flatLayerAt(int index) const
 void Composition::rebuildFlatLayers()
 {
     m_flatLayers.clear();
-    for (auto *tl : m_timelineLayers) {
-        for (int ti = 0; ti < tl->trackCount(); ++ti) {
+    // Reverse iteration: last timeline layer = bottom (rendered first),
+    // first timeline layer = top (rendered last)
+    for (int li = m_timelineLayers.size() - 1; li >= 0; --li) {
+        auto *tl = m_timelineLayers[li];
+        // Reverse tracks within each layer too
+        for (int ti = tl->trackCount() - 1; ti >= 0; --ti) {
             auto *track = tl->trackAt(ti);
             for (int si = 0; si < track->stripCount(); ++si) {
                 auto *strip = track->stripAt(si);

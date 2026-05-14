@@ -138,35 +138,37 @@ Rectangle {
     }
 
     // ── Editing operations ──
-    function copySelected() {
-        _clipboard = [];
-        if (!root.selectedObject || !_isStrip(root.selectedObject))
-            return;
-        _clipboard = [root.selectedObject];
-    }
+        function copySelected() {
+            _clipboard = [];
+            if (!root.selectedObject || !_isStrip(root.selectedObject))
+                return;
+            _clipboard = [{ strip: root.selectedObject, track: root.selectedObject.track }];
+        }
 
-    function cutSelected() {
-        copySelected();
-        if (root.selectedObject && root.selectedObject.deleteStrip)
+        function cutSelected() {
+            if (!root.selectedObject || !_isStrip(root.selectedObject))
+                return;
+            copySelected();
             root.selectedObject.deleteStrip();
-        root.selectedObject = null;
-        _selectedLayers = [];
-    }
+            root.selectedObject = null;
+            _selectedLayers = [];
+        }
 
-    function pasteClips() {
-        if (_clipboard.length === 0)
-            return;
-        var src = _clipboard[0];
-        if (!src || !src.track)
-            return;
-        var track = src.track;
-        var newStrip = src.clone(track);
-        newStrip.startFrame = src.startFrame + 30;
-        track.addStrip(newStrip);
-        select(newStrip);
-        if (src.element)
-            root.elementSelected(src.element);
-    }
+        function pasteClips() {
+            if (_clipboard.length === 0)
+                return;
+            var entry = _clipboard[0];
+            if (!entry || !entry.strip || !entry.track)
+                return;
+            var src = entry.strip;
+            var track = entry.track;
+            var newStrip = src.clone(track);
+            newStrip.startFrame = src.startFrame + 30;
+            track.addStrip(newStrip);
+            select(newStrip);
+            if (src.element)
+                root.elementSelected(src.element);
+        }
 
     function duplicateSelected() {
         if (!root.selectedObject || !_isStrip(root.selectedObject))
@@ -204,6 +206,59 @@ Rectangle {
         select(newStrip);
         if (strip.element)
             root.elementSelected(strip.element);
+    }
+
+    function splitStripAt(strip, frame) {
+        if (!strip || !strip.track)
+            return null;
+        var start = strip.startFrame;
+        var end = start + strip.duration;
+        if (frame <= start || frame >= end)
+            return null;
+        var track = strip.track;
+        var newStrip = strip.clone(track);
+        newStrip.startFrame = frame;
+        newStrip.duration = end - frame;
+        strip.duration = frame - start;
+        track.addStrip(newStrip);
+        return newStrip;
+    }
+
+    function splitAtPlayheadForLayer(layer) {
+        if (!layer)
+            return;
+        var playhead = root.timelineModel ? root.timelineModel.currentFrame : 0;
+        for (var ti = 0; ti < layer.trackCount; ti++) {
+            var track = layer.trackAt(ti);
+            if (!track) continue;
+            var stripsToSplit = [];
+            for (var si = 0; si < track.stripCount; si++) {
+                stripsToSplit.push(track.stripAt(si));
+            }
+            for (var si = 0; si < stripsToSplit.length; si++) {
+                var st = stripsToSplit[si];
+                if (playhead > st.startFrame && playhead < st.startFrame + st.duration)
+                    splitStripAt(st, playhead);
+            }
+        }
+    }
+
+    function splitBySelection() {
+        var playhead = root.timelineModel ? root.timelineModel.currentFrame : 0;
+        var toSplit = [];
+        for (var i = 0; i < _selectedLayers.length; i++) {
+            var obj = _selectedLayers[i];
+            if (_isStrip(obj) && obj.track)
+                toSplit.push(obj);
+        }
+        if (toSplit.length === 0)
+            return;
+        // Split non-adjacent strips within same track first
+        for (var i = 0; i < toSplit.length; i++) {
+            var st = toSplit[i];
+            if (playhead > st.startFrame && playhead < st.startFrame + st.duration)
+                splitStripAt(st, playhead);
+        }
     }
 
     function deleteSelected() {
@@ -421,7 +476,15 @@ Rectangle {
                             Rectangle {
                                 width: parent.width
                                 height: root.rowHeight
-                                color: root.selectedObject === modelData ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.25) : Theme.secondaryHover
+                                color: {
+                                    if (root.selectedObject === modelData)
+                                        return Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.25);
+                                    if (modelData && modelData.locked)
+                                        return Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.15);
+                                    if (modelData && !modelData.visible)
+                                        return Theme.secondary;
+                                    return Theme.secondaryHover;
+                                }
 
                                 RowLayout {
                                     anchors.fill: parent
@@ -448,7 +511,7 @@ Rectangle {
                                 MouseArea {
                                     anchors.fill: parent
                                     acceptedButtons: Qt.LeftButton
-                                    onClicked: root.objectSelected(modelData)
+                                    onClicked: root.select(modelData)
                                 }
                             }
 
@@ -465,6 +528,56 @@ Rectangle {
                                         trackTypeDialog.open();
                                     }
                                 }
+                                MenuSeparator {}
+                                MenuItem {
+                                    text: "Cut Through Layer"
+                                    onTriggered: root.splitAtPlayheadForLayer(layerColumn.layerModel)
+                                }
+                                MenuSeparator {}
+                                MenuItem {
+                                    text: "Toggle Visibility"
+                                    checkable: true
+                                    checked: layerColumn.layerModel ? layerColumn.layerModel.visible : true
+                                    onTriggered: {
+                                        if (layerColumn.layerModel)
+                                            layerColumn.layerModel.visible = !layerColumn.layerModel.visible;
+                                    }
+                                }
+                                MenuItem {
+                                    text: "Toggle Lock"
+                                    checkable: true
+                                    checked: layerColumn.layerModel ? layerColumn.layerModel.locked : false
+                                    onTriggered: {
+                                        if (layerColumn.layerModel)
+                                            layerColumn.layerModel.locked = !layerColumn.layerModel.locked;
+                                    }
+                                }
+                                MenuSeparator {}
+                                MenuItem {
+                                    text: "Move Up"
+                                    enabled: !!(layerColumn.layerModel && layerColumn.layerModel.composition)
+                                    onTriggered: {
+                                        if (layerColumn.layerModel && layerColumn.layerModel.composition) {
+                                            var comp = layerColumn.layerModel.composition;
+                                            var idx = comp.layerIndex(layerColumn.layerModel);
+                                            if (idx > 0)
+                                                comp.moveLayer(idx, idx - 1);
+                                        }
+                                    }
+                                }
+                                MenuItem {
+                                    text: "Move Down"
+                                    enabled: !!(layerColumn.layerModel && layerColumn.layerModel.composition)
+                                    onTriggered: {
+                                        if (layerColumn.layerModel && layerColumn.layerModel.composition) {
+                                            var comp = layerColumn.layerModel.composition;
+                                            var idx = comp.layerIndex(layerColumn.layerModel);
+                                            if (idx < comp.layerCount() - 1)
+                                                comp.moveLayer(idx, idx + 1);
+                                        }
+                                    }
+                                }
+                                MenuSeparator {}
                                 MenuItem {
                                     text: "Delete Layer"
                                     onTriggered: layerColumn.layerModel.deleteLayer()
@@ -478,7 +591,15 @@ Rectangle {
                             id: trackRow
                             width: parent.width
                             height: 38
-                            color: root.selectedObject === modelData ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.15) : (index % 2 === 0 ? Theme.secondary : Qt.rgba(Theme.secondaryHover.r, Theme.secondaryHover.g, Theme.secondaryHover.b, 0.3))
+                            color: {
+                                if (root.selectedObject === modelData)
+                                    return Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.15);
+                                if (trackObj && trackObj.locked)
+                                    return Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.1);
+                                if (trackObj && !trackObj.enabled)
+                                    return Theme.secondary;
+                                return (index % 2 === 0 ? Theme.secondary : Qt.rgba(Theme.secondaryHover.r, Theme.secondaryHover.g, Theme.secondaryHover.b, 0.3));
+                            }
 
                             property var trackObj: null
                             property var layerObj: layerColumn.modelData
@@ -493,18 +614,28 @@ Rectangle {
 
                                 RowLayout {
                                     anchors.fill: parent
-                                    anchors.leftMargin: 16
+                                    anchors.leftMargin: 8
+                                    spacing: 4
+                                    Image {
+                                        source: trackObj && trackObj.trackType === Track.Audio ? "qrc:/icons/outline/volume.svg"
+                                              : trackObj && trackObj.trackType === Track.Image ? "qrc:/icons/outline/photo.svg"
+                                              : "qrc:/icons/outline/video.svg"
+                                        sourceSize.width: 14
+                                        sourceSize.height: 14
+                                    }
                                     Text {
                                         text: modelData ? modelData.name : ""
                                         color: Theme.foreground
                                         font.pixelSize: 11
+                                        elide: Text.ElideRight
+                                        Layout.fillWidth: true
                                     }
                                 }
 
                                 MouseArea {
                                     anchors.fill: parent
                                     acceptedButtons: Qt.LeftButton
-                                    onClicked: root.objectSelected(trackObj)
+                                    onClicked: root.select(trackObj)
                                 }
 
                                 MouseArea {
@@ -529,12 +660,90 @@ Rectangle {
                                     }
                                     MenuSeparator {}
                                     MenuItem {
+                                        text: "Toggle Enabled"
+                                        checkable: true
+                                        checked: trackObj ? trackObj.enabled : true
+                                        onTriggered: {
+                                            if (trackObj)
+                                                trackObj.enabled = !trackObj.enabled;
+                                        }
+                                    }
+                                    MenuItem {
+                                        text: "Toggle Lock"
+                                        checkable: true
+                                        checked: trackObj ? trackObj.locked : false
+                                        onTriggered: {
+                                            if (trackObj)
+                                                trackObj.locked = !trackObj.locked;
+                                        }
+                                    }
+                                    MenuSeparator {}
+                                    MenuItem {
                                         text: "Rename Track"
                                         onTriggered: renameItem(trackObj)
                                     }
                                     MenuItem {
                                         text: "Delete Track"
                                         onTriggered: trackObj.deleteTrack()
+                                    }
+                                    MenuSeparator {}
+                                    MenuItem {
+                                        text: "Move Track Up"
+                                        enabled: !!(trackObj && trackObj.layer && trackObj.layer.trackIndex && trackObj.layer.trackIndex(trackObj) > 0)
+                                        onTriggered: {
+                                            if (trackObj && trackObj.layer) {
+                                                var tl = trackObj.layer;
+                                                var idx = tl.trackIndex(trackObj);
+                                                if (idx > 0)
+                                                    tl.moveTrack(idx, idx - 1);
+                                            }
+                                        }
+                                    }
+                                    MenuItem {
+                                        text: "Move Track Down"
+                                        enabled: !!(trackObj && trackObj.layer && trackObj.layer.trackIndex && trackObj.layer.trackIndex(trackObj) < trackObj.layer.trackCount - 1)
+                                        onTriggered: {
+                                            if (trackObj && trackObj.layer) {
+                                                var tl = trackObj.layer;
+                                                var idx = tl.trackIndex(trackObj);
+                                                if (idx < tl.trackCount - 1)
+                                                    tl.moveTrack(idx, idx + 1);
+                                            }
+                                        }
+                                    }
+                                    MenuItem {
+                                        text: "Move to Next Layer"
+                                        enabled: !!(trackObj && trackObj.layer && trackObj.layer.composition)
+                                        onTriggered: {
+                                            if (!trackObj || !trackObj.layer) return;
+                                            var curLayer = trackObj.layer;
+                                            var comp = curLayer.composition;
+                                            var layerIdx = comp.layerIndex(curLayer);
+                                            if (layerIdx < comp.layerCount() - 1) {
+                                                var nextLayer = comp.layerAt(layerIdx + 1);
+                                                if (nextLayer) {
+                                                    curLayer.removeTrack(trackObj);
+                                                    nextLayer.addTrack(trackObj);
+                                                }
+                                            }
+                                        }
+                                    }
+                                    MenuItem {
+                                        text: "Move to Previous Layer"
+                                        enabled: !!(trackObj && trackObj.layer && trackObj.layer.composition)
+                                        onTriggered: {
+                                            if (!trackObj || !trackObj.layer) return;
+                                            var curLayer = trackObj.layer;
+                                            var comp = curLayer.composition;
+                                            var layerIdx = comp.layerIndex(curLayer);
+                                            if (layerIdx > 0) {
+                                                var prevLayer = comp.layerAt(layerIdx - 1);
+                                                if (prevLayer) {
+                                                    curLayer.removeTrack(trackObj);
+                                                    prevLayer.addTrack(trackObj);
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -863,15 +1072,19 @@ Rectangle {
                                                 text: "Copy"
                                                 onTriggered: copySelected()
                                             }
-                                            MenuItem {
-                                                text: "Duplicate"
-                                                onTriggered: duplicateSelected()
-                                            }
-                                            MenuItem {
-                                                text: "Split at Playhead"
-                                                onTriggered: splitAtPlayhead()
-                                            }
-                                            MenuSeparator {}
+                                    MenuItem {
+                                        text: "Duplicate"
+                                        onTriggered: duplicateSelected()
+                                    }
+                                    MenuItem {
+                                        text: "Split at Playhead"
+                                        onTriggered: splitAtPlayhead()
+                                    }
+                                    MenuItem {
+                                        text: "Split by Selection"
+                                        onTriggered: splitBySelection()
+                                    }
+                                    MenuSeparator {}
                                             MenuItem {
                                                 text: "Rename Strip"
                                                 onTriggered: renameItem(stripObj)
