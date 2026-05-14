@@ -24,7 +24,8 @@ AudioEngineDevice::AudioEngineDevice(AudioEngine *engine, QObject *parent)
 
 qint64 AudioEngineDevice::readData(char *data, qint64 maxlen)
 {
-    qDebug() << "READ_DATA_ENTERED: Playing=" << m_engine->m_playing << "MaxLen=" << maxlen;
+    if (maxlen <= 0) return 0;
+    
     if (!m_engine->m_playing || !m_engine->m_timeline) {
         std::memset(data, 0, maxlen);
         return maxlen;
@@ -45,13 +46,14 @@ qint64 AudioEngineDevice::readData(char *data, qint64 maxlen)
     qreal fps = m_engine->m_timeline->composition() ? m_engine->m_timeline->composition()->frameRate() : 30.0;
     if (fps <= 0) fps = 30.0;
 
+    // Use current timeline frame as master clock
+    double currentFrame = (double)m_engine->m_timeline->currentFrame();
+    double currentSamplePos = (currentFrame / fps) * sampleRate;
+    
     auto *comp = m_engine->m_timeline->composition();
-    int layersFound = 0;
     if (comp) {
-        qDebug() << "Processing composition with" << comp->layerCount() << "layers.";
         for (int li = 0; li < comp->layerCount(); li++) {
             auto *tl = comp->layerAt(li);
-            if (!tl) continue;
             for (int ti = 0; ti < tl->trackCount(); ti++) {
                 auto *tr = tl->trackAt(ti);
                 if (!tr || tr->trackType() != Track::Audio || tr->mute()) continue;
@@ -60,23 +62,15 @@ qint64 AudioEngineDevice::readData(char *data, qint64 maxlen)
 
                 for (int si = 0; si < tr->stripCount(); si++) {
                     auto *st = tr->stripAt(si);
-                    if (!st) continue;
-                    
                     double startSample = (st->startFrame() / fps) * sampleRate;
                     double endSample = ((st->startFrame() + st->duration()) / fps) * sampleRate;
                     
-                    if (m_engine->m_currentPositionSamples >= startSample && m_engine->m_currentPositionSamples < endSample) {
-                        layersFound++;
+                    if (currentSamplePos >= startSample && currentSamplePos < endSample) {
                         AudioLayer *al = qobject_cast<AudioLayer*>(st->element());
                         if (!al) continue;
 
+                        double clipOffsetSamples = currentSamplePos - startSample;
                         const QVector<float>& fullData = al->fullAudioData();
-                        if (fullData.isEmpty()) {
-                             qDebug() << "Layer audio data is empty! Layer pointer:" << al;
-                             continue;
-                        }
-                        
-                        double clipOffsetSamples = m_engine->m_currentPositionSamples - startSample;
                         int nChannels = al->channels();
                         
                         for (int i = 0; i < framesToRead; i++) {
@@ -104,25 +98,10 @@ qint64 AudioEngineDevice::readData(char *data, qint64 maxlen)
             }
         }
     }
-    
-    static int logCount = 0;
-    if (logCount++ % 500 == 0) {
-        qDebug() << "Layers processed:" << layersFound << "Frames to read:" << framesToRead;
-        float peak = 0;
-        for(int i=0; i<framesToRead; i++) peak = qMax(peak, qAbs(leftBuf[i]));
-        qDebug() << "Peak signal:" << peak;
-    }
 
     for (int i = 0; i < framesToRead; i++) {
         fData[i * 2] = leftBuf[i];
         fData[i * 2 + 1] = rightBuf[i];
-    }
-
-    m_engine->m_currentPositionSamples += framesToRead;
-    int newFrame = qFloor((m_engine->m_currentPositionSamples / sampleRate) * fps);
-    if (newFrame != m_engine->m_timeline->currentFrame()) {
-        QMetaObject::invokeMethod(m_engine->m_timeline, "setCurrentFrame", 
-                                  Qt::QueuedConnection, Q_ARG(int, newFrame));
     }
 
     return maxlen;
@@ -181,16 +160,9 @@ void AudioEngine::setMasterPan(qreal pan)
     m_masterPan = qBound(-1.0, pan, 1.0);
     emit masterPanChanged();
 }
-
 void AudioEngine::play()
 {
     if (m_playing) return;
-    
-    if (m_timeline) {
-        qreal fps = m_timeline->composition() ? m_timeline->composition()->frameRate() : 30.0;
-        if (fps <= 0) fps = 30.0;
-        m_currentPositionSamples = (m_timeline->currentFrame() / fps) * 48000;
-    }
 
     if (!m_audioDevice->isOpen()) {
         qDebug() << "Re-opening audio device...";
@@ -203,6 +175,7 @@ void AudioEngine::play()
     qDebug() << "Device is open:" << m_audioDevice->isOpen();
     emit playingChanged();
 }
+
 
 void AudioEngine::pause()
 {
