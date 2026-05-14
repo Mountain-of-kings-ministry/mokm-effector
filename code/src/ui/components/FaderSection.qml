@@ -10,7 +10,6 @@ Rectangle {
     property var timelineModel: null
     property var target: null
     property var masterVolume: _audioEngine ? _audioEngine.masterVolume : 1.0
-    property var masterPan: _audioEngine ? _audioEngine.masterPan : 0.0
     property bool showAutomation: true
     property bool animateFaders: false
 
@@ -62,30 +61,24 @@ Rectangle {
             FaderColumn {
                 label: "MASTER"
                 vol: root.masterVolume
-                pan: root.masterPan
                 color: "#eab308"
                 animateValue: root.animateFaders && root.timelineModel && root.timelineModel.playing
                 onVolChanged: if (_audioEngine) _audioEngine.masterVolume = vol
-                onPanChanged: if (_audioEngine) _audioEngine.masterPan = pan
             }
 
             // Track Channel
             FaderColumn {
                 label: target ? target.name : "TRACK"
-                vol: target ? target.opacity : 1.0
-                pan: target ? target.pan : 0.0
+                vol: target ? (target.volume !== undefined ? target.volume : target.opacity) : 1.0
                 color: "#60a5fa"
                 animateValue: root.animateFaders && root.timelineModel && root.timelineModel.playing
                 onVolChanged: {
                     if (target) {
-                        target.opacity = vol;
-                        if (root.timelineModel) root.timelineModel.tryAutoKeyframe(target, "opacity", vol);
-                    }
-                }
-                onPanChanged: {
-                    if (target) {
-                        target.pan = pan;
-                        if (root.timelineModel) root.timelineModel.tryAutoKeyframe(target, "pan", pan);
+                        if (target.volume !== undefined)
+                            target.volume = vol;
+                        else
+                            target.opacity = vol;
+                        if (root.timelineModel) root.timelineModel.tryAutoKeyframe(target, "volume", vol);
                     }
                 }
             }
@@ -96,13 +89,12 @@ Rectangle {
         id: colRoot
         property string label: ""
         property real vol: 0.5
-        property real pan: 0.0
         property color color: Theme.accent
         property bool animateValue: false
         
         spacing: 8
         Layout.fillHeight: true
-        Layout.preferredWidth: 60
+        Layout.preferredWidth: 72
 
         Text {
             Layout.alignment: Qt.AlignHCenter
@@ -110,21 +102,6 @@ Rectangle {
             color: Theme.foreground
             font.pixelSize: 10
             font.bold: true
-        }
-
-        // Pan Knob
-        Image {
-            Layout.alignment: Qt.AlignHCenter
-            source: "qrc:/circular-numb.svg"
-            width: 32; height: 32
-            rotation: pan * 45
-            MouseArea {
-                anchors.fill: parent
-                onPositionChanged: function(mouse) {
-                    var delta = (mouse.y - height/2) / height;
-                    colRoot.pan = Math.max(-1, Math.min(1, pan - delta));
-                }
-            }
         }
 
         // Fader
@@ -139,14 +116,14 @@ Rectangle {
             
             background: Rectangle {
                 x: faderSlider.leftPadding + faderSlider.availableWidth / 2 - width / 2
-                implicitWidth: 10
+                implicitWidth: 18
                 height: faderSlider.availableHeight
                 radius: 5
                 color: "#1a1a1a"
                 Rectangle {
                     anchors.bottom: parent.bottom
                     width: parent.width
-                    height: parent.height * faderSlider.visualPosition
+                    height: parent.height * faderSlider.position
                     color: colRoot.color
                     opacity: 0.3
                     radius: 5

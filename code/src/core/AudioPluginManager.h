@@ -44,3 +44,54 @@ private:
 };
 
 #endif
+
+// #ifndef AUDIOPLUGINMANAGER_H
+// #define AUDIOPLUGINMANAGER_H
+
+// #include <QObject>
+// #include <QQmlListProperty>
+// #include "JucePlugin.h"
+// #include <juce_audio_processors/juce_audio_processors.h>
+
+// class AudioPlugin : public QObject {
+//     Q_OBJECT
+//     Q_PROPERTY(QString name READ name CONSTANT)
+//     Q_PROPERTY(QString format READ format CONSTANT)
+
+// public:
+//     explicit AudioPlugin(const juce::PluginDescription& desc, QObject* parent = nullptr);
+
+//     QString name() const;
+//     QString format() const;
+//     const juce::PluginDescription& description() const { return m_desc; }
+
+// private:
+//     juce::PluginDescription m_desc;
+// };
+
+// class AudioPluginManager : public QObject
+// {
+//     Q_OBJECT
+//     Q_PROPERTY(QQmlListProperty<AudioPlugin> availablePlugins READ plugins NOTIFY pluginsChanged)
+
+// public:
+//     explicit AudioPluginManager(QObject *parent = nullptr);
+
+//     QQmlListProperty<AudioPlugin> plugins();
+
+//     Q_INVOKABLE void scanPlugins();
+//     Q_INVOKABLE void rescan();
+
+// signals:
+//     void pluginsChanged();
+//     void scanProgress(int percent);     // you can enable later
+
+// private:
+//     void scanFormat(juce::AudioPluginFormat* format);
+
+//     juce::AudioPluginFormatManager m_formatManager;
+//     juce::KnownPluginList m_knownPluginList;
+//     QList<AudioPlugin*> m_plugins;
+// };
+
+// #endif

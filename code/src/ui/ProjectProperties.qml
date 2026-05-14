@@ -75,6 +75,8 @@ Window {
                 Rectangle {
                     Layout.fillHeight: true
                     Layout.preferredWidth: 360
+                    Layout.minimumWidth: 300
+                    Layout.maximumWidth: 420
                     radius: 12
                     color: Theme.secondary
                     border.color: Theme.border
@@ -83,6 +85,7 @@ Window {
                         anchors.fill: parent
                         anchors.margins: 20
                         spacing: 16
+                        clip: true
 
                         Text {
                             text: "Recent Projects"
@@ -177,6 +180,7 @@ Window {
                 Rectangle {
                     Layout.fillHeight: true
                     Layout.fillWidth: true
+                    Layout.minimumWidth: 350
                     radius: 12
                     color: Theme.secondary
                     border.color: Theme.border
@@ -274,7 +278,11 @@ Window {
                                     ]
 
                                     onCurrentIndexChanged: {
-                                        // You can add logic here to auto-fill width/height if needed
+                                        var match = resCombo.currentText.match(/(\d+)×(\d+)/);
+                                        if (match) {
+                                            resW.text = match[1];
+                                            resH.text = match[2];
+                                        }
                                     }
                                 }
 
@@ -333,18 +341,6 @@ Window {
                                 }
                             }
 
-                            // // Color Space
-                            // ColumnLayout {
-                            //     spacing: 6
-                            //     Text { text: "Color Space"; color: Theme.foreground; font.pixelSize: 13 }
-                            //     ComboBox {
-                            //         id: colorCombo
-                            //         Layout.fillWidth: true
-                            //         height: 42
-                            //         font.pixelSize: 13
-                            //         model: ["sRGB", "Rec.709", "DCI-P3", "Rec.2020"]
-                            //     }
-                            // }
                             // Color Space
                             ColumnLayout {
                                 spacing: 6

@@ -389,8 +389,19 @@ target_include_directories(MOKM_JUCE PRIVATE
     ${FREETYPE_INCLUDE_DIRS}
 )
 
-
-
+# target_compile_definitions(MOKM_JUCE PUBLIC
+#     JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1
+#     JUCE_PLUGINHOST_VST3=0      # ← Enable this
+#     JUCE_PLUGINHOST_VST=0       # Optional, but useful
+#     JUCE_PLUGINHOST_LADSPA=0
+#     JUCE_PLUGINHOST_LV2=0       # If you want LV2
+#     JUCE_STANDALONE_APPLICATION=1
+#     JUCE_USE_CURL=0
+#     JUCE_WEB_BROWSER=0
+#     JUCE_VST3_CAN_REPLACE_VST2=0
+#     JUCE_USE_FREETYPE=1
+# )
+#
 target_compile_definitions(MOKM_JUCE PUBLIC
     JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1
     JUCE_PLUGINHOST_VST3=0
@@ -400,6 +411,36 @@ target_compile_definitions(MOKM_JUCE PUBLIC
     JUCE_VST3_CAN_REPLACE_VST2=0
     JUCE_USE_FREETYPE=1
 )
+#
+# target_compile_definitions(MOKM_JUCE PUBLIC
+#     JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1
+
+#     JUCE_PLUGINHOST_VST3=1
+#     JUCE_PLUGINHOST_VST=0
+#     JUCE_PLUGINHOST_LADSPA=0
+#     JUCE_PLUGINHOST_LV2=0
+
+#     # === Force headless mode on Linux ===
+#     JUCE_LINUX=1
+#     JUCE_DISABLE_XEMBED=1
+#     JUCE_USE_X11=0                    # ← Add this
+#     JUCE_DONT_INCLUDE_X11_HEADERS=1   # ← Add this
+
+#     JUCE_USE_XCURSOR=0
+#     JUCE_USE_XINERAMA=0
+#     JUCE_USE_XRANDR=0
+#     JUCE_USE_XSHM=0
+
+#     JUCE_STANDALONE_APPLICATION=1
+#     JUCE_USE_CURL=0
+#     JUCE_WEB_BROWSER=0
+#     JUCE_VST3_CAN_REPLACE_VST2=0
+#     JUCE_USE_FREETYPE=1
+
+#     # last include
+#     JUCE_MODAL_LOOPS_PERMITTED=0
+#     JUCE_GUI_BASICS_INCLUDE_X11=0
+# )
 
 target_sources(MOKM_JUCE PRIVATE
     ${JUCE_MODULES_PATH}/juce_core/juce_core.cpp
@@ -549,6 +590,7 @@ qt_add_qml_module(appmokm_effector
         src/ui/components/FaderSection.qml
         src/ui/components/PluginRack.qml
         src/ui/components/PluginManagerPopup.qml
+        src/ui/components/NodeGraphPopup.qml
     SOURCES ${CORE_SOURCES}
 )
 

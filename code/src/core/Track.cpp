@@ -11,6 +11,10 @@
 
 #ifdef MOKM_ENABLE_NODES
 #include "../nodes/NodeStrip.h"
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QUuid>
 #endif
 
 Track::Track(QObject *parent)
@@ -187,6 +191,55 @@ Strip* Track::createStripFromAsset(Layer *asset, const QString &stripName, int s
     // Clone the asset element
     auto *element = asset->clone(strip);
     strip->setElement(element);
+
+    // Auto-generate initial node graph: source → render output
+    {
+        QJsonObject rootObj;
+        QJsonArray nodesArr;
+
+        QString srcType = QStringLiteral("mokm/strip/source/shape");
+        if (qobject_cast<VideoLayer*>(asset))
+            srcType = QStringLiteral("mokm/strip/source/video");
+        else if (qobject_cast<AudioLayer*>(asset))
+            srcType = QStringLiteral("mokm/strip/source/audio");
+        else if (qobject_cast<ImageLayer*>(asset))
+            srcType = QStringLiteral("mokm/strip/source/image");
+
+        QJsonObject srcNode;
+        QString srcId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+        srcNode["id"] = srcId;
+        srcNode["type"] = srcType;
+        srcNode["x"] = 100;
+        srcNode["y"] = 200;
+        srcNode["data"] = QJsonObject();
+        nodesArr.append(srcNode);
+
+        QJsonObject outNode;
+        QString outId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+        outNode["id"] = outId;
+        outNode["type"] = QStringLiteral("mokm/output/render");
+        outNode["x"] = 500;
+        outNode["y"] = 200;
+        outNode["data"] = QJsonObject();
+        nodesArr.append(outNode);
+
+        rootObj["nodes"] = nodesArr;
+
+        QJsonArray edgesArr;
+        QJsonObject edge;
+        edge["id"] = QUuid::createUuid().toString(QUuid::WithoutBraces);
+        edge["sourceNodeId"] = srcId;
+        edge["sourcePort"] = QStringLiteral("output");
+        edge["targetNodeId"] = outId;
+        edge["targetPort"] = QStringLiteral("input");
+        edgesArr.append(edge);
+        rootObj["edges"] = edgesArr;
+
+        QJsonDocument doc(rootObj);
+        auto jsonStr = QString::fromUtf8(doc.toJson(QJsonDocument::Compact));
+        strip->setNodeGraphJson(jsonStr);
+        qDebug() << "Track: created NodeStrip with auto-generated graph, json length:" << jsonStr.length();
+    }
 
     addStrip(strip);
     return strip;

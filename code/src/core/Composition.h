@@ -48,6 +48,9 @@ public:
     Q_INVOKABLE void clearLayers();
     Q_INVOKABLE TimelineLayer* ensureDefaultLayer();
 
+    // Returns the last frame that has any content across all layers
+    Q_INVOKABLE int lastClipEndFrame() const;
+
     // Flat visual layer list (computed from all strips' elements — for viewport/export)
     Q_PROPERTY(int flatLayerCount READ flatLayerCount NOTIFY layersChanged)
     int flatLayerCount() const { return m_flatLayers.size(); }

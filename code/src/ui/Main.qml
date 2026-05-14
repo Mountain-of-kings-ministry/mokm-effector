@@ -249,6 +249,7 @@ Window {
                     id: nodeEditorPage
 
                     NodeEditor {
+                        timelineModel: globalTimelineModel
                         selectedObject: mainWindow.selectedObject
                     }
                 }

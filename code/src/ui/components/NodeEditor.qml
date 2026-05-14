@@ -6,13 +6,51 @@ import NodeEditor
 Item {
     id: root
 
+    property var timelineModel: null
     property var selectedObject: null
 
-    readonly property var _target: {
-        if (!selectedObject) return null;
-        if (selectedObject.element !== undefined) return selectedObject.element;
-        if (selectedObject.nodeGraphJson !== undefined) return selectedObject;
-        return null;
+    property var _target: null
+    property bool _loading: false
+
+    onSelectedObjectChanged: {
+        console.log("NodeEditor: selectedObject changed:", selectedObject ? (selectedObject.name || selectedObject) : "null");
+        _target = computeTarget(selectedObject);
+    }
+
+    Component.onCompleted: {
+        console.log("NodeEditor: component completed");
+        _target = computeTarget(selectedObject);
+    }
+
+    function computeTarget(obj) {
+        if (!obj) return null;
+        if (typeof obj.nodeGraphJson !== 'undefined') {
+            console.log("NodeEditor: target has nodeGraphJson:", obj.name, "length:", obj.nodeGraphJson ? obj.nodeGraphJson.length : 0);
+            return obj;
+        }
+        console.log("NodeEditor: target does NOT have nodeGraphJson:", obj ? obj.name : "null");
+        return obj;
+    }
+
+    readonly property var _comp: timelineModel ? timelineModel.composition : null
+
+    function _buildSearchableItems() {
+        var items = [];
+        if (!_comp) return items;
+        for (var li = 0; li < _comp.layerCount(); li++) {
+            var tl = _comp.layerAt(li);
+            items.push({ object: tl, name: tl.name, depth: 0, typeName: "Layer" });
+            for (var ti = 0; ti < tl.trackCount; ti++) {
+                var tr = tl.trackAt(ti);
+                items.push({ object: tr, name: tr.name, depth: 1, typeName: "Track" });
+                for (var si = 0; si < tr.stripCount; si++) {
+                    var st = tr.stripAt(si);
+                    var elName = st.element ? st.element.name : "?";
+                    items.push({ object: st, name: st.name + " (" + elName + ")", depth: 2, typeName: "Strip" });
+                }
+            }
+        }
+        return items;
     }
 
     Rectangle {
@@ -27,6 +65,14 @@ Item {
         RowLayout {
             anchors.fill: parent
             anchors.margins: 6
+
+            Button {
+                id: selectBtn
+                text: _target ? (selectedObject ? selectedObject.name || _target.name || "Selected" : "Select\u2026") : "Select\u2026"
+                height: 26
+                flat: true
+                onClicked: selectPopup.open()
+            }
 
             Text {
                 text: _target ? (_target.name || "Node Graph") : "No Selection"
@@ -53,6 +99,31 @@ Item {
                 font.pixelSize: 11
                 verticalAlignment: Text.AlignVCenter
                 Layout.alignment: Qt.AlignVCenter
+
+                Shortcut {
+                    sequence: "Ctrl+Z"
+                    onActivated: if (_undoManager) _undoManager.undo()
+                }
+                Shortcut {
+                    sequence: "Ctrl+Y"
+                    onActivated: if (_undoManager) _undoManager.redo()
+                }
+                Shortcut {
+                    sequence: "Delete"
+                    onActivated: {
+                        if (!canvas || !_graphModel) return
+                        var sel = canvas.selectedNodeIds
+                        if (sel) {
+                            var ids = sel.length !== undefined ? sel : [sel]
+                            for (var i = 0; i < ids.length; i++)
+                                _undoManager.qmlRemoveNode(ids[i])
+                        }
+                    }
+                }
+                Shortcut {
+                    sequence: "Shift+A"
+                    onActivated: addNodePopup.open()
+                }
             }
 
             Button {
@@ -109,39 +180,153 @@ Item {
 
         Text {
             anchors.centerIn: parent
-            text: "Select a strip to edit its node graph"
+            text: "Select a layer, track, or strip to edit its node graph"
             color: Theme.mutedForeground
             font.pixelSize: 13
         }
     }
 
-    AddNodePopup {
+    NodeGraphPopup {
         id: addNodePopup
         graphModel: _graphModel
         undoManager: _undoManager
     }
 
     on_TargetChanged: {
+        console.log("NodeEditor: _target changed, has nodeGraphJson:", _target ? (_target.nodeGraphJson ? true : false) : false);
+        _loading = true;
         if (_target && _target.nodeGraphJson) {
+            console.log("NodeEditor: deserializing graph, json length:", _target.nodeGraphJson.length);
             _graphModel.qmlDeserializeFromJson(_target.nodeGraphJson);
+            console.log("NodeEditor: deserialization complete, node count:", _graphModel.qmlNodeIds().length);
         } else {
+            console.log("NodeEditor: clearing graph");
             _graphModel.clear();
         }
+        _loading = false;
+    }
+
+    property Timer _posTimer: Timer {
+        interval: 2000
+        onTriggered: doSave()
     }
 
     Connections {
         target: _graphModel
-        function onQmlNodeAdded(nodeId) { saveGraph(); }
-        function onQmlNodeRemoved(nodeId) { saveGraph(); }
-        function onQmlEdgeAdded(edgeId) { saveGraph(); }
-        function onQmlEdgeRemoved(edgeId) { saveGraph(); }
-        function onQmlNodeDataChanged(nodeId, key) { saveGraph(); }
-        function onQmlNodePositionChanged(nodeId) { saveGraph(); }
+        function onQmlNodeAdded(nodeId) {
+            console.log("NodeEditor: node added", nodeId);
+            saveGraph(true);
+        }
+        function onQmlNodeRemoved(nodeId) {
+            console.log("NodeEditor: node removed", nodeId);
+            saveGraph(true);
+        }
+        function onQmlEdgeAdded(edgeId) {
+            console.log("NodeEditor: edge added", edgeId);
+            saveGraph(true);
+        }
+        function onQmlEdgeRemoved(edgeId) {
+            console.log("NodeEditor: edge removed", edgeId);
+            saveGraph(true);
+        }
+        function onQmlNodeDataChanged(nodeId, key) {
+            saveGraph(true);
+        }
+        function onQmlNodePositionChanged(nodeId) {
+            saveGraph(false);
+        }
+        function onQmlNodePortsChanged(nodeId) {
+        }
     }
 
-    function saveGraph() {
-        if (!_target) return;
+    function saveGraph(immediate) {
+        if (!_target || _loading) return;
+        if (immediate) {
+            _posTimer.stop();
+            doSave();
+        } else {
+            _posTimer.restart();
+        }
+    }
+
+    function doSave() {
+        if (!_target || _loading) return;
         var json = _graphModel.qmlSerializeToJson();
+        console.log("NodeEditor: saving graph, json length:", json.length);
         _target.nodeGraphJson = json;
+    }
+
+    Popup {
+        id: selectPopup
+        x: selectBtn.x; y: 36
+        width: 300; height: 400
+        modal: true
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+
+        property var items: []
+        onAboutToShow: {
+            searchField.text = "";
+            items = _buildSearchableItems();
+            rebuildFilter();
+        }
+
+        ListModel { id: filterModel }
+
+        function rebuildFilter() {
+            filterModel.clear();
+            var q = searchField.text.toLowerCase();
+            for (var i = 0; i < items.length; i++) {
+                var it = items[i];
+                if (!q || it.name.toLowerCase().indexOf(q) >= 0)
+                    filterModel.append(it);
+            }
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            color: Theme.background
+            border.color: Theme.border
+
+            ColumnLayout {
+                anchors.fill: parent; anchors.margins: 4; spacing: 4
+
+                TextField {
+                    id: searchField
+                    Layout.fillWidth: true
+                    placeholderText: "Search\u2026"
+                    onTextChanged: selectPopup.rebuildFilter()
+                }
+
+                ListView {
+                    Layout.fillWidth: true; Layout.fillHeight: true; clip: true
+                    model: filterModel
+                    delegate: Rectangle {
+                        width: ListView.view.width; height: 28
+                        color: ma.containsMouse ? Theme.muted : "transparent"
+
+                        RowLayout {
+                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.left: parent.left; anchors.leftMargin: 4 + model.depth * 16
+                            spacing: 6
+
+                            Text {
+                                text: model.depth === 0 ? "\uD83D\uDCC1" : model.depth === 1 ? "\uD83D\uDCCB" : "\uD83C\uDF9E"
+                                font.pixelSize: 10
+                            }
+                            Text { text: model.name; color: Theme.foreground; font.pixelSize: 11; elide: Text.ElideRight }
+                            Text { text: "(" + model.typeName + ")"; color: Theme.mutedForeground; font.pixelSize: 9 }
+                        }
+
+                        MouseArea {
+                            id: ma; anchors.fill: parent; hoverEnabled: true
+                            onClicked: {
+                                selectedObject = model.object;
+                                selectPopup.close();
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }

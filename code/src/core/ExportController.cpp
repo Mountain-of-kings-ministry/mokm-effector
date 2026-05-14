@@ -246,7 +246,7 @@ void ExportController::exportSequence(Composition *comp, TimelineModel *timeline
         }
     }
 
-    int totalFrames = comp->duration();
+    int totalFrames = qMax(comp->duration(), comp->lastClipEndFrame());
     int oldFrame = timeline->currentFrame();
 
     for (int frame = 0; frame < totalFrames; ++frame) {

@@ -229,8 +229,10 @@ void AudioEngine::applyTrackVolume(int frame)
                 int end = start + st->duration();
                 if (frame >= start && frame < end) {
                     qreal trackVol = tr->opacity(); // Track opacity doubles as volume control
+                    AudioLayer *audioLayer = qobject_cast<AudioLayer*>(st->element());
+                    qreal layerVol = audioLayer ? audioLayer->volume() : 1.0;
                     if (m_audioOutput)
-                        m_audioOutput->setVolume(m_masterVolume * trackVol);
+                        m_audioOutput->setVolume(m_masterVolume * trackVol * layerVol);
                     return;
                 }
             }

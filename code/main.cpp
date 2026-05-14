@@ -49,6 +49,9 @@
 
 int main(int argc, char *argv[])
 {
+    // Suppress libpng duplicate eXIf warning (harmless) — must be before QApplication
+    qputenv("QT_LOGGING_RULES", "qt.gui.imageio.warning=false");
+
     QApplication app(argc, argv);
     app.setApplicationName("MOKM Effector");
     app.setOrganizationName("MOKM");
@@ -113,6 +116,7 @@ int main(int argc, char *argv[])
 #ifdef MOKM_ENABLE_CLAP
     auto *clapManager = new CLAPPluginManager(&engine);
     engine.rootContext()->setContextProperty("_clapPluginManager", clapManager);
+    clapManager->rescan();
 #endif
 
 #ifdef MOKM_ENABLE_NODES
@@ -125,9 +129,6 @@ int main(int argc, char *argv[])
 
     // Register MOKM-specific nodes (only once!)
     NodeEditor::registerMOKMNodeTypes(graphModel);
-
-    // Optional: Register your own custom categories
-    graphModel->registerCategory({"MOKM", "MOKM", QColor("#636E72")});
 
     // If you have more node sets in the future:
     // NodeEditor::registerSomeOtherNodes(graphModel);
