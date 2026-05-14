@@ -309,20 +309,40 @@ void AudioLayer::loadWaveform()
                     m_sampleRate = codecCtx->sample_rate;
                     m_channels = codecCtx->ch_layout.nb_channels;
                     
+                    int pktCount = 0;
+                    int frameCount = 0;
+                    
                     AVPacket *pkt = av_packet_alloc();
                     AVFrame *frame = av_frame_alloc();
                     while (av_read_frame(fmtCtx, pkt) >= 0) {
                         if (pkt->stream_index == audioStream) {
+                            pktCount++;
                             if (avcodec_send_packet(codecCtx, pkt) == 0) {
                                 while (avcodec_receive_frame(codecCtx, frame) == 0) {
+                                    frameCount++;
                                     int nbSamples = frame->nb_samples;
                                     for (int j = 0; j < nbSamples; j++) {
                                         for (int c = 0; c < m_channels; c++) {
                                             float val = 0.0f;
-                                            if (av_sample_fmt_is_planar(codecCtx->sample_fmt))
-                                                val = ((float*)frame->data[c])[j];
-                                            else
-                                                val = ((float*)frame->data[0])[j * m_channels + c];
+                                            switch (codecCtx->sample_fmt) {
+                                                case AV_SAMPLE_FMT_FLT:
+                                                case AV_SAMPLE_FMT_FLTP:
+                                                    val = av_sample_fmt_is_planar(codecCtx->sample_fmt) ? 
+                                                          ((float*)frame->data[c])[j] : ((float*)frame->data[0])[j * m_channels + c];
+                                                    break;
+                                                case AV_SAMPLE_FMT_S16:
+                                                case AV_SAMPLE_FMT_S16P:
+                                                    val = av_sample_fmt_is_planar(codecCtx->sample_fmt) ? 
+                                                          ((int16_t*)frame->data[c])[j] / 32768.0f : ((int16_t*)frame->data[0])[j * m_channels + c] / 32768.0f;
+                                                    break;
+                                                case AV_SAMPLE_FMT_S32:
+                                                case AV_SAMPLE_FMT_S32P:
+                                                    val = av_sample_fmt_is_planar(codecCtx->sample_fmt) ? 
+                                                          ((int32_t*)frame->data[c])[j] / 2147483648.0f : ((int32_t*)frame->data[0])[j * m_channels + c] / 2147483648.0f;
+                                                    break;
+                                                default:
+                                                    val = 0.0f;
+                                            }
                                             m_fullAudioData.append(val);
                                         }
                                     }
@@ -332,6 +352,7 @@ void AudioLayer::loadWaveform()
                         }
                         av_packet_unref(pkt);
                     }
+                    qDebug() << "FFmpeg decoding finished. Packets read:" << pktCount << "Frames decoded:" << frameCount << "Samples stored:" << m_fullAudioData.size();
                     av_frame_free(&frame);
                     av_packet_free(&pkt);
                     avcodec_free_context(&codecCtx);
@@ -383,6 +404,9 @@ Layer* AudioLayer::clone(QObject *parent) const
     l->m_mute = m_mute;
     l->m_solo = m_solo;
     l->m_waveformData = m_waveformData;
+    l->m_fullAudioData = m_fullAudioData;
+    l->m_sampleRate = m_sampleRate;
+    l->m_channels = m_channels;
     return l;
 }
 

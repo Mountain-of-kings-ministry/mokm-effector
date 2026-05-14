@@ -627,11 +627,12 @@ Rectangle {
                                             id: waveformCanvas
                                             anchors.fill: parent
                                             anchors.margins: 2
-                                            visible: stripObj.element && stripObj.element.waveformDataList !== undefined && stripObj.element.waveformDataList.length > 0
+                                            visible: stripObj && stripObj.element && stripObj.element.waveformDataList && stripObj.element.waveformDataList.length > 0
                                             onPaint: {
                                                 var ctx = getContext("2d");
                                                 if (!ctx) return;
                                                 ctx.clearRect(0, 0, width, height);
+                                                if (!stripObj || !stripObj.element) return;
                                                 var data = stripObj.element.waveformDataList;
                                                 if (!data || data.length === 0) return;
                                                 ctx.fillStyle = Qt.rgba(1, 1, 1, 0.2);

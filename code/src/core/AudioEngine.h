@@ -22,8 +22,9 @@ class AudioEngineDevice : public QIODevice {
 public:
     explicit AudioEngineDevice(class AudioEngine *engine, QObject *parent = nullptr);
     qint64 readData(char *data, qint64 maxlen) override;
+    qint64 bytesAvailable() const override { return 4096; }
     qint64 writeData(const char *data, qint64 len) override { Q_UNUSED(data); Q_UNUSED(len); return 0; }
-    bool isSequential() const override { return true; }
+    bool isSequential() const override { return false; }
 private:
     class AudioEngine *m_engine;
 };

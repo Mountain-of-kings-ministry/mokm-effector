@@ -29,7 +29,7 @@ public:
     void setComposition(Composition *comp);
 
     int currentFrame() const { return m_currentFrame; }
-    void setCurrentFrame(int frame);
+    Q_INVOKABLE void setCurrentFrame(int frame);
 
     bool playing() const { return m_playing; }
     void setPlaying(bool playing);

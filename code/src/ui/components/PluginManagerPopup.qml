@@ -49,6 +49,13 @@ Popup {
         rebuildFilter();
     }
 
+    function getSelectedList() {
+        var list = [];
+        for (var id in selectedPluginIds)
+            list.push(selectedPluginIds[id]);
+        return list;
+    }
+
     property string _currentTab: "CLAP"
 
     Rectangle {
@@ -187,13 +194,6 @@ Popup {
                         }
                     }
                 }
-            }
-
-            function getSelectedList() {
-                var list = [];
-                for (var id in selectedPluginIds)
-                    list.push(selectedPluginIds[id]);
-                return list;
             }
 
             // Bottom buttons
