@@ -228,12 +228,25 @@ QVariant TimelineModel::getValueAt(QObject *obj, const QString &property, int fr
     int nextFrame = next.key();
     qreal t = qreal(frame - prevFrame) / qreal(nextFrame - prevFrame);
     auto easing = prev.value()->easing();
-    qreal easedT = Keyframe::interpolate(t, easing);
+    QPointF hIn = next.value()->handleIn();
+    QPointF hOut = prev.value()->handleOut();
 
     return interpolateValue(prev.value()->value().toReal(),
                             next.value()->value().toReal(),
-                            easedT,
-                            easing);
+                            t,
+                            easing,
+                            hIn,
+                            hOut);
+}
+
+Keyframe* TimelineModel::getKeyframe(QObject *obj, const QString &property, int frame) const
+{
+    if (!obj) return nullptr;
+    auto layerIt = m_keyframes.find(obj);
+    if (layerIt == m_keyframes.end()) return nullptr;
+    auto propIt = layerIt.value().find(property);
+    if (propIt == layerIt.value().end()) return nullptr;
+    return propIt.value().value(frame, nullptr);
 }
 
 bool TimelineModel::hasKeyframe(QObject *obj, const QString &property, int frame) const
@@ -311,8 +324,22 @@ void TimelineModel::onTick()
     setCurrentFrame(nextFrame);
 }
 
-qreal TimelineModel::interpolateValue(qreal from, qreal to, qreal t, Keyframe::Easing easing) const
+qreal TimelineModel::interpolateValue(qreal from, qreal to, qreal t, Keyframe::Easing easing, QPointF hIn, QPointF hOut) const
 {
-    Q_UNUSED(easing);
-    return from + (to - from) * t;
+    if (easing != Keyframe::Bezier) {
+        return from + (to - from) * Keyframe::interpolate(t, easing);
+    }
+
+    // Cubic Bezier calculation:
+    // P0=(0,0), P1=hOut, P2=hIn(normalized), P3=(1,1)
+    // t is normalized time [0..1]
+    auto bz = [](qreal t, qreal p0, qreal p1, qreal p2, qreal p3) {
+        qreal mt = 1 - t;
+        return mt*mt*mt*p0 + 3*mt*mt*t*p1 + 3*mt*t*t*p2 + t*t*t*p3;
+    };
+
+    // Note: This is a simplified approach; true Bezier requires solving for t 
+    // given x, but as a starting point we map the y-curve.
+    qreal easedT = bz(t, 0.0, hOut.y(), hIn.y(), 1.0);
+    return from + (to - from) * easedT;
 }

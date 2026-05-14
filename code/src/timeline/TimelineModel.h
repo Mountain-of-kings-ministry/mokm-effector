@@ -59,6 +59,7 @@ public:
     // Helper: adds a keyframe at currentFrame only if autoKeyframeEnabled is true
     Q_INVOKABLE bool tryAutoKeyframe(QObject *obj, const QString &property, const QVariant &value);
     Q_INVOKABLE bool hasKeyframe(QObject *obj, const QString &property, int frame) const;
+    Q_INVOKABLE Keyframe* getKeyframe(QObject *obj, const QString &property, int frame) const;
     Q_INVOKABLE QVector<int> keyframeFrames(QObject *obj, const QString &property) const;
     Q_INVOKABLE QVariantList getKeyframeData(QObject *obj, const QString &property) const;
 
@@ -81,7 +82,7 @@ private:
         QMap<QString, KeyframeMap> keyframes;
     };
 
-    qreal interpolateValue(qreal from, qreal to, qreal t, Keyframe::Easing easing) const;
+    qreal interpolateValue(qreal from, qreal to, qreal t, Keyframe::Easing easing, QPointF hIn = {}, QPointF hOut = {}) const;
 
     Composition *m_composition = nullptr;
     int m_currentFrame = 0;
