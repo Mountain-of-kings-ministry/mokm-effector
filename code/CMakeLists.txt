@@ -53,6 +53,43 @@ qt_add_executable(appmokm_effector
 
 # ── Local Third Party Libraries ──────────────────────────────
 
+# Linux dependencies
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
+pkg_check_modules(ALSA REQUIRED alsa)
+
+target_link_libraries(appmokm_effector PRIVATE
+    ${GTK3_LIBRARIES}
+    ${ALSA_LIBRARIES}
+    pthread
+    dl
+    X11
+)
+
+# Qt-Node-editor
+if(MOKM_ENABLE_NODES)
+
+  target_include_directories(appmokm_effector PRIVATE
+        ${CMAKE_SOURCE_DIR}/../third_parties/Qt-Node-editor
+        ${CMAKE_SOURCE_DIR}/../third_parties/Qt-Node-editor/NodeEditor/include
+    )
+
+  target_link_directories(appmokm_effector PRIVATE
+        ${CMAKE_SOURCE_DIR}/../third_parties/Qt-Node-editor/build/default/NodeEditor
+    )
+
+  target_link_libraries(appmokm_effector PRIVATE
+        NodeEditor
+        NodeEditorCore
+        Qt6::QuickShapes
+    )
+
+  target_compile_definitions(appmokm_effector PRIVATE
+        MOKM_ENABLE_NODES
+    )
+
+endif()
+
 # ── VST3 SDK ─────────────────────────────────────────────────
 set(VST3_SDK_ROOT "${CMAKE_SOURCE_DIR}/../third_parties/vst3sdk")
 if(EXISTS "${VST3_SDK_ROOT}/CMakeLists.txt")
