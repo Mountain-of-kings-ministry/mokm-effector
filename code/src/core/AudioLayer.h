@@ -45,6 +45,10 @@ public:
     const QVector<float>& waveformData() const { return m_waveformData; }
     QVariantList waveformDataList() const;
 
+    const QVector<float>& fullAudioData() const { return m_fullAudioData; }
+    int sampleRate() const { return m_sampleRate; }
+    int channels() const { return m_channels; }
+
     Layer* clone(QObject *parent = nullptr) const override;
     QJsonObject toJson() const override;
     void fromJson(const QJsonObject &obj) override;
@@ -72,6 +76,9 @@ private:
     bool m_solo = false;
     int m_frameCount = 0;
     QVector<float> m_waveformData;
+    QVector<float> m_fullAudioData;
+    int m_sampleRate = 48000;
+    int m_channels = 2;
 };
 
 #endif

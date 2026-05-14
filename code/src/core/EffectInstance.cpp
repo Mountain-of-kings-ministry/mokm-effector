@@ -1,8 +1,10 @@
 #include "EffectInstance.h"
 #include "CLAPInstance.h"
+#include "VST3Instance.h"
 
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QDynamicPropertyChangeEvent>
 
 EffectInstance::EffectInstance(const QString &name,
                                const QString &pluginId,
@@ -40,6 +42,8 @@ void EffectInstance::setParameter(const QString &paramId, double value)
 
     if (m_clapInstance)
         m_clapInstance->setParameter(paramId, value);
+    else if (m_vst3Instance)
+        m_vst3Instance->setParameter(paramId, value);
 
     emit parametersChanged();
 }
@@ -64,6 +68,29 @@ void EffectInstance::setClapInstance(CLAPInstance *instance)
         if (!m_clapInstance) return;
         QVariantMap clapParams = m_clapInstance->parameters();
         for (auto it = clapParams.begin(); it != clapParams.end(); ++it) {
+            if (m_parameters.value(it.key()) != it.value()) {
+                m_parameters[it.key()] = it.value();
+            }
+        }
+        emit parametersChanged();
+    });
+}
+
+void EffectInstance::setVst3Instance(VST3Instance *instance)
+{
+    m_vst3Instance = instance;
+    if (!instance) return;
+
+    // Sync parameters from VST3
+    QVariantMap vstParams = instance->parameters();
+    for (auto it = vstParams.begin(); it != vstParams.end(); ++it) {
+        m_parameters[it.key()] = it.value();
+    }
+
+    connect(instance, &VST3Instance::parametersChanged, this, [this]() {
+        if (!m_vst3Instance) return;
+        QVariantMap vstParams = m_vst3Instance->parameters();
+        for (auto it = vstParams.begin(); it != vstParams.end(); ++it) {
             if (m_parameters.value(it.key()) != it.value()) {
                 m_parameters[it.key()] = it.value();
             }
@@ -120,4 +147,17 @@ void EffectInstance::fromJson(const QJsonObject &obj)
     QJsonObject params = obj["parameters"].toObject();
     for (auto it = params.begin(); it != params.end(); ++it)
         m_parameters[it.key()] = it.value().toDouble();
+}
+
+bool EffectInstance::event(QEvent *e)
+{
+    if (e->type() == QEvent::DynamicPropertyChange) {
+        auto *de = static_cast<QDynamicPropertyChangeEvent*>(e);
+        QString propName = QString::fromUtf8(de->propertyName());
+        // If this dynamic property name matches a parameter ID, update the parameter
+        if (m_parameters.contains(propName)) {
+            setParameter(propName, property(de->propertyName()).toDouble());
+        }
+    }
+    return QObject::event(e);
 }

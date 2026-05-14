@@ -283,12 +283,72 @@ void AudioLayer::loadWaveform()
     }
 
     // Non-WAV: use FFmpeg
+    m_fullAudioData.clear();
     double durationSec = ffmpegAudioDuration(path);
     if (durationSec > 0) {
         m_frameCount = qMax(1, (int)(durationSec * m_compositionFrameRate + 0.5));
         setDuration(m_frameCount);
-    m_waveformData = ffmpegWaveform(path, 1200);
-    emit frameCountChanged();
+        
+        // Use a modified ffmpegWaveform to get full data
+        // For now, let's keep the existing logic and add full data decoding
+        AVFormatContext *fmtCtx = nullptr;
+        if (avformat_open_input(&fmtCtx, path.toUtf8().constData(), nullptr, nullptr) >= 0) {
+            if (avformat_find_stream_info(fmtCtx, nullptr) >= 0) {
+                int audioStream = -1;
+                for (unsigned i = 0; i < fmtCtx->nb_streams; i++) {
+                    if (fmtCtx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
+                        audioStream = i; break;
+                    }
+                }
+                if (audioStream >= 0) {
+                    const AVCodec *codec = avcodec_find_decoder(fmtCtx->streams[audioStream]->codecpar->codec_id);
+                    AVCodecContext *codecCtx = avcodec_alloc_context3(codec);
+                    avcodec_parameters_to_context(codecCtx, fmtCtx->streams[audioStream]->codecpar);
+                    avcodec_open2(codecCtx, codec, nullptr);
+                    
+                    m_sampleRate = codecCtx->sample_rate;
+                    m_channels = codecCtx->ch_layout.nb_channels;
+                    
+                    AVPacket *pkt = av_packet_alloc();
+                    AVFrame *frame = av_frame_alloc();
+                    while (av_read_frame(fmtCtx, pkt) >= 0) {
+                        if (pkt->stream_index == audioStream) {
+                            if (avcodec_send_packet(codecCtx, pkt) == 0) {
+                                while (avcodec_receive_frame(codecCtx, frame) == 0) {
+                                    int nbSamples = frame->nb_samples;
+                                    for (int j = 0; j < nbSamples; j++) {
+                                        for (int c = 0; c < m_channels; c++) {
+                                            float val = 0.0f;
+                                            if (av_sample_fmt_is_planar(codecCtx->sample_fmt))
+                                                val = ((float*)frame->data[c])[j];
+                                            else
+                                                val = ((float*)frame->data[0])[j * m_channels + c];
+                                            m_fullAudioData.append(val);
+                                        }
+                                    }
+                                    av_frame_unref(frame);
+                                }
+                            }
+                        }
+                        av_packet_unref(pkt);
+                    }
+                    av_frame_free(&frame);
+                    av_packet_free(&pkt);
+                    avcodec_free_context(&codecCtx);
+                }
+            }
+            avformat_close_input(&fmtCtx);
+        }
+
+        // Re-generate waveform from full data
+        int displaySamples = 1200;
+        int totalSamples = m_fullAudioData.size() / m_channels;
+        int step = qMax(1, totalSamples / displaySamples);
+        m_waveformData.clear();
+        for (int i = 0; i < totalSamples; i += step) {
+            m_waveformData.append(m_fullAudioData.at(i * m_channels));
+        }
+        emit frameCountChanged();
     }
 }
 

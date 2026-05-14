@@ -29,29 +29,20 @@ Popup {
         _clapPlugins = [];
         _vst3Plugins = [];
 
-        if (typeof _clapPluginManager !== "undefined" && _clapPluginManager) {
-            var pm = _clapPluginManager;
-            if (pm.scanDone) {
-                for (var i = 0; i < pm.pluginsCount; i++) {
-                    var p = pm.plugins(i);
-                    _clapPlugins.push({
-                        name: p.name,
-                        pluginId: p.pluginId,
-                        format: "CLAP"
-                    });
-                }
-            }
-        }
-
         if (typeof _audioPluginManager !== "undefined" && _audioPluginManager) {
             var apm = _audioPluginManager;
-            for (var j = 0; j < apm.availablePluginsCount; j++) {
-                var ap = apm.availablePlugins(j);
-                _vst3Plugins.push({
-                    name: ap.name,
-                    pluginId: ap.name,
-                    format: "VST3"
-                });
+            for (var i = 0; i < apm.availablePlugins.length; i++) {
+                var p = apm.availablePlugins[i];
+                var entry = {
+                    name: p.name,
+                    pluginId: p.pluginId,
+                    format: p.format,
+                    vendor: p.vendor
+                };
+                if (p.format === "CLAP")
+                    _clapPlugins.push(entry);
+                else if (p.format === "VST3")
+                    _vst3Plugins.push(entry);
             }
         }
 
@@ -226,7 +217,7 @@ Popup {
                 }
 
                 Button {
-                    text: "Add to Chain"
+                    text: "Add Selected (" + Object.keys(selectedPluginIds).length + ")"
                     enabled: Object.keys(selectedPluginIds).length > 0
                     contentItem: Text {
                         text: parent.text

@@ -30,11 +30,12 @@
 #include "src/core/AudioPluginManager.h"
 #include "src/core/EffectInstance.h"
 #include "src/core/EffectChain.h"
+#include "src/core/VST3Instance.h"
+#include "src/core/CLAPInstance.h"
 
 #ifdef MOKM_ENABLE_CLAP
 #include "src/core/CLAPPluginManager.h"
 #include "src/core/CLAPPlugin.h"
-#include "src/core/CLAPInstance.h"
 #endif
 
 #ifdef MOKM_ENABLE_NODES
@@ -78,13 +79,15 @@ int main(int argc, char *argv[])
     qmlRegisterType<TimelineLayer>("mokm_effector", 1, 0, "TimelineLayer");
     qmlRegisterType<EffectInstance>("mokm_effector", 1, 0, "EffectInstance");
     qmlRegisterType<EffectChain>("mokm_effector", 1, 0, "EffectChain");
+    qmlRegisterType<AudioPlugin>("mokm_effector", 1, 0, "AudioPlugin");
+    qmlRegisterType<VST3Instance>("mokm_effector", 1, 0, "VST3Instance");
+    qmlRegisterType<CLAPInstance>("mokm_effector", 1, 0, "CLAPInstance");
 
     qmlRegisterType<OFXPlugin>("mokm_effector", 1, 0, "OFXPlugin");
     qmlRegisterType<OFXPluginManager>("mokm_effector", 1, 0, "OFXPluginManager");
 #ifdef MOKM_ENABLE_CLAP
     qmlRegisterType<CLAPPlugin>("mokm_effector", 1, 0, "CLAPPlugin");
     qmlRegisterType<CLAPPluginManager>("mokm_effector", 1, 0, "CLAPPluginManager");
-    qmlRegisterType<CLAPInstance>("mokm_effector", 1, 0, "CLAPInstance");
 #endif
 
     qmlRegisterSingletonType<AppSettings>("mokm_effector", 1, 0, "AppSettings",
@@ -105,6 +108,8 @@ int main(int argc, char *argv[])
     // Plugin managers
     auto *ofxManager = new OFXPluginManager(&engine);
     engine.rootContext()->setContextProperty("_ofxPluginManager", ofxManager);
+    
+    // Audio plugin manager (VST3 + CLAP)
     auto *pluginManager = new AudioPluginManager(&engine);
     engine.rootContext()->setContextProperty("_audioPluginManager", pluginManager);
 
@@ -112,12 +117,6 @@ int main(int argc, char *argv[])
     // Audio engine
     auto *audioEngine = new AudioEngine(&engine);
     engine.rootContext()->setContextProperty("_audioEngine", audioEngine);
-
-#ifdef MOKM_ENABLE_CLAP
-    auto *clapManager = new CLAPPluginManager(&engine);
-    engine.rootContext()->setContextProperty("_clapPluginManager", clapManager);
-    clapManager->rescan();
-#endif
 
 #ifdef MOKM_ENABLE_NODES
     auto *graphModel = new NodeEditor::GraphModel(&engine);

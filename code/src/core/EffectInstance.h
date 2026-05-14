@@ -5,8 +5,10 @@
 #include <QString>
 #include <QVariantMap>
 #include <QJsonObject>
+#include <QEvent>
 
 class CLAPInstance;
+class VST3Instance;
 
 class EffectInstance : public QObject
 {
@@ -37,6 +39,9 @@ public:
     void setClapInstance(CLAPInstance *instance);
     CLAPInstance* clapInstance() const { return m_clapInstance; }
 
+    void setVst3Instance(VST3Instance *instance);
+    VST3Instance* vst3Instance() const { return m_vst3Instance; }
+
     void setParameterMeta(const QString &paramId, const QString &label,
                           double min, double max, double defaultValue);
     struct ParamInfo {
@@ -49,6 +54,9 @@ public:
 
     QJsonObject toJson() const;
     void fromJson(const QJsonObject &obj);
+
+protected:
+    bool event(QEvent *e) override;
 
 signals:
     void nameChanged();
@@ -63,6 +71,7 @@ private:
     QVariantMap m_parameters;
     QMap<QString, ParamInfo> m_paramInfo;
     CLAPInstance *m_clapInstance = nullptr;
+    VST3Instance *m_vst3Instance = nullptr;
 };
 
 #endif

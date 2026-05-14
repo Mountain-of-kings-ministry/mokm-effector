@@ -35,6 +35,18 @@ Rectangle {
 
     function _getProperties(obj) {
         if (!obj) return [[], []];
+        
+        // Check for EffectInstance (has pluginId and parameters)
+        if (obj.pluginId !== undefined && obj.parameters !== undefined) {
+            var keys = Object.keys(obj.parameters);
+            var labels = [];
+            for (var i = 0; i < keys.length; i++) {
+                var info = obj.parameterInfo ? obj.parameterInfo(keys[i]) : null;
+                labels.push(info ? info.label : ("Param " + keys[i]));
+            }
+            return [keys, labels];
+        }
+
         if (obj.tracks !== undefined) return [
             ["opacity","offsetX","offsetY","rotation","scaleX","scaleY","anchorX","anchorY","visible"],
             ["Opacity","Offset X","Offset Y","Rotation","Scale X","Scale Y","Anchor X","Anchor Y","Visible"]

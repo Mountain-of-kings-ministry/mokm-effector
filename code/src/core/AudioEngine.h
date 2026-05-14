@@ -7,11 +7,26 @@
 
 #include "../timeline/TimelineModel.h"
 
+#include <QAudioSink>
+#include <QAudioFormat>
+#include <QIODevice>
+
 class QMediaPlayer;
 class QAudioOutput;
 class Track;
 class Strip;
 class AudioLayer;
+
+class AudioEngineDevice : public QIODevice {
+    Q_OBJECT
+public:
+    explicit AudioEngineDevice(class AudioEngine *engine, QObject *parent = nullptr);
+    qint64 readData(char *data, qint64 maxlen) override;
+    qint64 writeData(const char *data, qint64 len) override { Q_UNUSED(data); Q_UNUSED(len); return 0; }
+    bool isSequential() const override { return true; }
+private:
+    class AudioEngine *m_engine;
+};
 
 class AudioEngine : public QObject
 {
@@ -20,6 +35,8 @@ class AudioEngine : public QObject
     Q_PROPERTY(qreal masterVolume READ masterVolume WRITE setMasterVolume NOTIFY masterVolumeChanged)
     Q_PROPERTY(qreal masterPan READ masterPan WRITE setMasterPan NOTIFY masterPanChanged)
     Q_PROPERTY(bool playing READ playing NOTIFY playingChanged)
+
+    friend class AudioEngineDevice;
 public:
     explicit AudioEngine(QObject *parent = nullptr);
     ~AudioEngine() override;
@@ -60,10 +77,11 @@ private:
     void syncToTimeline();
     void applyTrackVolume(int frame);
     AudioLayer* findAudioLayerAtFrame(int frame) const;
+    void processAudioBlock(float **buffers, int nChannels, int nFrames, int frame);
 
     TimelineModel *m_timeline = nullptr;
-    QMediaPlayer *m_player = nullptr;
-    QAudioOutput *m_audioOutput = nullptr;
+    QAudioSink *m_audioSink = nullptr;
+    AudioEngineDevice *m_audioDevice = nullptr;
     qreal m_masterVolume = 1.0;
     qreal m_masterPan = 0.0;
     bool m_playing = false;

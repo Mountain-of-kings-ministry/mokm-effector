@@ -13,7 +13,7 @@
     "**/.settings",
 
     "**/code/third_parties/**",
-    // "**/third_parties/**",
+    "**/third_parties/**",
     "**/backup/**",
     "**/code/vcpkg_installed/**",
     "**/code/resources/icons/**",

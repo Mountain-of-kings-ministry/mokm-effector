@@ -360,14 +360,10 @@ Rectangle {
         timelineModel: root.timelineModel
 
         onPluginsSelected: function(plugins) {
-            if (!root.effectChain) return;
+            if (!root.effectChain || typeof _audioPluginManager === "undefined") return;
             for (var i = 0; i < plugins.length; i++) {
                 var p = plugins[i];
-                var effect = Qt.createQmlObject(
-                    'import mokm_effector; EffectInstance { name: "' + p.name + '"; pluginId: "' + p.pluginId + '"; format: "' + p.format + '" }',
-                    root.effectChain,
-                    "dynamicEffect"
-                );
+                var effect = _audioPluginManager.createInstanceById(p.pluginId, p.format, root.effectChain);
                 if (effect) {
                     root.effectChain.addEffect(effect);
                     root.effectAdded(p.name, p.pluginId, p.format);
