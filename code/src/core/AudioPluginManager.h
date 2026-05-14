@@ -4,6 +4,11 @@
 #include <QObject>
 #include <QQmlListProperty>
 #include <QStringList>
+#include <QMap>
+
+#ifdef MOKM_ENABLE_VST3
+#include "public.sdk/source/vst/hosting/module.h"
+#endif
 
 class AudioPlugin : public QObject {
     Q_OBJECT
@@ -60,6 +65,9 @@ private:
     void scanCLAP();
 
     QList<AudioPlugin*> m_plugins;
+#ifdef MOKM_ENABLE_VST3
+    QMap<QString, VST3::Hosting::Module::Ptr> m_vst3Modules;
+#endif
 };
 
 #endif

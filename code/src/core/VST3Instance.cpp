@@ -45,10 +45,12 @@ static bool stringToTUID(const QString &cid, TUID tuid)
     return true;
 }
 
-VST3Instance::VST3Instance(const QString &pluginPath, const QString &cid, QObject *parent)
+VST3Instance::VST3Instance(const QString &pluginPath, const QString &cid,
+                           VST3::Hosting::Module::Ptr preloadedModule, QObject *parent)
     : QObject(parent)
     , m_pluginPath(pluginPath)
     , m_cid(cid)
+    , m_module(preloadedModule)
 {
 }
 
@@ -61,12 +63,16 @@ bool VST3Instance::load()
 {
     if (m_component) return true;
 
-    std::string pathStr = m_pluginPath.toStdString();
-    std::string error;
-    m_module = VST3::Hosting::Module::create(pathStr, error);
+    // Use pre-loaded module if available (avoids dlclose/dlopen cycle that
+    // corrupts D runtime plugins like Graillon 3)
     if (!m_module) {
-        qWarning() << "Failed to load VST3 module:" << m_pluginPath << "Error:" << QString::fromStdString(error);
-        return false;
+        std::string pathStr = m_pluginPath.toStdString();
+        std::string error;
+        m_module = VST3::Hosting::Module::create(pathStr, error);
+        if (!m_module) {
+            qWarning() << "Failed to load VST3 module:" << m_pluginPath << "Error:" << QString::fromStdString(error);
+            return false;
+        }
     }
 
     auto factory = m_module->getFactory();
@@ -209,7 +215,13 @@ double VST3Instance::getParameter(const QString &paramId) const
 
 bool VST3Instance::process(float **inputs, float **outputs, int nChannels, int nFrames)
 {
-    if (!m_audioProcessor || !m_active) return false;
+    if (!m_audioProcessor) return false;
+
+    // Lazy activation: plugins must be set up before processing
+    if (!m_active) {
+        if (!activate(48000.0, qMin(nFrames, 2048)))
+            return false;
+    }
 
     ProcessData data;
     data.processMode = kRealtime;

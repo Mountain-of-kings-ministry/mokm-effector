@@ -35,6 +35,7 @@ void AudioPluginManager::scanPlugins()
 void AudioPluginManager::scanVST3()
 {
     qDebug() << "Scanning for VST3 plugins...";
+    m_vst3Modules.clear();
     
     for (const auto &basePath : standardVST3Paths) {
         QDir dir(basePath);
@@ -49,6 +50,10 @@ void AudioPluginManager::scanVST3()
             std::string error;
             auto module = VST3::Hosting::Module::create(pathStr, error);
             if (!module) continue;
+
+            // Cache module handle — prevents dlclose/dlopen cycle that
+            // corrupts D runtime and certain plugin state machines (Graillon 3 etc.)
+            m_vst3Modules[path] = module;
 
             auto factory = module->getFactory();
             for (auto &classInfo : factory.classInfos()) {
@@ -157,7 +162,12 @@ EffectInstance* AudioPluginManager::createInstance(AudioPlugin *plugin, QObject 
         return nullptr;
 #endif
     } else if (plugin->format() == "VST3") {
-        auto *inst = new VST3Instance(plugin->filePath(), plugin->pluginId(), effect);
+        // Pass cached module handle to prevent reloading the .so
+        VST3::Hosting::Module::Ptr preloaded;
+        auto it = m_vst3Modules.constFind(plugin->filePath());
+        if (it != m_vst3Modules.constEnd())
+            preloaded = it.value();
+        auto *inst = new VST3Instance(plugin->filePath(), plugin->pluginId(), preloaded, effect);
         if (inst->load()) {
             effect->setVst3Instance(inst);
         } else {

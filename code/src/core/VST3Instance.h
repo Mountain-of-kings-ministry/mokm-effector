@@ -21,7 +21,9 @@ class VST3Instance : public QObject
     Q_PROPERTY(QVariantMap parameters READ parameters NOTIFY parametersChanged)
 
 public:
-    explicit VST3Instance(const QString &pluginPath, const QString &cid, QObject *parent = nullptr);
+    explicit VST3Instance(const QString &pluginPath, const QString &cid,
+                          VST3::Hosting::Module::Ptr preloadedModule = nullptr,
+                          QObject *parent = nullptr);
     ~VST3Instance() override;
 
     QString name() const { return m_name; }
