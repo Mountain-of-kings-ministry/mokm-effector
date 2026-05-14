@@ -66,12 +66,15 @@ void AudioPluginManager::scanVST3()
     }
 }
 
+#ifdef MOKM_ENABLE_CLAP
 #include <dlfcn.h>
 #include <clap/clap.h>
 #include <clap/factory/plugin-factory.h>
+#endif
 
 void AudioPluginManager::scanCLAP()
 {
+#ifdef MOKM_ENABLE_CLAP
     qDebug() << "Scanning for CLAP plugins...";
     QStringList searchPaths = {
         QDir::homePath() + "/.clap",
@@ -126,6 +129,9 @@ void AudioPluginManager::scanCLAP()
             dlclose(lib);
         }
     }
+#else
+    qDebug() << "CLAP support disabled (headers not found)";
+#endif
 }
 
 EffectInstance* AudioPluginManager::createInstance(AudioPlugin *plugin, QObject *parent)
@@ -135,6 +141,7 @@ EffectInstance* AudioPluginManager::createInstance(AudioPlugin *plugin, QObject 
     auto *effect = new EffectInstance(plugin->name(), plugin->pluginId(), plugin->format(), parent ? parent : this);
 
     if (plugin->format() == "CLAP") {
+#ifdef MOKM_ENABLE_CLAP
         auto *inst = new CLAPInstance(plugin->pluginId(), plugin->filePath(), effect);
         if (inst->load()) {
             effect->setClapInstance(inst);
@@ -143,6 +150,10 @@ EffectInstance* AudioPluginManager::createInstance(AudioPlugin *plugin, QObject 
             delete effect;
             return nullptr;
         }
+#else
+        delete effect;
+        return nullptr;
+#endif
     } else if (plugin->format() == "VST3") {
         auto *inst = new VST3Instance(plugin->filePath(), plugin->pluginId(), effect);
         if (inst->load()) {

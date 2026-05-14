@@ -56,10 +56,10 @@ qt_add_executable(appmokm_effector
 # ── VST3 SDK ─────────────────────────────────────────────────
 set(VST3_SDK_ROOT "${CMAKE_SOURCE_DIR}/../third_parties/vst3sdk")
 if(EXISTS "${VST3_SDK_ROOT}/CMakeLists.txt")
-    # Disable VST3 samples and unnecessary components to speed up build
-    set(SMTG_ADD_VST3_HOSTING_SAMPLES OFF CACHE BOOL "" FORCE)
-    set(SMTG_ADD_VST3_SAMPLES OFF CACHE BOOL "" FORCE)
-    set(SMTG_ADD_VSTGUI OFF CACHE BOOL "" FORCE)
+    # Disable VST3 samples and unnecessary components to speed up build and fix Wayland error
+    set(SMTG_ENABLE_VSTGUI_SUPPORT OFF CACHE BOOL "" FORCE)
+    set(SMTG_ENABLE_VST3_HOSTING_EXAMPLES OFF CACHE BOOL "" FORCE)
+    set(SMTG_ENABLE_VST3_PLUGIN_EXAMPLES OFF CACHE BOOL "" FORCE)
     
     add_subdirectory("${VST3_SDK_ROOT}" "${CMAKE_BINARY_DIR}/vst3sdk" EXCLUDE_FROM_ALL)
     message(STATUS "VST3 SDK included from local source")
@@ -123,8 +123,13 @@ target_link_libraries(appmokm_effector
 )
 
 if(TARGET sdk)
-    target_link_libraries(appmokm_effector PRIVATE sdk)
+    target_link_libraries(appmokm_effector PRIVATE sdk sdk_hosting)
     target_compile_definitions(appmokm_effector PRIVATE MOKM_ENABLE_VST3=1)
+endif()
+
+if(TARGET CLAP)
+    target_link_libraries(appmokm_effector PRIVATE CLAP)
+    target_compile_definitions(appmokm_effector PRIVATE MOKM_ENABLE_CLAP=1)
 endif()
 
 

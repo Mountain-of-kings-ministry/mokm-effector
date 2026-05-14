@@ -1,4 +1,6 @@
 #include "CLAPInstance.h"
+
+#ifdef MOKM_ENABLE_CLAP
 #include <dlfcn.h>
 #include <clap/clap.h>
 #include <clap/ext/params.h>
@@ -246,3 +248,14 @@ bool CLAPInstance::process(float *const *audioInputs, float **audioOutputs,
     plug->stop_processing(plug);
     return status == CLAP_PROCESS_CONTINUE || status == CLAP_PROCESS_TAIL;
 }
+#else
+CLAPInstance::CLAPInstance(const QString &, const QString &, QObject *parent) : QObject(parent) {}
+CLAPInstance::~CLAPInstance() {}
+bool CLAPInstance::load() { return false; }
+void CLAPInstance::unload() {}
+bool CLAPInstance::activate(double, int, int) { return false; }
+void CLAPInstance::deactivate() {}
+void CLAPInstance::setParameter(const QString &, double) {}
+double CLAPInstance::getParameter(const QString &) const { return 0.0; }
+bool CLAPInstance::process(float *const *, float **, uint32_t, uint32_t) { return false; }
+#endif
