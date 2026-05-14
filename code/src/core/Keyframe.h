@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QVariant>
 #include <QString>
+#include <QPointF>
 
 class Keyframe : public QObject
 {

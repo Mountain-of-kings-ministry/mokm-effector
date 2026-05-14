@@ -13,99 +13,7 @@
 #include <QAudioDevice>
 #include <QMediaDevices>
 #include <QDebug>
-
-// ── AudioEngineDevice implementation ────────────────────────
-AudioEngineDevice::AudioEngineDevice(AudioEngine *engine, QObject *parent)
-    : QIODevice(parent), m_engine(engine)
-{
-    open(QIODevice::ReadOnly);
-    qDebug() << "AudioEngineDevice initialized.";
-}
-
-qint64 AudioEngineDevice::readData(char *data, qint64 maxlen)
-{
-    if (maxlen <= 0) return 0;
-    
-    if (!m_engine->m_playing || !m_engine->m_timeline) {
-        std::memset(data, 0, maxlen);
-        return maxlen;
-    }
-
-    const int sampleRate = 48000;
-    const int channels = 2;
-    const int bytesPerSample = sizeof(float);
-    const int framesToRead = maxlen / (channels * bytesPerSample);
-    
-    float *fData = reinterpret_cast<float*>(data);
-    std::memset(fData, 0, maxlen);
-
-    QVector<float> leftBuf(framesToRead, 0.0f);
-    QVector<float> rightBuf(framesToRead, 0.0f);
-    float* buffers[2] = { leftBuf.data(), rightBuf.data() };
-
-    qreal fps = m_engine->m_timeline->composition() ? m_engine->m_timeline->composition()->frameRate() : 30.0;
-    if (fps <= 0) fps = 30.0;
-
-    // Use current timeline frame as master clock
-    double currentFrame = (double)m_engine->m_timeline->currentFrame();
-    double currentSamplePos = (currentFrame / fps) * sampleRate;
-    
-    auto *comp = m_engine->m_timeline->composition();
-    if (comp) {
-        for (int li = 0; li < comp->layerCount(); li++) {
-            auto *tl = comp->layerAt(li);
-            for (int ti = 0; ti < tl->trackCount(); ti++) {
-                auto *tr = tl->trackAt(ti);
-                if (!tr || tr->trackType() != Track::Audio || tr->mute()) continue;
-                
-                qreal trackVol = tr->opacity() * m_engine->m_masterVolume;
-
-                for (int si = 0; si < tr->stripCount(); si++) {
-                    auto *st = tr->stripAt(si);
-                    double startSample = (st->startFrame() / fps) * sampleRate;
-                    double endSample = ((st->startFrame() + st->duration()) / fps) * sampleRate;
-                    
-                    if (currentSamplePos >= startSample && currentSamplePos < endSample) {
-                        AudioLayer *al = qobject_cast<AudioLayer*>(st->element());
-                        if (!al) continue;
-
-                        double clipOffsetSamples = currentSamplePos - startSample;
-                        const QVector<float>& fullData = al->fullAudioData();
-                        int nChannels = al->channels();
-                        
-                        for (int i = 0; i < framesToRead; i++) {
-                            qint64 layerSampleIdx = qint64(clipOffsetSamples + i);
-                            qint64 pos = layerSampleIdx * nChannels;
-                            if (pos + 1 < fullData.size()) {
-                                leftBuf[i] += fullData[pos] * trackVol * al->volume();
-                                rightBuf[i] += (nChannels > 1 ? fullData[pos + 1] : fullData[pos]) * trackVol * al->volume();
-                            }
-                        }
-                    }
-                }
-
-                if (tr->effectChain() && tr->effectChain()->count() > 0) {
-                    for (int ei = 0; ei < tr->effectChain()->count(); ei++) {
-                        auto *effect = tr->effectChain()->effectAt(ei);
-                        if (effect && !effect->bypassed()) {
-                            if (effect->clapInstance())
-                                effect->clapInstance()->process(buffers, buffers, 2, framesToRead);
-                            else if (effect->vst3Instance())
-                                effect->vst3Instance()->process(buffers, buffers, 2, framesToRead);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    for (int i = 0; i < framesToRead; i++) {
-        fData[i * 2] = leftBuf[i];
-        fData[i * 2 + 1] = rightBuf[i];
-    }
-
-    return maxlen;
-}
+#include <cmath>
 
 // ── AudioEngine implementation ──────────────────────────────
 AudioEngine::AudioEngine(QObject *parent)
@@ -116,13 +24,46 @@ AudioEngine::AudioEngine(QObject *parent)
     format.setChannelCount(2);
     format.setSampleFormat(QAudioFormat::Float);
 
-    auto device = QMediaDevices::defaultAudioOutput();
-    qDebug() << "Using audio device:" << device.description();
-    m_audioSink = new QAudioSink(device, format, this);
-    m_audioSink->setBufferSize(2048); 
+    auto deviceInfo = QMediaDevices::defaultAudioOutput();
+    qDebug() << "Using audio device:" << deviceInfo.description()
+             << "isNull:" << deviceInfo.isNull();
 
-    m_audioDevice = new AudioEngineDevice(this, this);
-    qDebug() << "AudioSink initialized with device:" << device.description();
+    if (deviceInfo.isNull())
+        qWarning() << "No audio output device available!";
+
+    if (!deviceInfo.isFormatSupported(format)) {
+        qDebug() << "Float not supported, falling back to Int32";
+        format.setSampleFormat(QAudioFormat::Int32);
+        if (!deviceInfo.isFormatSupported(format)) {
+            qDebug() << "Int32 not supported either, falling back to Int16";
+            format.setSampleFormat(QAudioFormat::Int16);
+        }
+    }
+
+    m_audioSink = new QAudioSink(deviceInfo, format, this);
+    m_audioSink->setBufferSize(65536);       // Request large buffer to reduce drain frequency
+    connect(m_audioSink, &QAudioSink::stateChanged, this, [this](QAudio::State state) {
+        qDebug() << "AudioSink state changed:" << state;
+    });
+
+    m_format = format;
+    switch (format.sampleFormat()) {
+    case QAudioFormat::Float: m_bytesPerSample = 4; break;
+    case QAudioFormat::Int32: m_bytesPerSample = 4; break;
+    case QAudioFormat::Int16: m_bytesPerSample = 2; break;
+    default:                  m_bytesPerSample = 2; break;
+    }
+
+    qDebug() << "AudioEngine: actual buffer size:" << m_audioSink->bufferSize();
+
+    m_audioTimer = new QTimer(this);
+    m_audioTimer->setInterval(8);  // ~125 Hz — fast enough to keep small buffers filled
+    connect(m_audioTimer, &QTimer::timeout, this, &AudioEngine::writeAudio);
+
+    qDebug() << "AudioEngine initialized. Format:" << format.sampleFormat()
+             << "Rate:" << format.sampleRate()
+             << "Channels:" << format.channelCount()
+             << "BytesPerSample:" << m_bytesPerSample;
 }
 
 AudioEngine::~AudioEngine()
@@ -134,12 +75,14 @@ void AudioEngine::setTimelineModel(TimelineModel *model)
 {
     if (m_timeline == model)
         return;
-    if (m_timeline) {
+    if (m_timeline)
         disconnect(m_timeline, nullptr, this, nullptr);
-    }
+
     m_timeline = model;
     if (m_timeline) {
         connect(m_timeline, &TimelineModel::playingChanged, this, [this]() {
+            qDebug() << "TimelineModel::playingChanged -> audio"
+                     << (m_timeline && m_timeline->playing() ? "play" : "pause");
             if (m_timeline && m_timeline->playing())
                 play();
             else
@@ -147,6 +90,7 @@ void AudioEngine::setTimelineModel(TimelineModel *model)
         });
     }
     emit timelineModelChanged();
+    qDebug() << "AudioEngine::setTimelineModel — connected.";
 }
 
 void AudioEngine::setMasterVolume(qreal vol)
@@ -160,28 +104,46 @@ void AudioEngine::setMasterPan(qreal pan)
     m_masterPan = qBound(-1.0, pan, 1.0);
     emit masterPanChanged();
 }
+
 void AudioEngine::play()
 {
-    if (m_playing) return;
+    {
+        QMutexLocker lock(&m_audioMutex);
+        if (m_playing) return;
 
-    if (!m_audioDevice->isOpen()) {
-        qDebug() << "Re-opening audio device...";
-        m_audioDevice->open(QIODevice::ReadOnly);
+        if (m_timeline) {
+            qreal fps = m_timeline->composition() ? m_timeline->composition()->frameRate() : 30.0;
+            if (fps <= 0) fps = 30.0;
+            m_currentPositionSamples = (m_timeline->currentFrame() / fps) * 48000;
+        }
+
+        m_playing = true;
     }
 
-    m_playing = true;
-    m_audioSink->start(m_audioDevice);
-    qDebug() << "AudioSink started. Sink state:" << m_audioSink->state();
-    qDebug() << "Device is open:" << m_audioDevice->isOpen();
+    // FFmpeg media backend: start() returns a QIODevice* to write to
+    m_audioOutputDevice = m_audioSink->start();
+    if (!m_audioOutputDevice) {
+        qWarning() << "AudioEngine::play() — start() returned null!";
+        return;
+    }
+    qDebug() << "AudioEngine::play() — sink state:" << m_audioSink->state()
+             << "outputDevice writable:" << m_audioOutputDevice->isWritable();
+    m_audioTimer->start();
     emit playingChanged();
 }
 
-
 void AudioEngine::pause()
 {
-    if (!m_playing) return;
-    m_playing = false;
+    {
+        QMutexLocker lock(&m_audioMutex);
+        if (!m_playing) return;
+        m_playing = false;
+    }
+
+    m_audioTimer->stop();
     m_audioSink->stop();
+    m_audioOutputDevice = nullptr;
+    qDebug() << "AudioEngine::pause() — sink state:" << m_audioSink->state();
     emit playingChanged();
 }
 
@@ -197,21 +159,134 @@ bool AudioEngine::hasAudioAtFrame(int frame) const
     return findAudioLayerAtFrame(frame) != nullptr;
 }
 
-void AudioEngine::onTimelinePlay() { play(); }
-void AudioEngine::onTimelinePause() { pause(); }
-
-void AudioEngine::onTimelineFrameChanged(int frame)
+void AudioEngine::writeAudio()
 {
-    Q_UNUSED(frame);
-}
+    QMutexLocker lock(&m_audioMutex);
+    if (!m_playing || !m_timeline || !m_audioOutputDevice)
+        return;
 
-void AudioEngine::syncToTimeline()
-{
-}
+    const int sampleRate = 48000;
+    const int channels = 2;
+    const int bytesPerFrame = channels * m_bytesPerSample;
+    qreal fps = 30.0;
+    auto *comp = m_timeline->composition();
+    if (comp) fps = qMax(1.0, comp->frameRate());
 
-void AudioEngine::applyTrackVolume(int frame)
-{
-    Q_UNUSED(frame);
+    // Keep writing chunks until the backend's buffer is full.
+    // This prevents silent gaps: we push as much data as the backend accepts
+    // in one batch, then the timer refills when space frees up.
+    static double positionDebugged = -1;
+    for (int iteration = 0; iteration < 4; iteration++) {
+        qint64 freeBytes = m_audioSink->bytesFree();
+        if (freeBytes <= 0)
+            break;
+
+        int framesThisIter = freeBytes / bytesPerFrame;
+        if (framesThisIter <= 0) break;
+
+        int writeSize = framesThisIter * bytesPerFrame;
+
+        // Build audio for this chunk
+        QVector<float> leftBuf(framesThisIter, 0.0f);
+        QVector<float> rightBuf(framesThisIter, 0.0f);
+        float* buffers[2] = { leftBuf.data(), rightBuf.data() };
+
+        if (comp) {
+            for (int li = 0; li < comp->layerCount(); li++) {
+                auto *tl = comp->layerAt(li);
+                for (int ti = 0; ti < tl->trackCount(); ti++) {
+                    auto *tr = tl->trackAt(ti);
+                    if (!tr || tr->trackType() != Track::Audio || tr->mute()) continue;
+
+                    qreal trackVol = tr->opacity() * m_masterVolume;
+
+                    for (int si = 0; si < tr->stripCount(); si++) {
+                        auto *st = tr->stripAt(si);
+                        double startSample = (st->startFrame() / fps) * sampleRate;
+                        double endSample = ((st->startFrame() + st->duration()) / fps) * sampleRate;
+
+                        if (m_currentPositionSamples >= startSample
+                            && m_currentPositionSamples < endSample) {
+                            AudioLayer *al = qobject_cast<AudioLayer*>(st->element());
+                            if (!al) continue;
+
+                            double clipOffsetSamples = m_currentPositionSamples - startSample;
+                            const QVector<float>& fullData = al->fullAudioData();
+                            int nChannels = al->channels();
+                            if (fullData.isEmpty()) continue;
+
+                            for (int i = 0; i < framesThisIter; i++) {
+                                qint64 layerSampleIdx = qint64(clipOffsetSamples + i);
+                                qint64 pos = layerSampleIdx * nChannels;
+                                if (pos + 1 < fullData.size()) {
+                                    leftBuf[i] += fullData[pos] * trackVol * al->volume();
+                                    rightBuf[i] += (nChannels > 1 ? fullData[pos + 1] : fullData[pos]) * trackVol * al->volume();
+                                }
+                            }
+                        }
+                    }
+
+                    if (tr->effectChain() && tr->effectChain()->count() > 0) {
+                        for (int ei = 0; ei < tr->effectChain()->count(); ei++) {
+                            auto *effect = tr->effectChain()->effectAt(ei);
+                            if (effect && !effect->bypassed()) {
+                                if (effect->clapInstance())
+                                    effect->clapInstance()->process(buffers, buffers, 2, framesThisIter);
+                                else if (effect->vst3Instance())
+                                    effect->vst3Instance()->process(buffers, buffers, 2, framesThisIter);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Convert float mix to native format
+        QByteArray buffer(writeSize, 0);
+        float *fData = reinterpret_cast<float*>(buffer.data());
+        QAudioFormat::SampleFormat outFmt = m_format.sampleFormat();
+        for (int i = 0; i < framesThisIter; i++) {
+            switch (outFmt) {
+            case QAudioFormat::Float:
+                fData[i * 2]     = leftBuf[i];
+                fData[i * 2 + 1] = rightBuf[i];
+                break;
+            case QAudioFormat::Int32: {
+                auto *out = reinterpret_cast<qint32*>(buffer.data());
+                out[i * 2]     = qBound(-2147483648LL, qint64(leftBuf[i] * 2147483647.f), 2147483647LL);
+                out[i * 2 + 1] = qBound(-2147483648LL, qint64(rightBuf[i] * 2147483647.f), 2147483647LL);
+                break;
+            }
+            case QAudioFormat::Int16: {
+                auto *out = reinterpret_cast<qint16*>(buffer.data());
+                out[i * 2]     = qBound(-32768, qint16(leftBuf[i] * 32767.f), 32767);
+                out[i * 2 + 1] = qBound(-32768, qint16(rightBuf[i] * 32767.f), 32767);
+                break;
+            }
+            default:
+                break;
+            }
+        }
+
+        qint64 written = m_audioOutputDevice->write(buffer);
+        if (written <= 0)
+            break;
+
+        int framesWritten = written / bytesPerFrame;
+        m_currentPositionSamples += framesWritten;
+
+        if (positionDebugged != m_currentPositionSamples) {
+            positionDebugged = m_currentPositionSamples;
+            qDebug() << "writeAudio: wrote" << written << "bytes (" << framesWritten << "frames)"
+                     << "free=" << freeBytes << "posSamples=" << m_currentPositionSamples;
+        }
+    }
+
+    // Drift correction
+    int audioFrame = qFloor((m_currentPositionSamples / sampleRate) * fps);
+    int timelineFrame = m_timeline->currentFrame();
+    if (qAbs(audioFrame - timelineFrame) > 1)
+        m_currentPositionSamples = (timelineFrame / fps) * sampleRate;
 }
 
 AudioLayer* AudioEngine::findAudioLayerAtFrame(int frame) const
@@ -229,9 +304,8 @@ AudioLayer* AudioEngine::findAudioLayerAtFrame(int frame) const
                 auto *st = tr->stripAt(si);
                 int start = st->startFrame();
                 int end = start + st->duration();
-                if (frame >= start && frame < end) {
+                if (frame >= start && frame < end)
                     return qobject_cast<AudioLayer*>(st->element());
-                }
             }
         }
     }

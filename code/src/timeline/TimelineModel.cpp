@@ -309,8 +309,6 @@ void TimelineModel::applyKeyframes()
 }
 void TimelineModel::onTick()
 {
-    // The timeline is driven by the timer if playing.
-    // The audio engine is independent and follows the timeline via play() sync.
     if (!m_playing || !m_composition) {
         return;
     }

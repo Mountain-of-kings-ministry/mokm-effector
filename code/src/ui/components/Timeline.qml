@@ -627,7 +627,7 @@ Rectangle {
                                             id: waveformCanvas
                                             anchors.fill: parent
                                             anchors.margins: 2
-                                            visible: stripObj && stripObj.element && stripObj.element.waveformDataList && stripObj.element.waveformDataList.length > 0
+                                            visible: stripObj && stripObj.element && stripObj.element.waveformDataList ? stripObj.element.waveformDataList.length > 0 : false
                                             onPaint: {
                                                 var ctx = getContext("2d");
                                                 if (!ctx) return;

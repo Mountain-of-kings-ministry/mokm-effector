@@ -4,6 +4,8 @@
 #include <QObject>
 #include <QUrl>
 #include <QVector>
+#include <QMutex>
+#include <QTimer>
 
 #include "../timeline/TimelineModel.h"
 
@@ -17,18 +19,6 @@ class Track;
 class Strip;
 class AudioLayer;
 
-class AudioEngineDevice : public QIODevice {
-    Q_OBJECT
-public:
-    explicit AudioEngineDevice(class AudioEngine *engine, QObject *parent = nullptr);
-    qint64 readData(char *data, qint64 maxlen) override;
-    qint64 bytesAvailable() const override { return 4096; }
-    qint64 writeData(const char *data, qint64 len) override { Q_UNUSED(data); Q_UNUSED(len); return 0; }
-    bool isSequential() const override { return false; }
-private:
-    class AudioEngine *m_engine;
-};
-
 class AudioEngine : public QObject
 {
     Q_OBJECT
@@ -36,8 +26,6 @@ class AudioEngine : public QObject
     Q_PROPERTY(qreal masterVolume READ masterVolume WRITE setMasterVolume NOTIFY masterVolumeChanged)
     Q_PROPERTY(qreal masterPan READ masterPan WRITE setMasterPan NOTIFY masterPanChanged)
     Q_PROPERTY(bool playing READ playing NOTIFY playingChanged)
-
-    friend class AudioEngineDevice;
 public:
     explicit AudioEngine(QObject *parent = nullptr);
     ~AudioEngine() override;
@@ -65,26 +53,22 @@ signals:
     void masterPanChanged();
     void playingChanged();
 
-private slots:
-    void onTimelinePlay();
-    void onTimelinePause();
-
 private:
-    void onTimelineFrameChanged(int frame);
-
-private:
-    void syncToTimeline();
-    void applyTrackVolume(int frame);
+    void writeAudio();
     AudioLayer* findAudioLayerAtFrame(int frame) const;
     void processAudioBlock(float **buffers, int nChannels, int nFrames, int frame);
 
     TimelineModel *m_timeline = nullptr;
     QAudioSink *m_audioSink = nullptr;
-    AudioEngineDevice *m_audioDevice = nullptr;
+    QIODevice *m_audioOutputDevice = nullptr;
+    QAudioFormat m_format;
+    int m_bytesPerSample = 4;
     qreal m_masterVolume = 1.0;
     qreal m_masterPan = 0.0;
+    double m_currentPositionSamples = 0;
+    QTimer *m_audioTimer = nullptr;
+    QMutex m_audioMutex;
     bool m_playing = false;
-    bool m_seeking = false;
 };
 
 #endif

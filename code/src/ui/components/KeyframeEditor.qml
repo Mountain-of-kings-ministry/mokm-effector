@@ -383,7 +383,7 @@ Rectangle {
                             }
 
                             Text {
-                                text: _propLabels[index]
+                                text: _propLabels && index < _propLabels.length ? _propLabels[index] : ""
                                 color: selectedProperty === _props[index] ? "#fff" : Theme.foreground
                                 font.pixelSize: 11
                                 anchors.verticalCenter: parent.verticalCenter
@@ -601,8 +601,8 @@ Rectangle {
                                     property bool isOut: index === 1
                                     property var kf: timelineModel.getKeyframe(root._target, root.selectedProperty, modelData)
 
-                                    x: (isOut ? kf.handleOut.x : kf.handleIn.x) * root.pixelPerFrame - 4
-                                    y: 60 + (isOut ? kf.handleOut.y : kf.handleIn.y) * -80   // adjust multiplier based on your visual scale
+                                    x: kf ? (isOut ? kf.handleOut.x : kf.handleIn.x) * root.pixelPerFrame - 4 : 0
+                                    y: kf ? 60 + (isOut ? kf.handleOut.y : kf.handleIn.y) * -80 : 0
 
                                     width: 8
                                     height: 8
@@ -610,11 +610,12 @@ Rectangle {
                                     color: "#4ade80"
                                     border.color: "white"
                                     border.width: 1
+                                    visible: kf !== null
 
                                     MouseArea {
                                         anchors.fill: parent
                                         drag.target: parent
-                                        drag.axis: Drag.XAndY
+                                        drag.axis: Drag.XAxis | Drag.YAxis
 
                                         onReleased: {
                                             if (!kf)
