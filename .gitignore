@@ -2,3 +2,4 @@
 /src/build/
 /code/vcpkg_installed
 /code/third_parties/
+/third_parties/vst3sdk/build
