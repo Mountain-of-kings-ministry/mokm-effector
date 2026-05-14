@@ -360,13 +360,22 @@ Rectangle {
         timelineModel: root.timelineModel
 
         onPluginsSelected: function(plugins) {
-            if (!root.effectChain || typeof _audioPluginManager === "undefined") return;
+            if (!root.effectChain) {
+                console.warn("PluginRack: effectChain is null — no track selected or track has no effect chain");
+                return;
+            }
+            if (typeof _audioPluginManager === "undefined") {
+                console.warn("PluginRack: _audioPluginManager not available");
+                return;
+            }
             for (var i = 0; i < plugins.length; i++) {
                 var p = plugins[i];
                 var effect = _audioPluginManager.createInstanceById(p.pluginId, p.format, root.effectChain);
                 if (effect) {
                     root.effectChain.addEffect(effect);
                     root.effectAdded(p.name, p.pluginId, p.format);
+                } else {
+                    console.warn("PluginRack: failed to create instance for", p.name, p.pluginId, p.format);
                 }
             }
         }

@@ -5,9 +5,27 @@
 #include "pluginterfaces/vst/ivstcomponent.h"
 #include "pluginterfaces/vst/ivstaudioprocessor.h"
 #include "pluginterfaces/vst/ivsteditcontroller.h"
+#include "pluginterfaces/base/ibstream.h"
 
 using namespace Steinberg;
 using namespace Steinberg::Vst;
+
+// Minimal host context that VST3 plugins can safely call into.
+// Prevents crashes when plugins dereference the host context pointer.
+class SafeHostContext : public FUnknown
+{
+public:
+    SafeHostContext() { }
+    virtual ~SafeHostContext() = default;
+
+    tresult PLUGIN_API queryInterface(const TUID _iid, void** obj) override
+    {
+        *obj = nullptr;
+        return kNoInterface;
+    }
+    uint32 PLUGIN_API addRef() override { return 1; }
+    uint32 PLUGIN_API release() override { return 1; }
+};
 
 // Helper to convert QString (UUID format) to TUID
 static bool stringToTUID(const QString &cid, TUID tuid)
@@ -71,9 +89,9 @@ bool VST3Instance::load()
         return false;
     }
 
-    // Initialize component
-    // In a real host, we'd pass a host context here
-    m_component->initialize(nullptr);
+    // Initialize component with safe host context
+    SafeHostContext hostContext;
+    m_component->initialize(&hostContext);
 
     // Try to get edit controller
     TUID controllerId;
@@ -85,7 +103,8 @@ bool VST3Instance::load()
     }
 
     if (m_editController) {
-        m_editController->initialize(nullptr);
+        SafeHostContext hostCtrlContext;
+        m_editController->initialize(&hostCtrlContext);
         m_editController->setComponentHandler(nullptr); // Host should provide this
         
         // Connect component and controller

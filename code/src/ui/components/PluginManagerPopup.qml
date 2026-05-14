@@ -16,8 +16,8 @@ Popup {
 
     onAboutToShow: {
         searchField.text = "";
-        rebuildFilter();
         gatherPlugins();
+        rebuildFilter();
     }
 
     property var _clapPlugins: []
@@ -232,7 +232,9 @@ Popup {
                         radius: 4
                     }
                     onClicked: {
-                        root.pluginsSelected(getSelectedList());
+                        var list = getSelectedList();
+                        console.log("PluginManagerPopup: adding", list.length, "plugins:", JSON.stringify(list.map(function(p) { return p.name; })));
+                        root.pluginsSelected(list);
                         root.close();
                     }
                 }

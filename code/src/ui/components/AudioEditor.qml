@@ -25,15 +25,29 @@ Rectangle {
         return selectedObject;
     }
 
-    // Effect chain from selected track
+    // Effect chain from selected track (auto-fallback to first available)
     readonly property var _effectChain: {
-        if (!selectedObject) return null;
-        if (selectedObject.element !== undefined && selectedObject.track)
-            return selectedObject.track.effectChain;
-        if (selectedObject.strips !== undefined && selectedObject.tracks === undefined)
-            return selectedObject.effectChain;
-        if (selectedObject.tracks !== undefined)
-            return selectedObject.tracks > 0 ? selectedObject.trackAt(0).effectChain : null;
+        if (!_comp) return null;
+
+        // Try selected object first
+        if (selectedObject) {
+            if (selectedObject.element !== undefined && selectedObject.track)
+                return selectedObject.track.effectChain;
+            if (selectedObject.strips !== undefined && selectedObject.tracks === undefined)
+                return selectedObject.effectChain;
+            if (selectedObject.tracks !== undefined)
+                return selectedObject.tracks > 0 ? selectedObject.trackAt(0).effectChain : null;
+        }
+
+        // Auto-fallback: first track with an effect chain
+        for (var li = 0; li < _comp.layerCount(); li++) {
+            var tl = _comp.layerAt(li);
+            for (var ti = 0; ti < tl.trackCount; ti++) {
+                var tr = tl.trackAt(ti);
+                if (tr && tr.effectChain)
+                    return tr.effectChain;
+            }
+        }
         return null;
     }
 
