@@ -13,16 +13,43 @@ Rectangle {
     property real pixelPerFrame: 8
     property bool animateFaders: false
 
-    // ── Target resolution ──
+    // ── Target resolution (auto-fallback to first audio layer) ──
     readonly property var _target: {
-        if (!selectedObject) return null;
-        if (selectedObject.element !== undefined)
-            return selectedObject.element; // Strip → AudioLayer
-        if (selectedObject.strips !== undefined && selectedObject.tracks === undefined)
-            return selectedObject; // Track
-        if (selectedObject.tracks !== undefined)
-            return selectedObject; // TimelineLayer
-        return selectedObject;
+        if (!_comp) return null;
+
+        // Try selected object first
+        if (selectedObject) {
+            if (selectedObject.element !== undefined)
+                return selectedObject.element; // Strip → AudioLayer
+            if (selectedObject.strips !== undefined && selectedObject.tracks === undefined)
+                return selectedObject; // Track
+            if (selectedObject.tracks !== undefined)
+                return selectedObject; // TimelineLayer
+            return selectedObject;
+        }
+
+        // Auto-fallback: first audio strip's element
+        for (var li = 0; li < _comp.layerCount(); li++) {
+            var tl = _comp.layerAt(li);
+            for (var ti = 0; ti < tl.trackCount; ti++) {
+                var tr = tl.trackAt(ti);
+                if (!tr || tr.trackType() !== Track.Audio) continue;
+                for (var si = 0; si < tr.stripCount; si++) {
+                    var st = tr.stripAt(si);
+                    if (st && st.element && st.element.volume !== undefined)
+                        return st.element; // AudioLayer
+                }
+            }
+        }
+        // Fallback: first track's effect chain owner
+        for (var li = 0; li < _comp.layerCount(); li++) {
+            var tl = _comp.layerAt(li);
+            for (var ti = 0; ti < tl.trackCount; ti++) {
+                var tr = tl.trackAt(ti);
+                if (tr) return tr;
+            }
+        }
+        return null;
     }
 
     // Effect chain from selected track (auto-fallback to first available)
