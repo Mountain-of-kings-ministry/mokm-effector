@@ -143,6 +143,21 @@ int Track::indexOf(Strip *strip) const
     return m_strips.indexOf(strip);
 }
 
+bool Track::canPlaceStrip(Strip *strip, int startFrame, int duration) const
+{
+    int endFrame = startFrame + duration;
+    for (auto *s : m_strips) {
+        if (s == strip) continue;
+        int sStart = s->startFrame();
+        int sEnd = sStart + s->duration();
+        // Check for overlap
+        if (startFrame < sEnd && endFrame > sStart) {
+            return false;
+        }
+    }
+    return true;
+}
+
 Strip* Track::createStripFromAsset(Layer *asset, const QString &stripName, int startFrame, int duration)
 {
     if (!asset)

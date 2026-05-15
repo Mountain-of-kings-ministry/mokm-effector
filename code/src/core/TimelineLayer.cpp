@@ -63,6 +63,24 @@ void TimelineLayer::addTrack(Track *track)
     emit tracksChanged();
 }
 
+Track* TimelineLayer::insertTrack(int index, int trackType)
+{
+    auto *track = new Track(this);
+    track->setTrackType(trackType);
+    track->setLayer(this);
+    
+    if (index < 0) index = 0;
+    if (index > m_tracks.size()) index = m_tracks.size();
+    
+    m_tracks.insert(index, track);
+    
+    if (m_composition)
+        connect(track, &Track::stripsChanged, m_composition, &Composition::rebuildFlatLayers);
+        
+    emit tracksChanged();
+    return track;
+}
+
 void TimelineLayer::removeTrack(Track *track)
 {
     if (!track || m_tracks.size() <= 1)

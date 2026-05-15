@@ -14,6 +14,7 @@ Window {
     color: Theme.background
 
     property bool animateFaders: false
+    property string globalTransition: "fade"
 
     // frameless window with topbar
     flags: Qt.FramelessWindowHint
@@ -133,6 +134,7 @@ Window {
                     selectedObject: selectedObject
                     currentTool: (stackView.currentItem && stackView.currentItem.currentTool !== undefined) ? stackView.currentItem.currentTool : "select"
                     snapEnabled: (stackView.currentItem && stackView.currentItem.snapEnabled !== undefined) ? stackView.currentItem.snapEnabled : true
+                    globalTransition: mainWindow.globalTransition
 
                     onToolChanged: function(tool) {
                         if (stackView.currentItem && stackView.currentItem.currentTool !== undefined)
@@ -142,6 +144,10 @@ Window {
                     onSnapToggled: function(enabled) {
                         if (stackView.currentItem && stackView.currentItem.snapEnabled !== undefined)
                             stackView.currentItem.snapEnabled = enabled;
+                    }
+
+                    onGlobalTransitionSet: function(transition) {
+                        mainWindow.globalTransition = transition;
                     }
 
                     onSplitAtPlayhead: {
@@ -215,6 +221,7 @@ Window {
                     Timeline {
                         timelineModel: globalTimelineModel
                         selectedObject: selectedObject
+                        globalTransition: mainWindow.globalTransition
 
                         onObjectSelected: function (obj) {
                             mainWindow.selectedObject = obj;

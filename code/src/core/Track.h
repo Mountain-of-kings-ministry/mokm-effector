@@ -62,6 +62,8 @@ public:
     Q_INVOKABLE void moveStrip(int fromIndex, int toIndex);
     Q_INVOKABLE int indexOf(Strip *strip) const;
 
+    Q_INVOKABLE bool canPlaceStrip(Strip *strip, int startFrame, int duration) const;
+
     Q_INVOKABLE Strip* createStripFromAsset(Layer *asset, const QString &stripName = QString(), int startFrame = 0, int duration = -1);
 
     Q_INVOKABLE void deleteTrack();

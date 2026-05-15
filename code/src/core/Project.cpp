@@ -470,6 +470,21 @@ QString Project::extractAudioFromVideo(const QUrl &videoUrl, const QString &outp
         }
     }
 
+    // Send null packet to flush decoder
+    avcodec_send_packet(codecCtx, nullptr);
+    while (avcodec_receive_frame(codecCtx, frame) == 0) {
+        uint8_t *s16Data = nullptr;
+        int outSamples = swr_get_out_samples(swr, frame->nb_samples);
+        av_samples_alloc(&s16Data, nullptr, channels, outSamples, AV_SAMPLE_FMT_S16, 0);
+        int converted = swr_convert(swr, &s16Data, outSamples,
+                                    (const uint8_t**)frame->data, frame->nb_samples);
+        if (converted > 0) {
+            int bytes = av_samples_get_buffer_size(nullptr, channels, converted, AV_SAMPLE_FMT_S16, 1);
+            pcm.append(reinterpret_cast<const char*>(s16Data), bytes);
+        }
+        av_freep(&s16Data);
+    }
+
     av_frame_free(&frame);
     av_packet_free(&pkt);
     swr_free(&swr);

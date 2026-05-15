@@ -18,6 +18,10 @@ class Strip : public QObject
     Q_PROPERTY(Layer* element READ element WRITE setElement NOTIFY elementChanged)
     Q_PROPERTY(Track* track READ track CONSTANT)
     Q_PROPERTY(int linkGroupId READ linkGroupId WRITE setLinkGroupId NOTIFY linkGroupIdChanged)
+    Q_PROPERTY(QString transitionIn READ transitionIn WRITE setTransitionIn NOTIFY transitionChanged)
+    Q_PROPERTY(QString transitionOut READ transitionOut WRITE setTransitionOut NOTIFY transitionChanged)
+    Q_PROPERTY(int transitionInDuration READ transitionInDuration WRITE setTransitionInDuration NOTIFY transitionChanged)
+    Q_PROPERTY(int transitionOutDuration READ transitionOutDuration WRITE setTransitionOutDuration NOTIFY transitionChanged)
 public:
     explicit Strip(QObject *parent = nullptr);
     ~Strip() override;
@@ -39,6 +43,15 @@ public:
     int linkGroupId() const { return m_linkGroupId; }
     void setLinkGroupId(int id);
 
+    QString transitionIn() const { return m_transitionIn; }
+    void setTransitionIn(const QString &v);
+    QString transitionOut() const { return m_transitionOut; }
+    void setTransitionOut(const QString &v);
+    int transitionInDuration() const { return m_transitionInDuration; }
+    void setTransitionInDuration(int v);
+    int transitionOutDuration() const { return m_transitionOutDuration; }
+    void setTransitionOutDuration(int v);
+
     Q_INVOKABLE virtual void moveToTrack(Track *newTrack);
     Q_INVOKABLE virtual void deleteStrip();
     Q_INVOKABLE virtual Strip* clone(QObject *parent = nullptr) const;
@@ -52,6 +65,7 @@ signals:
     void durationChanged();
     void elementChanged();
     void linkGroupIdChanged();
+    void transitionChanged();
 
 private:
     QString m_name = "Strip";
@@ -60,6 +74,11 @@ private:
     Layer *m_element = nullptr;
     Track *m_track = nullptr;
     int m_linkGroupId = 0;
+
+    QString m_transitionIn = "fade";
+    QString m_transitionOut = "fade";
+    int m_transitionInDuration = 0;
+    int m_transitionOutDuration = 0;
 };
 
 #endif

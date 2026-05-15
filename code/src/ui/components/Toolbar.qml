@@ -15,6 +15,7 @@ Rectangle {
     property string currentTool: "select"
     property bool snapEnabled: true
     property bool animateFaders: false
+    property string globalTransition: "fade"
 
     signal toolChanged(string tool)
     signal snapToggled(bool enabled)
@@ -23,6 +24,12 @@ Rectangle {
     signal rippleDeleteSelected()
     signal duplicateSelected()
     signal animateFadersToggled(bool enabled)
+    signal globalTransitionSet(string transition)
+
+    function setGlobalTransition(name) {
+        globalTransition = name;
+        globalTransitionSet(name);
+    }
 
     RowLayout {
         anchors.fill: parent
@@ -89,6 +96,83 @@ Rectangle {
             tooltip: "Blade (B)"
             accented: root.currentTool === "blade"
             onClicked: root.toolChanged("blade")
+        }
+
+        ToolIconButton {
+            source: "qrc:/icons/outline/stroke-curved.svg"
+            tooltip: "Transition (N)"
+            accented: root.currentTool === "transition"
+            onClicked: root.toolChanged("transition")
+            
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.RightButton
+                onClicked: transitionMenu.popup()
+            }
+
+            Menu {
+                id: transitionMenu
+                title: "FFmpeg Transitions"
+                
+                Menu {
+                    title: "Basic Fades"
+                    MenuItem { text: "Fade"; onTriggered: root.setGlobalTransition("fade") }
+                    MenuItem { text: "Fade Black"; onTriggered: root.setGlobalTransition("fadeblack") }
+                    MenuItem { text: "Fade White"; onTriggered: root.setGlobalTransition("fadewhite") }
+                    MenuItem { text: "Fade Grays"; onTriggered: root.setGlobalTransition("fadegrays") }
+                    MenuItem { text: "Fade Fast"; onTriggered: root.setGlobalTransition("fadefast") }
+                    MenuItem { text: "Fade Slow"; onTriggered: root.setGlobalTransition("fadeslow") }
+                }
+                Menu {
+                    title: "Wipes (Straight)"
+                    MenuItem { text: "Wipe Left"; onTriggered: root.setGlobalTransition("wipeleft") }
+                    MenuItem { text: "Wipe Right"; onTriggered: root.setGlobalTransition("wiperight") }
+                    MenuItem { text: "Wipe Up"; onTriggered: root.setGlobalTransition("wipeup") }
+                    MenuItem { text: "Wipe Down"; onTriggered: root.setGlobalTransition("wipedown") }
+                }
+                Menu {
+                    title: "Wipes (Diagonal)"
+                    MenuItem { text: "Wipe TL"; onTriggered: root.setGlobalTransition("wipetl") }
+                    MenuItem { text: "Wipe TR"; onTriggered: root.setGlobalTransition("wipetr") }
+                    MenuItem { text: "Wipe BL"; onTriggered: root.setGlobalTransition("wipebl") }
+                    MenuItem { text: "Wipe BR"; onTriggered: root.setGlobalTransition("wipebr") }
+                }
+                Menu {
+                    title: "Slides"
+                    MenuItem { text: "Slide Left"; onTriggered: root.setGlobalTransition("slideleft") }
+                    MenuItem { text: "Slide Right"; onTriggered: root.setGlobalTransition("slideright") }
+                    MenuItem { text: "Slide Up"; onTriggered: root.setGlobalTransition("slideup") }
+                    MenuItem { text: "Slide Down"; onTriggered: root.setGlobalTransition("slidedown") }
+                }
+                Menu {
+                    title: "Smooth Slides"
+                    MenuItem { text: "Smooth Left"; onTriggered: root.setGlobalTransition("smoothleft") }
+                    MenuItem { text: "Smooth Right"; onTriggered: root.setGlobalTransition("smoothright") }
+                    MenuItem { text: "Smooth Up"; onTriggered: root.setGlobalTransition("smoothup") }
+                    MenuItem { text: "Smooth Down"; onTriggered: root.setGlobalTransition("smoothdown") }
+                }
+                Menu {
+                    title: "Iris / Shapes"
+                    MenuItem { text: "Circle Crop"; onTriggered: root.setGlobalTransition("circlecrop") }
+                    MenuItem { text: "Rect Crop"; onTriggered: root.setGlobalTransition("rectcrop") }
+                    MenuItem { text: "Circle Open"; onTriggered: root.setGlobalTransition("circleopen") }
+                    MenuItem { text: "Circle Close"; onTriggered: root.setGlobalTransition("circleclose") }
+                    MenuItem { text: "Vert Open"; onTriggered: root.setGlobalTransition("vertopen") }
+                    MenuItem { text: "Vert Close"; onTriggered: root.setGlobalTransition("vertclose") }
+                    MenuItem { text: "Horz Open"; onTriggered: root.setGlobalTransition("horzopen") }
+                    MenuItem { text: "Horz Close"; onTriggered: root.setGlobalTransition("horzclose") }
+                }
+                Menu {
+                    title: "Advanced"
+                    MenuItem { text: "Dissolve"; onTriggered: root.setGlobalTransition("dissolve") }
+                    MenuItem { text: "Pixelize"; onTriggered: root.setGlobalTransition("pixelize") }
+                    MenuItem { text: "Radial"; onTriggered: root.setGlobalTransition("radial") }
+                    MenuItem { text: "H Blur"; onTriggered: root.setGlobalTransition("hblur") }
+                    MenuItem { text: "Zoom In"; onTriggered: root.setGlobalTransition("zoomin") }
+                    MenuItem { text: "Squeeze H"; onTriggered: root.setGlobalTransition("squeezeh") }
+                    MenuItem { text: "Squeeze V"; onTriggered: root.setGlobalTransition("squeezev") }
+                }
+            }
         }
 
         // ── Separator ──
