@@ -60,6 +60,7 @@ private:
     int m_videoHeight = 0;
     double m_frameRate = 30.0;
     int m_frameCount = 0;
+    int m_lastDecodedFrame = -1;
 
     QImage m_currentImage;
     mutable QHash<int, QImage> m_frameCache;

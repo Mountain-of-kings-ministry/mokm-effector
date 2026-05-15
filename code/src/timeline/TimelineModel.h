@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QTimer>
+#include <QElapsedTimer>
 #include <QMap>
 #include <QVector>
 #include <QPair>
@@ -65,6 +66,9 @@ public:
 
     void applyKeyframes();
 
+    // Set by AudioEngine to drive the visual clock
+    Q_INVOKABLE void syncToSamples(qint64 samples, int sampleRate);
+
 signals:
     void compositionChanged();
     void currentFrameChanged();
@@ -91,6 +95,9 @@ private:
     int m_keyframesStamp = 0;
     bool m_autoKeyframeEnabled = false;
     QTimer *m_timer = nullptr;
+    QElapsedTimer m_elapsedTimer;
+    qint64 m_startFrameTime = 0; // ms offset when play started
+    int m_playStartFrame = 0;
 
     // keyframes grouped by QObject ptr -> property name -> frame -> keyframe
     QMap<QObject*, QMap<QString, KeyframeMap>> m_keyframes;

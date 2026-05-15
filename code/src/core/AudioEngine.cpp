@@ -208,17 +208,20 @@ void AudioEngine::writeAudio()
                         if (m_currentPositionSamples >= startSample
                             && m_currentPositionSamples < endSample) {
                             AudioLayer *al = qobject_cast<AudioLayer*>(st->element());
-                            if (!al) continue;
+                            if (!al || al->sampleRate() <= 0) continue;
 
                             double clipOffsetSamples = m_currentPositionSamples - startSample;
                             const QVector<float>& fullData = al->fullAudioData();
                             int nChannels = al->channels();
                             if (fullData.isEmpty()) continue;
 
+                            // Resampling ratio: how many layer samples per hardware sample
+                            double ratio = (double)al->sampleRate() / sampleRate;
+
                             for (int i = 0; i < framesThisIter; i++) {
-                                qint64 layerSampleIdx = qint64(clipOffsetSamples + i);
-                                qint64 pos = layerSampleIdx * nChannels;
-                                if (pos + 1 < fullData.size()) {
+                                double layerSampleIdx = (clipOffsetSamples + i) * ratio;
+                                qint64 pos = qint64(layerSampleIdx) * nChannels;
+                                if (pos + nChannels - 1 < fullData.size()) {
                                     leftBuf[i] += fullData[pos] * trackVol * al->volume();
                                     rightBuf[i] += (nChannels > 1 ? fullData[pos + 1] : fullData[pos]) * trackVol * al->volume();
                                 }
@@ -275,18 +278,17 @@ void AudioEngine::writeAudio()
         int framesWritten = written / bytesPerFrame;
         m_currentPositionSamples += framesWritten;
 
+        // Drive the timeline from the audio samples (Master Clock)
+        if (m_timeline) {
+            m_timeline->syncToSamples(m_currentPositionSamples, sampleRate);
+        }
+
         if (positionDebugged != m_currentPositionSamples) {
             positionDebugged = m_currentPositionSamples;
             qDebug() << "writeAudio: wrote" << written << "bytes (" << framesWritten << "frames)"
                      << "free=" << freeBytes << "posSamples=" << m_currentPositionSamples;
         }
     }
-
-    // Drift correction
-    int audioFrame = qFloor((m_currentPositionSamples / sampleRate) * fps);
-    int timelineFrame = m_timeline->currentFrame();
-    if (qAbs(audioFrame - timelineFrame) > 1)
-        m_currentPositionSamples = (timelineFrame / fps) * sampleRate;
 }
 
 AudioLayer* AudioEngine::findAudioLayerAtFrame(int frame) const

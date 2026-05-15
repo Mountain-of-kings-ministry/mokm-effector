@@ -47,8 +47,8 @@ private:
     int m_frame = 0;
     QVariant m_value = 0.0;
     Easing m_easing = Linear;
-    QPointF m_handleIn {-0.1, 0.0};
-    QPointF m_handleOut {0.1, 0.0};
+    QPointF m_handleIn {-5.0, 0.0};
+    QPointF m_handleOut {5.0, 0.0};
 };
 
 #endif

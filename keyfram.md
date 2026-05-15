@@ -233,3 +233,35 @@ onActivated: {
 applyEasingPreset(currentText)
 }
 }
+
+
+################
+last adition
+
+
+## Timeline Navigation
+
+```text id="nav_tools"
+[ Playhead ]
+Move current frame
+
+[ Scrub ]
+Timeline scrubbing
+
+[ Pan ]
+Move timeline view
+
+[ Zoom ]
+Zoom timeline
+
+[ Frame Step ]
+Move frame-by-frame
+
+[ Jump Start ]
+Go to frame 0
+
+[ Jump End ]
+Go to composition end
+```
+
+---

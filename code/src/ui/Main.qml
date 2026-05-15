@@ -281,6 +281,15 @@ Window {
         }
     }
 
+    function getBaseName(url) {
+        var str = String(url);
+        var lastSlash = str.lastIndexOf("/");
+        var lastDot = str.lastIndexOf(".");
+        if (lastSlash === -1) lastSlash = str.lastIndexOf("\\");
+        var name = str.substring(lastSlash + 1, lastDot === -1 ? str.length : lastDot);
+        return decodeURIComponent(name);
+    }
+
     FileDialog {
         id: importImageDialog
         title: qsTr("Import Image")
@@ -289,7 +298,7 @@ Window {
             if (!importImageDialog.selectedFile) return;
             var url = importImageDialog.selectedFile;
             var layer = imageLayerComponent.createObject(project, {
-                name: "Image " + (project.assets.length + 1),
+                name: getBaseName(url),
                 source: url
             });
             project.addAsset(layer);
@@ -304,9 +313,10 @@ Window {
         nameFilters: ["Audio (*.wav *.mp3 *.ogg *.flac *.aac *.m4a)", "All Files (*)"]
         onAccepted: {
             if (!importAudioDialog.selectedFile) return;
+            var url = importAudioDialog.selectedFile;
             var layer = audioLayerComponent.createObject(project, {
-                name: "Audio " + (project.assets.length + 1),
-                source: importAudioDialog.selectedFile
+                name: getBaseName(url),
+                source: url
             });
             project.addAsset(layer);
             selectedObject = layer;
@@ -321,13 +331,26 @@ Window {
         onAccepted: {
             if (!importVideoDialog.selectedFile) return;
             var url = importVideoDialog.selectedFile;
-            var name = "Video " + (project.assets.length + 1);
-            var layer = videoLayerComponent.createObject(project, {
-                name: name,
+            var baseName = getBaseName(url);
+            
+            // 1. Create Video Layer
+            var vLayer = videoLayerComponent.createObject(project, {
+                name: baseName + " (Video)",
                 source: url
             });
-            project.addAsset(layer);
-            selectedObject = layer;
+            project.addAsset(vLayer);
+            
+            // 2. Extract and Create Audio Layer
+            var wavPath = project.extractAudioFromVideo(url, baseName);
+            if (wavPath && wavPath.length > 0) {
+                var aLayer = audioLayerComponent.createObject(project, {
+                    name: baseName + " (Audio)",
+                    source: wavPath
+                });
+                project.addAsset(aLayer);
+            }
+            
+            selectedObject = vLayer;
             project.captureSnapshot();
         }
     }

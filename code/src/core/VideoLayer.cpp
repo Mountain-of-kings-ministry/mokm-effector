@@ -143,30 +143,34 @@ QImage VideoLayer::frameAt(int frameNumber)
     if (m_frameCache.contains(frameNumber))
         return m_frameCache[frameNumber];
 
-    AVStream *stream = m_formatCtx->streams[m_videoStreamIndex];
-    AVRational frameRate = stream->avg_frame_rate;
+    // Optimization: if it's the next sequential frame, don't seek
+    bool sequential = (frameNumber == m_lastDecodedFrame + 1);
 
-    int64_t targetPts;
-    if (frameRate.num && frameRate.den) {
-        AVRational frameDuration = av_inv_q(frameRate);
-        targetPts = av_rescale_q(frameNumber, frameDuration, stream->time_base);
-    } else {
-        targetPts = av_rescale_q(frameNumber, (AVRational){1, (int)m_frameRate}, stream->time_base);
+    if (!sequential) {
+        AVStream *stream = m_formatCtx->streams[m_videoStreamIndex];
+        AVRational frameRate = stream->avg_frame_rate;
+
+        int64_t targetPts;
+        if (frameRate.num && frameRate.den) {
+            AVRational frameDuration = av_inv_q(frameRate);
+            targetPts = av_rescale_q(frameNumber, frameDuration, stream->time_base);
+        } else {
+            targetPts = av_rescale_q(frameNumber, (AVRational){1, (int)m_frameRate}, stream->time_base);
+        }
+
+        av_seek_frame(m_formatCtx, m_videoStreamIndex, targetPts, AVSEEK_FLAG_BACKWARD);
+        avcodec_flush_buffers(m_codecCtx);
+        m_lastDecodedFrame = -1; // Force re-sync
     }
-
-    av_seek_frame(m_formatCtx, m_videoStreamIndex, targetPts, AVSEEK_FLAG_BACKWARD);
-    avcodec_flush_buffers(m_codecCtx);
 
     AVFrame *frame = av_frame_alloc();
     AVPacket *packet = av_packet_alloc();
 
-    int maxAttempts = m_frameCount * 2;
+    int maxAttempts = 100; // Cap attempts to find the specific frame
     int attempts = 0;
     QImage result;
-    int lastFrameDecoded = -1;
 
     while (attempts < maxAttempts) {
-        attempts++;
         int ret = av_read_frame(m_formatCtx, packet);
         if (ret < 0) break;
 
@@ -179,19 +183,24 @@ QImage VideoLayer::frameAt(int frameNumber)
         av_packet_unref(packet);
         if (ret < 0) continue;
 
-        ret = avcodec_receive_frame(m_codecCtx, frame);
-        if (ret == 0) {
-            lastFrameDecoded++;
-            if (lastFrameDecoded == frameNumber) {
+        while (avcodec_receive_frame(m_codecCtx, frame) == 0) {
+            m_lastDecodedFrame++;
+            
+            // Map PTS to frame index for more accurate matching if possible,
+            // but for now we rely on sequential counter or nearest hit.
+            if (m_lastDecodedFrame == frameNumber) {
                 result = decodeFrame(frame);
                 m_frameCache.insert(frameNumber, result);
-                if (m_frameCache.size() > 60) {
+                if (m_frameCache.size() > 120) { // Increased cache
                     auto it = m_frameCache.begin();
                     m_frameCache.erase(it);
                 }
                 break;
             }
+            av_frame_unref(frame);
         }
+        if (!result.isNull()) break;
+        attempts++;
     }
 
     av_frame_free(&frame);

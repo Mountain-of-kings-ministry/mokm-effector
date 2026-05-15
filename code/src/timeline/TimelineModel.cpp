@@ -49,10 +49,13 @@ void TimelineModel::setPlaying(bool playing)
 {
     if (m_playing != playing) {
         m_playing = playing;
-        if (playing)
-            m_timer->start(1000 / 60);
-        else
+        if (playing) {
+            m_playStartFrame = m_currentFrame;
+            m_elapsedTimer.start();
+            m_timer->start(16); // ~60Hz UI refresh
+        } else {
             m_timer->stop();
+        }
         emit playingChanged();
     }
 }
@@ -313,13 +316,39 @@ void TimelineModel::onTick()
         return;
     }
 
-    int nextFrame = m_currentFrame + 1;
-    int duration = m_composition->duration();
+    qreal fps = m_composition->frameRate();
+    if (fps <= 0) fps = 30.0;
 
-    if (nextFrame >= duration)
+    qint64 elapsedMs = m_elapsedTimer.elapsed();
+    int framesDelta = qFloor((elapsedMs / 1000.0) * fps * m_playbackSpeed);
+    int nextFrame = m_playStartFrame + framesDelta;
+
+    int duration = m_composition->duration();
+    if (nextFrame >= duration) {
+        m_playStartFrame = 0;
+        m_elapsedTimer.restart();
         nextFrame = 0;
+    }
 
     setCurrentFrame(nextFrame);
+}
+
+void TimelineModel::syncToSamples(qint64 samples, int sampleRate)
+{
+    if (!m_playing || !m_composition || sampleRate <= 0) return;
+
+    qreal fps = m_composition->frameRate();
+    if (fps <= 0) fps = 30.0;
+
+    double timeSec = (double)samples / sampleRate;
+    int targetFrame = qFloor(timeSec * fps);
+
+    if (qAbs(m_currentFrame - targetFrame) > 1) {
+         setCurrentFrame(targetFrame);
+         // Adjust elapsed timer to match audio hardware clock
+         m_playStartFrame = targetFrame;
+         m_elapsedTimer.restart();
+    }
 }
 
 qreal TimelineModel::interpolateValue(qreal from, qreal to, qreal t, Keyframe::Easing easing, QPointF hIn, QPointF hOut) const

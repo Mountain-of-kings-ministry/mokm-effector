@@ -254,27 +254,34 @@ void AudioLayer::loadWaveform()
                     m_waveformData.reserve(totalSamples / step);
 
                     if (bitsPerSample == 16) {
-                        for (int i = 0; i < totalSamples; i += step) {
+                        m_fullAudioData.reserve(totalSamples * channels);
+                        for (int i = 0; i < totalSamples; i++) {
                             int byteOffset = dataOffset + i * bytesPerSample * channels;
-                            if (byteOffset + bytesPerSample > data.size()) break;
-                            qint16 sample = *reinterpret_cast<const qint16*>(data.constData() + byteOffset);
-                            m_waveformData.append(sample / 32768.0f);
-                        }
-                    } else if (bitsPerSample == 8) {
-                        for (int i = 0; i < totalSamples; i += step) {
-                            int byteOffset = dataOffset + i * bytesPerSample * channels;
-                            if (byteOffset >= data.size()) break;
-                            quint8 sample = *reinterpret_cast<const quint8*>(data.constData() + byteOffset);
-                            m_waveformData.append((sample - 128) / 128.0f);
+                            for (int c = 0; c < channels; c++) {
+                                int off = byteOffset + c * 2;
+                                if (off + 2 > data.size()) break;
+                                qint16 sample = *reinterpret_cast<const qint16*>(data.constData() + off);
+                                float fval = sample / 32768.0f;
+                                m_fullAudioData.append(fval);
+                                // Populate waveform data at intervals
+                                if (i % step == 0 && c == 0) m_waveformData.append(fval);
+                            }
                         }
                     } else if (bitsPerSample == 32) {
-                        for (int i = 0; i < totalSamples; i += step) {
+                        m_fullAudioData.reserve(totalSamples * channels);
+                        for (int i = 0; i < totalSamples; i++) {
                             int byteOffset = dataOffset + i * bytesPerSample * channels;
-                            if (byteOffset + 4 > data.size()) break;
-                            float sample = *reinterpret_cast<const float*>(data.constData() + byteOffset);
-                            m_waveformData.append(qBound(-1.0f, sample, 1.0f));
+                            for (int c = 0; c < channels; c++) {
+                                int off = byteOffset + c * 4;
+                                if (off + 4 > data.size()) break;
+                                float sample = *reinterpret_cast<const float*>(data.constData() + off);
+                                m_fullAudioData.append(sample);
+                                if (i % step == 0 && c == 0) m_waveformData.append(sample);
+                            }
                         }
                     }
+                    m_sampleRate = sampleRate;
+                    m_channels = channels;
                     emit frameCountChanged();
                     return;
                 }

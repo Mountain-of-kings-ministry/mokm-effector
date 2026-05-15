@@ -1,5 +1,8 @@
 # MOKM Effector — Timeline Tool Architecture
 
+Transision tool
+this tool is for making transition effects
+
 This structure keeps your editor:
 
 * scalable
