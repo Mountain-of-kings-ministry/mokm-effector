@@ -870,9 +870,9 @@ Rectangle {
                                                 anchors.fill: parent; cursorShape: Qt.SizeHorCursor; drag.target: parent; drag.axis: Drag.XAxis
                                                 onPositionChanged: {
                                                     if (drag.active) {
-                                                        var frames = Math.round(parent.x / root.pixelPerFrame);
+                                                        var frames = Math.round(parent.x / tlRoot.pixelPerFrame);
                                                         stripObj.transitionInDuration = Math.max(0, Math.min(frames, stripObj.duration - stripObj.transitionOutDuration));
-                                                        stripObj.transitionIn = root.globalTransition;
+                                                        stripObj.transitionIn = tlRoot.globalTransition;
                                                     }
                                                 }
                                             }
@@ -882,18 +882,18 @@ Rectangle {
                                         Rectangle {
                                             id: transOutHandle
                                             anchors.right: parent.right
-                                            anchors.rightMargin: stripObj.transitionOutDuration * root.pixelPerFrame - 4
+                                            anchors.rightMargin: stripObj.transitionOutDuration * tlRoot.pixelPerFrame - 4
                                             y: -2; width: 8; height: 8; radius: 4
                                             color: Theme.accent; border.color: "white"; border.width: 1
-                                            visible: root.currentTool === "transition"
+                                            visible: tlRoot.currentTool === "transition"
                                             z: 5
                                             MouseArea {
                                                 anchors.fill: parent; cursorShape: Qt.SizeHorCursor; drag.target: parent; drag.axis: Drag.XAxis
                                                 onPositionChanged: {
                                                     if (drag.active) {
-                                                        var frames = Math.round((stripRect.width - (parent.x + parent.width)) / root.pixelPerFrame);
+                                                        var frames = Math.round((stripRect.width - (parent.x + parent.width)) / tlRoot.pixelPerFrame);
                                                         stripObj.transitionOutDuration = Math.max(0, Math.min(frames, stripObj.duration - stripObj.transitionInDuration));
-                                                        stripObj.transitionOut = root.globalTransition;
+                                                        stripObj.transitionOut = tlRoot.globalTransition;
                                                     }
                                                 }
                                             }

@@ -297,68 +297,78 @@ Window {
         return decodeURIComponent(name);
     }
 
+    // FileDialog {
+    //     id: importImageDialog
+    //     title: qsTr("Import Image")
+    //     nameFilters: ["Images (*.png *.jpg *.jpeg *.gif *.bmp *.webp)", "All Files (*)"]
+    //     onAccepted: {
+    //         if (!importImageDialog.selectedFile) return;
+    //         var files = [importImageDialog.selectedFile];
+    //         projectBin.importFiles(files, "image");
+    //     }
+    // }
+    //
+    // Import Images Dialog
     FileDialog {
         id: importImageDialog
-        title: qsTr("Import Image")
-        nameFilters: ["Images (*.png *.jpg *.jpeg *.gif *.bmp *.webp)", "All Files (*)"]
+        title: qsTr("Import Images")
+        nameFilters: ["Images (*.png *.jpg *.jpeg *.gif *.bmp *.webp *.tiff)", "All Files (*)"]
+
+        fileMode: FileDialog.OpenFiles     // ← This is the correct way
+
         onAccepted: {
-            if (!importImageDialog.selectedFile) return;
-            var url = importImageDialog.selectedFile;
-            var layer = imageLayerComponent.createObject(project, {
-                name: getBaseName(url),
-                source: url
-            });
-            project.addAsset(layer);
-            selectedObject = layer;
-            project.captureSnapshot();
+            if (selectedFiles.length === 0) return;
+            projectBin.importFiles(selectedFiles, "image");
         }
     }
 
+    // FileDialog {
+    //     id: importAudioDialog
+    //     title: qsTr("Import Audio")
+    //     nameFilters: ["Audio (*.wav *.mp3 *.ogg *.flac *.aac *.m4a)", "All Files (*)"]
+    //     onAccepted: {
+    //         if (!importAudioDialog.selectedFile) return;
+    //         var files = [importAudioDialog.selectedFile];
+    //         projectBin.importFiles(files, "audio");
+    //     }
+    // }
+    //
+    // Import Audio Dialog
     FileDialog {
         id: importAudioDialog
         title: qsTr("Import Audio")
-        nameFilters: ["Audio (*.wav *.mp3 *.ogg *.flac *.aac *.m4a)", "All Files (*)"]
+        nameFilters: ["Audio (*.wav *.mp3 *.ogg *.flac *.aac *.m4a *.opus)", "All Files (*)"]
+
+        fileMode: FileDialog.OpenFiles
+
         onAccepted: {
-            if (!importAudioDialog.selectedFile) return;
-            var url = importAudioDialog.selectedFile;
-            var layer = audioLayerComponent.createObject(project, {
-                name: getBaseName(url),
-                source: url
-            });
-            project.addAsset(layer);
-            selectedObject = layer;
-            project.captureSnapshot();
+            if (selectedFiles.length === 0) return;
+            projectBin.importFiles(selectedFiles, "audio");
         }
     }
 
+    // FileDialog {
+    //     id: importVideoDialog
+    //     title: qsTr("Import Video")
+    //     nameFilters: ["Video (*.mp4 *.mov *.avi *.mkv *.webm *.m4v *.ts)", "All Files (*)"]
+    //     onAccepted: {
+    //         if (!importVideoDialog.selectedFile) return;
+    //         var files = [importVideoDialog.selectedFile];
+    //         projectBin.importFiles(files, "video");
+    //     }
+    // }
+    //
+    // Import Video Dialog
     FileDialog {
         id: importVideoDialog
         title: qsTr("Import Video")
-        nameFilters: ["Video (*.mp4 *.mov *.avi *.mkv *.webm *.m4v *.ts)", "All Files (*)"]
+        nameFilters: ["Video (*.mp4 *.mov *.avi *.mkv *.webm *.m4v *.ts *.flv)", "All Files (*)"]
+
+        fileMode: FileDialog.OpenFiles
+
         onAccepted: {
-            if (!importVideoDialog.selectedFile) return;
-            var url = importVideoDialog.selectedFile;
-            var baseName = getBaseName(url);
-            
-            // 1. Create Video Layer
-            var vLayer = videoLayerComponent.createObject(project, {
-                name: baseName + " (Video)",
-                source: url
-            });
-            project.addAsset(vLayer);
-            
-            // 2. Extract and Create Audio Layer
-            var wavPath = project.extractAudioFromVideo(url, baseName);
-            if (wavPath && wavPath.length > 0) {
-                var aLayer = audioLayerComponent.createObject(project, {
-                    name: baseName + " (Audio)",
-                    source: wavPath
-                });
-                project.addAsset(aLayer);
-            }
-            
-            selectedObject = vLayer;
-            project.captureSnapshot();
+            if (selectedFiles.length === 0) return;
+            projectBin.importFiles(selectedFiles, "video");
         }
     }
 

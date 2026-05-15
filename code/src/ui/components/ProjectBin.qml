@@ -33,6 +33,52 @@ Rectangle {
     signal importAudioRequested()
     signal importVideoRequested()
 
+    function importFiles(files, type) {
+        if (!files) return;
+        for (var i = 0; i < files.length; i++) {
+            var url = files[i];
+            if (type === "image") {
+                var layer = imageLayerComponent.createObject(projectModel, {
+                    name: getBaseName(url),
+                    source: url
+                });
+                projectModel.addAsset(layer);
+            } else if (type === "audio") {
+                var layer = audioLayerComponent.createObject(projectModel, {
+                    name: getBaseName(url),
+                    source: url
+                });
+                projectModel.addAsset(layer);
+            } else if (type === "video") {
+                var baseName = getBaseName(url);
+                var vLayer = videoLayerComponent.createObject(projectModel, {
+                    name: baseName + " (Video)",
+                    source: url
+                });
+                projectModel.addAsset(vLayer);
+                
+                var wavPath = projectModel.extractAudioFromVideo(url, baseName);
+                if (wavPath && wavPath.length > 0) {
+                    var aLayer = audioLayerComponent.createObject(projectModel, {
+                        name: baseName + " (Audio)",
+                        source: wavPath
+                    });
+                    projectModel.addAsset(aLayer);
+                }
+            }
+        }
+        projectModel.captureSnapshot();
+    }
+
+    function getBaseName(url) {
+        var str = String(url);
+        var lastSlash = str.lastIndexOf("/");
+        var lastDot = str.lastIndexOf(".");
+        if (lastSlash === -1) lastSlash = str.lastIndexOf("\\");
+        var name = str.substring(lastSlash + 1, lastDot === -1 ? str.length : lastDot);
+        return decodeURIComponent(name);
+    }
+
     function createNodeStrip(type) {
         if (!bin.projectModel)
             return;
