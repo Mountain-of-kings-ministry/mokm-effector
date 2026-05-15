@@ -45,7 +45,6 @@
 #include "NodeEditor/BaseNode.h"
 #include "NodeEditor/DefaultNodes.h"
 #include "src/nodes/MOKMNodes.h"
-#include "src/nodes/NodeStrip.h"
 #endif
 
 int main(int argc, char *argv[])
@@ -131,8 +130,6 @@ int main(int argc, char *argv[])
 
     // If you have more node sets in the future:
     // NodeEditor::registerSomeOtherNodes(graphModel);
-
-    qmlRegisterType<NodeStrip>("mokm_effector", 1, 0, "NodeStrip");
 
     engine.addImportPath(
         QDir(QCoreApplication::applicationDirPath())

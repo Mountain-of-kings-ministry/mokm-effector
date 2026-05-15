@@ -620,8 +620,8 @@ Rectangle {
                                     spacing: 4
                                     Image {
                                         source: trackObj && trackObj.trackType === Track.Audio ? "qrc:/icons/outline/volume.svg"
-                                              : trackObj && trackObj.trackType === Track.Image ? "qrc:/icons/outline/photo.svg"
-                                              : "qrc:/icons/outline/video.svg"
+                                              : trackObj && trackObj.trackType === Track.Video ? "qrc:/icons/outline/video.svg"
+                                              : "qrc:/icons/outline/photo.svg"
                                         sourceSize.width: 14
                                         sourceSize.height: 14
                                     }
@@ -782,7 +782,7 @@ Rectangle {
 
                                     onDropped: function (drag) {
                                         if (drag.source.stripObj) {
-                                            drag.source.stripObj.moveToTrack(trackObj);
+                                            drag.source.stripObj.moveToTrack(stripTrack);
                                         }
                                     }
                                 }
@@ -805,6 +805,7 @@ Rectangle {
                                         border.color: root.selectedObject === modelData ? Theme.accent : Qt.lighter(color, 1.4)
 
                                         property var stripObj: modelData
+                                        property var stripTrack: trackObj
                                         property var tlRoot: root
 
                                         // Visual Edges
@@ -858,42 +859,103 @@ Rectangle {
                                         }
 
                                         // ── Transition In Handle ──
+                                        // Rectangle {
+                                        //     id: transInHandle
+                                        //     anchors.left: parent.left
+                                        //     anchors.leftMargin: stripObj.transitionInDuration * root.pixelPerFrame - 4
+                                        //     y: -2; width: 8; height: 8; radius: 4
+                                        //     color: Theme.accent; border.color: "white"; border.width: 1
+                                        //     visible: root.currentTool === "transition"
+                                        //     z: 5
+                                        //     MouseArea {
+                                        //         anchors.fill: parent; cursorShape: Qt.SizeHorCursor; drag.target: parent; drag.axis: Drag.XAxis
+                                        //         onPositionChanged: {
+                                        //             if (drag.active) {
+                                        //                 var frames = Math.round(parent.x / tlRoot.pixelPerFrame);
+                                        //                 stripObj.transitionInDuration = Math.max(0, Math.min(frames, stripObj.duration - stripObj.transitionOutDuration));
+                                        //                 stripObj.transitionIn = tlRoot.globalTransition;
+                                        //             }
+                                        //         }
+                                        //     }
+                                        // }
+                                        //
+                                        // ── Transition In Handle ──
                                         Rectangle {
                                             id: transInHandle
                                             anchors.left: parent.left
                                             anchors.leftMargin: stripObj.transitionInDuration * root.pixelPerFrame - 4
                                             y: -2; width: 8; height: 8; radius: 4
-                                            color: Theme.accent; border.color: "white"; border.width: 1
+                                            color: Theme.accent
+                                            border.color: "white"
+                                            border.width: 1
                                             visible: root.currentTool === "transition"
                                             z: 5
+
                                             MouseArea {
-                                                anchors.fill: parent; cursorShape: Qt.SizeHorCursor; drag.target: parent; drag.axis: Drag.XAxis
+                                                anchors.fill: parent
+                                                cursorShape: Qt.SizeHorCursor
+                                                drag.target: parent
+                                                drag.axis: Drag.XAxis
+
                                                 onPositionChanged: {
                                                     if (drag.active) {
-                                                        var frames = Math.round(parent.x / tlRoot.pixelPerFrame);
-                                                        stripObj.transitionInDuration = Math.max(0, Math.min(frames, stripObj.duration - stripObj.transitionOutDuration));
-                                                        stripObj.transitionIn = tlRoot.globalTransition;
+                                                        // Use stripRect (the parent of this MouseArea) or root
+                                                        var frames = Math.round(parent.x / stripRect.tlRoot.pixelPerFrame);
+                                                        stripObj.transitionInDuration = Math.max(0,
+                                                            Math.min(frames, stripObj.duration - stripObj.transitionOutDuration));
+                                                        stripObj.transitionIn = stripRect.tlRoot.globalTransition;
                                                     }
                                                 }
                                             }
                                         }
 
                                         // ── Transition Out Handle ──
+                                        // Rectangle {
+                                        //     id: transOutHandle
+                                        //     anchors.right: parent.right
+                                        //     anchors.rightMargin: stripObj.transitionOutDuration * tlRoot.pixelPerFrame - 4
+                                        //     y: -2; width: 8; height: 8; radius: 4
+                                        //     color: Theme.accent; border.color: "white"; border.width: 1
+                                        //     visible: tlRoot.currentTool === "transition"
+                                        //     z: 5
+                                        //     MouseArea {
+                                        //         anchors.fill: parent; cursorShape: Qt.SizeHorCursor; drag.target: parent; drag.axis: Drag.XAxis
+                                        //         onPositionChanged: {
+                                        //             if (drag.active) {
+                                        //                 var frames = Math.round((stripRect.width - (parent.x + parent.width)) / tlRoot.pixelPerFrame);
+                                        //                 stripObj.transitionOutDuration = Math.max(0, Math.min(frames, stripObj.duration - stripObj.transitionInDuration));
+                                        //                 stripObj.transitionOut = tlRoot.globalTransition;
+                                        //             }
+                                        //         }
+                                        //     }
+                                        // }
+                                        //
+                                        // ── Transition Out Handle ──
                                         Rectangle {
                                             id: transOutHandle
                                             anchors.right: parent.right
-                                            anchors.rightMargin: stripObj.transitionOutDuration * tlRoot.pixelPerFrame - 4
+                                            anchors.rightMargin: stripObj.transitionOutDuration * stripRect.tlRoot.pixelPerFrame - 4
                                             y: -2; width: 8; height: 8; radius: 4
-                                            color: Theme.accent; border.color: "white"; border.width: 1
-                                            visible: tlRoot.currentTool === "transition"
+                                            color: Theme.accent
+                                            border.color: "white"
+                                            border.width: 1
+                                            visible: stripRect.tlRoot.currentTool === "transition"
                                             z: 5
+
                                             MouseArea {
-                                                anchors.fill: parent; cursorShape: Qt.SizeHorCursor; drag.target: parent; drag.axis: Drag.XAxis
+                                                anchors.fill: parent
+                                                cursorShape: Qt.SizeHorCursor
+                                                drag.target: parent
+                                                drag.axis: Drag.XAxis
+
                                                 onPositionChanged: {
                                                     if (drag.active) {
-                                                        var frames = Math.round((stripRect.width - (parent.x + parent.width)) / tlRoot.pixelPerFrame);
-                                                        stripObj.transitionOutDuration = Math.max(0, Math.min(frames, stripObj.duration - stripObj.transitionInDuration));
-                                                        stripObj.transitionOut = tlRoot.globalTransition;
+                                                        var frames = Math.round(
+                                                            (stripRect.width - (parent.x + parent.width)) / stripRect.tlRoot.pixelPerFrame
+                                                        );
+                                                        stripObj.transitionOutDuration = Math.max(0,
+                                                            Math.min(frames, stripObj.duration - stripObj.transitionInDuration));
+                                                        stripObj.transitionOut = stripRect.tlRoot.globalTransition;
                                                     }
                                                 }
                                             }
@@ -1015,9 +1077,9 @@ Rectangle {
                                                     var durSnapped = root.snapFrame(stripObj.startFrame + stripObj.duration);
                                                     var finalStart = snapped;
                                                     var finalDuration = Math.max(5, durSnapped - snapped);
-                                                    
+
                                                     // Check resize collision
-                                                    if (!trackObj.canPlaceStrip(stripObj, finalStart, finalDuration)) {
+                                                    if (!stripTrack.canPlaceStrip(stripObj, finalStart, finalDuration)) {
                                                         // If collision, we don't snap/resize to overlap
                                                         // For simplicity, we just revert or let it overlap for now if resizing?
                                                         // Professional behavior: push others or prevent. Let's prevent for now.
@@ -1038,28 +1100,30 @@ Rectangle {
 
                                                 stripRect.Drag.active = false;
                                                 var newStart = root.snapFrame(Math.max(0, stripRect.x / root.pixelPerFrame));
-                                                
+
                                                 // ── Collision Avoidance ──
-                                                if (!trackObj.canPlaceStrip(stripObj, newStart, stripObj.duration)) {
+                                                var colTrack = stripTrack;
+                                                if (!colTrack || !colTrack.layer) return;
+                                                if (!colTrack.canPlaceStrip(stripObj, newStart, stripObj.duration)) {
                                                     // Collision! Find/Create new track above
-                                                    var tl = trackObj.layer;
-                                                    var curIdx = tl.trackIndex(trackObj);
+                                                    var tl = colTrack.layer;
+                                                    var curIdx = tl.trackIndex(colTrack);
                                                     var newTrack = null;
-                                                    
+
                                                     // Try track above first
                                                     if (curIdx > 0) {
                                                         var above = tl.trackAt(curIdx - 1);
-                                                        if (above && above.trackType === trackObj.trackType && above.canPlaceStrip(stripObj, newStart, stripObj.duration)) {
+                                                        if (above && above.trackType === colTrack.trackType && above.canPlaceStrip(stripObj, newStart, stripObj.duration)) {
                                                             newTrack = above;
                                                         }
                                                     }
-                                                    
+
                                                     if (!newTrack) {
                                                         // Insert new track
-                                                        newTrack = tl.insertTrack(curIdx, trackObj.trackType);
-                                                        newTrack.name = trackObj.name + " (Overlap)";
+                                                        newTrack = tl.insertTrack(curIdx, colTrack.trackType);
+                                                        newTrack.name = colTrack.name + " (Overlap)";
                                                     }
-                                                    
+
                                                     stripObj.startFrame = newStart;
                                                     stripObj.moveToTrack(newTrack);
                                                 } else {
@@ -1198,15 +1262,16 @@ Rectangle {
                                         MenuItem {
                                             text: "Delete Strip"
                                             onTriggered: {
+                                                var r = tlRoot;
                                                 stripObj.deleteStrip();
-                                                root.selectedObject = null;
-                                                _selectedLayers = [];
+                                                r.selectedObject = null;
+                                                r._selectedLayers = [];
                                             }
                                         }
                                         MenuItem {
                                             text: "Ripple Delete"
                                             onTriggered: {
-                                                root.selectedObject = stripObj;
+                                                tlRoot.selectedObject = stripObj;
                                                 rippleDeleteSelected();
                                             }
                                         }

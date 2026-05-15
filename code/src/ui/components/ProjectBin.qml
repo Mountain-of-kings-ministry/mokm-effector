@@ -79,7 +79,7 @@ Rectangle {
         return decodeURIComponent(name);
     }
 
-    function createNodeStrip(type) {
+    function createStrip(type) {
         if (!bin.projectModel)
             return;
         var proj = bin.projectModel;
@@ -339,44 +339,44 @@ Rectangle {
         Menu {
             title: qsTr("Generators")
 
-            MenuItem { text: qsTr("Rectangle"); onTriggered: createNodeStrip("Rectangle") }
-            MenuItem { text: qsTr("Text"); onTriggered: createNodeStrip("Text") }
-            MenuItem { text: qsTr("Circle"); onTriggered: createNodeStrip("Circle") }
-            MenuItem { text: qsTr("Ellipse"); onTriggered: createNodeStrip("Ellipse") }
-            MenuItem { text: qsTr("Polygon"); onTriggered: createNodeStrip("Polygon") }
-            MenuItem { text: qsTr("Star"); onTriggered: createNodeStrip("Star") }
-            MenuItem { text: qsTr("Line"); onTriggered: createNodeStrip("Line") }
-            MenuItem { text: qsTr("Arc"); onTriggered: createNodeStrip("Arc") }
-            MenuItem { text: qsTr("Grid"); onTriggered: createNodeStrip("Grid") }
-            MenuItem { text: qsTr("Spiral"); onTriggered: createNodeStrip("Spiral") }
-            MenuItem { text: qsTr("Arrow"); onTriggered: createNodeStrip("Arrow") }
-            MenuItem { text: qsTr("Rounded Rectangle"); onTriggered: createNodeStrip("RoundedRectangle") }
-            MenuItem { text: qsTr("Bezier Shape"); onTriggered: createNodeStrip("BezierShape") }
-            MenuItem { text: qsTr("Path"); onTriggered: createNodeStrip("Path") }
-            MenuItem { text: qsTr("SVG"); onTriggered: createNodeStrip("SVG") }
-            MenuItem { text: qsTr("Spline"); onTriggered: createNodeStrip("Spline") }
-            MenuItem { text: qsTr("Lottie"); onTriggered: createNodeStrip("Lottie") }
+            MenuItem { text: qsTr("Rectangle"); onTriggered: createStrip("Rectangle") }
+            MenuItem { text: qsTr("Text"); onTriggered: createStrip("Text") }
+            MenuItem { text: qsTr("Circle"); onTriggered: createStrip("Circle") }
+            MenuItem { text: qsTr("Ellipse"); onTriggered: createStrip("Ellipse") }
+            MenuItem { text: qsTr("Polygon"); onTriggered: createStrip("Polygon") }
+            MenuItem { text: qsTr("Star"); onTriggered: createStrip("Star") }
+            MenuItem { text: qsTr("Line"); onTriggered: createStrip("Line") }
+            MenuItem { text: qsTr("Arc"); onTriggered: createStrip("Arc") }
+            MenuItem { text: qsTr("Grid"); onTriggered: createStrip("Grid") }
+            MenuItem { text: qsTr("Spiral"); onTriggered: createStrip("Spiral") }
+            MenuItem { text: qsTr("Arrow"); onTriggered: createStrip("Arrow") }
+            MenuItem { text: qsTr("Rounded Rectangle"); onTriggered: createStrip("RoundedRectangle") }
+            MenuItem { text: qsTr("Bezier Shape"); onTriggered: createStrip("BezierShape") }
+            MenuItem { text: qsTr("Path"); onTriggered: createStrip("Path") }
+            MenuItem { text: qsTr("SVG"); onTriggered: createStrip("SVG") }
+            MenuItem { text: qsTr("Spline"); onTriggered: createStrip("Spline") }
+            MenuItem { text: qsTr("Lottie"); onTriggered: createStrip("Lottie") }
         }
 
         Menu {
             title: qsTr("Media")
 
-            MenuItem { text: qsTr("Image"); onTriggered: createNodeStrip("Image") }
-            MenuItem { text: qsTr("Video"); onTriggered: createNodeStrip("Video") }
-            MenuItem { text: qsTr("Image Sequence"); onTriggered: createNodeStrip("ImageSequence") }
-            MenuItem { text: qsTr("Audio File"); onTriggered: createNodeStrip("AudioFile") }
-            MenuItem { text: qsTr("Webcam"); onTriggered: createNodeStrip("Webcam") }
-            MenuItem { text: qsTr("Screen Capture"); onTriggered: createNodeStrip("ScreenCapture") }
-            MenuItem { text: qsTr("GIF"); onTriggered: createNodeStrip("GIF") }
-            MenuItem { text: qsTr("Sprite Sheet"); onTriggered: createNodeStrip("SpriteSheet") }
+            MenuItem { text: qsTr("Image"); onTriggered: createStrip("Image") }
+            MenuItem { text: qsTr("Video"); onTriggered: createStrip("Video") }
+            MenuItem { text: qsTr("Image Sequence"); onTriggered: createStrip("ImageSequence") }
+            MenuItem { text: qsTr("Audio File"); onTriggered: createStrip("AudioFile") }
+            MenuItem { text: qsTr("Webcam"); onTriggered: createStrip("Webcam") }
+            MenuItem { text: qsTr("Screen Capture"); onTriggered: createStrip("ScreenCapture") }
+            MenuItem { text: qsTr("GIF"); onTriggered: createStrip("GIF") }
+            MenuItem { text: qsTr("Sprite Sheet"); onTriggered: createStrip("SpriteSheet") }
         }
 
         Menu {
             title: qsTr("Procedural")
 
-            MenuItem { text: qsTr("Noise"); onTriggered: createNodeStrip("Noise") }
-            MenuItem { text: qsTr("Curl Noise"); onTriggered: createNodeStrip("CurlNoise") }
-            MenuItem { text: qsTr("Voronoi"); onTriggered: createNodeStrip("Voronoi") }
+            MenuItem { text: qsTr("Noise"); onTriggered: createStrip("Noise") }
+            MenuItem { text: qsTr("Curl Noise"); onTriggered: createStrip("CurlNoise") }
+            MenuItem { text: qsTr("Voronoi"); onTriggered: createStrip("Voronoi") }
         }
     }
 

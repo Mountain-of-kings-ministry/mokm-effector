@@ -29,7 +29,7 @@ Item {
             return obj;
         }
         console.log("NodeEditor: target does NOT have nodeGraphJson:", obj ? obj.name : "null");
-        return obj;
+        return null;
     }
 
     readonly property var _comp: timelineModel ? timelineModel.composition : null

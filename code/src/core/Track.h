@@ -25,6 +25,8 @@ class Track : public QObject
     Q_PROPERTY(QColor color READ color WRITE setColor NOTIFY colorChanged)
 
     // Track properties
+    Q_PROPERTY(TimelineLayer* layer READ layer CONSTANT)
+    Q_PROPERTY(QString nodeGraphJson READ nodeGraphJson WRITE setNodeGraphJson NOTIFY nodeGraphJsonChanged)
     Q_PROPERTY(bool enabled READ enabled WRITE setEnabled NOTIFY enabledChanged)
     Q_PROPERTY(bool mute READ mute WRITE setMute NOTIFY muteChanged)
     Q_PROPERTY(bool solo READ solo WRITE setSolo NOTIFY soloChanged)
@@ -45,6 +47,9 @@ public:
 
     QString name() const { return m_name; }
     void setName(const QString &name);
+
+    QString nodeGraphJson() const { return m_nodeGraphJson; }
+    void setNodeGraphJson(const QString &json);
 
     int trackType() const { return m_trackType; }
     void setTrackType(int type);
@@ -105,6 +110,7 @@ signals:
     void stripsChanged();
     void trackTypeChanged();
     void colorChanged();
+    void nodeGraphJsonChanged();
     void enabledChanged();
     void muteChanged();
     void soloChanged();
@@ -122,6 +128,7 @@ private:
     QColor m_color = QColor("#3b82f6");
     TimelineLayer *m_layer = nullptr;
     QVector<Strip*> m_strips;
+    QString m_nodeGraphJson;
 
     bool m_enabled = true;
     bool m_mute = false;
